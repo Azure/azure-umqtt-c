@@ -46,7 +46,6 @@ static int OnOperationComplete(MQTTCLIENT_ACTION_RESULT actionResult, void* cont
 
 void mqtt_client_sample_run()
 {
-
 #ifdef _CRT_DBG_MAP_ALLOC
     _CrtDumpMemoryLeaks();
 #endif

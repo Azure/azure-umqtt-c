@@ -9,7 +9,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif /* __cplusplus */
+#endif // __cplusplus
 
 #include "mqttconst.h"
 
@@ -23,6 +23,6 @@ extern void byteutil_writeUTF(char** buffer, const char* stringData, size_t len)
 
 #ifdef __cplusplus
 }
-#endif /* __cplusplus */
+#endif // __cplusplus
 
 #endif // DATA_BYTE_UTIL_H

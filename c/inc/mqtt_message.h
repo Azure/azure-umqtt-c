@@ -4,16 +4,12 @@
 #ifndef MQTT_MESSAGE_H
 #define MQTT_MESSAGE_H
 
-#include "macro_utils.h"
-#include "map.h" 
-
 #ifdef __cplusplus
 #include <cstddef>
-extern "C"
-{
+extern "C" {
 #else
 #include <stddef.h>
-#endif
+#endif // __cplusplus
 
 #include "mqttconst.h"
 
@@ -32,6 +28,6 @@ extern const BYTE* mqttmsg_applicationMsg(MQTT_MESSAGE_HANDLE handle);
 
 #ifdef __cplusplus
 }
-#endif
+#endif // __cplusplus
 
 #endif // MQTT_MESSAGE_H

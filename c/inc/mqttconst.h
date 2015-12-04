@@ -32,7 +32,8 @@ typedef enum QOS_VALUE_TAG
 {
     DELIVER_AT_MOST_ONCE = 0x00,
     DELIVER_AT_LEAST_ONCE = 0x01,
-    DELIVER_EXACTLY_ONCE = 0x02
+    DELIVER_EXACTLY_ONCE = 0x02,
+    DELIVER_FAILURE = 0x80
 } QOS_VALUE;
 
 typedef struct MQTTCLIENT_OPTIONS_TAG
@@ -64,5 +65,11 @@ typedef struct CONNECT_ACK_TAG
     bool isSessionPresent;
     CONNECT_RETURN_CODE returnCode;
 } CONNECT_ACK;
+
+typedef struct SUBSCRIBE_ACK_TAG
+{
+    BYTE packetId;
+    QOS_VALUE qosReturn;
+} SUBSCRIBE_ACK;
 
 #endif // MQTTCONST_H

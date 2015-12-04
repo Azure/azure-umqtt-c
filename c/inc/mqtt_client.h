@@ -37,7 +37,6 @@ extern int mqttclient_subscribe(MQTTCLIENT_HANDLE handle, BYTE packetId, const c
 extern int mqttclient_unsubscribe(MQTTCLIENT_HANDLE handle, BYTE packetId, const char* unsubscribeTopic, QOS_VALUE qosValue);
 
 extern int mqttclient_publish(MQTTCLIENT_HANDLE handle, MQTT_MESSAGE_HANDLE msgHandle);
-
 extern void mqttclient_dowork(MQTTCLIENT_HANDLE handle);
 
 #ifdef __cplusplus

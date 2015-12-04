@@ -4,14 +4,13 @@
 #ifndef CONNECT_PACKET_H
 #define CONNECT_PACKET_H
 
-#include <stddef.h>
-#include <stdint.h>
-
 #ifdef __cplusplus
+#include <cstddef>
 extern "C" {
+#else
+#include <stddef.h>
 #endif /* __cplusplus */
 
-#include "xio.h"
 #include "mqttconst.h"
 #include "buffer_.h"
 
@@ -32,7 +31,6 @@ extern int ctrlpacket_unsubscribe(CTRL_PACKET_IO_SEND ioSendFn, void* callContex
 extern int ctrlpacket_ping(CTRL_PACKET_IO_SEND ioSendFn, void* callContext);
 
 extern CONTROL_PACKET_TYPE ctrlpacket_processControlPacketType(BYTE pktByte, int* flags);
-extern int ctrlpacket_processVariableHeader(CONTROL_PACKET_TYPE type, BUFFER_HANDLE packetData);
 
 #ifdef __cplusplus
 }

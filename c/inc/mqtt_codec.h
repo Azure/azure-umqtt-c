@@ -4,14 +4,13 @@
 #ifndef MQTT_CODEC_H
 #define MQTT_CODEC_H
 
-#include <stddef.h>
-#include <stdint.h>
-
 #ifdef __cplusplus
 extern "C" {
-#endif /* __cplusplus */
+#include <cstddef>
+#else
+#include <stddef.h>
+#endif // __cplusplus
 
-#include "xio.h"
 #include "mqttconst.h"
 #include "buffer_.h"
 
@@ -26,6 +25,6 @@ extern int mqttcodec_bytesReceived(MQTTCODEC_HANDLE handle, const void* buffer, 
 
 #ifdef __cplusplus
 }
-#endif /* __cplusplus */
+#endif // __cplusplus
 
 #endif // MQTT_CODEC_H

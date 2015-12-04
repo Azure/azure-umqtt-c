@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+
 #ifndef MQTT_CLIENT_SAMPLE_H
 #define MQTT_CLIENT_SAMPLE_H
 

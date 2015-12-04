@@ -2,7 +2,7 @@
 
 ##Overview
 
-Mqtt_Client is the library that encapsulates the mqtt protocol 
+Mqtt_Client is the library that encapsulates the [MQTT Protocol](http://mqtt.org/documentation)
 
 ##Exposed API
 
