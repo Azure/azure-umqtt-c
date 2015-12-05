@@ -4,12 +4,12 @@
 #ifndef DATA_BYTE_UTIL_H
 #define DATA_BYTE_UTIL_H
 
-#include <stddef.h>
-#include <stdint.h>
-
 #ifdef __cplusplus
+#include <cstddef>
 extern "C" {
-#endif // __cplusplus
+#else
+#include <stddef.h>
+#endif /* __cplusplus */
 
 #include "mqttconst.h"
 

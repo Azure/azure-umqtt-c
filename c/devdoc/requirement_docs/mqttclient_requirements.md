@@ -10,7 +10,7 @@ Mqtt_Client is the library that encapsulates the [MQTT Protocol](http://mqtt.org
 typedef struct MQTTCLIENT_DATA_INSTANCE_TAG* MQTTCLIENT_HANDLE;
 
 #define MQTTCLIENT_ACTION_VALUES    \
-    MQTTCLIENT_ON_CONNACT,          \
+    MQTTCLIENT_ON_CONNACK,          \
     MQTTCLIENT_ON_SUBSCRIBE,        \
     MQTTCLIENT_ON_DISCONNECT
 
