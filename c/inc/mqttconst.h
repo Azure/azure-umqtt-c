@@ -72,4 +72,8 @@ typedef struct SUBSCRIBE_ACK_TAG
     QOS_VALUE qosReturn;
 } SUBSCRIBE_ACK;
 
+typedef struct PUBLISH_ACK_TAG
+{
+    BYTE packetId;
+} PUBLISH_ACK;
 #endif // MQTTCONST_H

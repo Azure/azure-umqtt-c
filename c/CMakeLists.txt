@@ -18,21 +18,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 # Start of variables used during install
 #set (INCLUDE_INSTALL_DIR include CACHE PATH "Include file directory")
 
-if(WIN32)
-    get_filename_component(REPO_DIR ${CMAKE_CURRENT_SOURCE_DIR} DIRECTORY)
-    get_filename_component(REPO_DIR ${REPO_DIR} DIRECTORY)
-    
-    set(SHARED_UTIL_INC_FOLDER ${REPO_DIR}/azure-c-shared-utility/c/inc)
-    set(SHARED_UTIL_SRC_FOLDER ${REPO_DIR}/azure-c-shared-utility/c/src)
-    set(SHARED_UTIL_LIB_DIR "$ENV{USERPROFILE}/shared-util_Win32")
-    set(MICROMOCK_UNITTEST_LIB_DIR "$ENV{USERPROFILE}/shared-util_Win32/testtools/micromock/")
-    set(CTEST_LIB_DIR "$ENV{USERPROFILE}/shared-util_Win32/testtools/ctest/")
-else()
-    set(SHARED_UTIL_INC_FOLDER /usr/include/azuresharedutil)
-    set(SHARED_UTIL_LIB_DIR "/usr/lib")
-    #set(MICROMOCK_UNITTEST_LIB_DIR "$ENV{USERPROFILE}/shared-util_Win32/testtools/micromock/")
-    #set(CTEST_LIB_DIR "$ENV{USERPROFILE}/shared-util_Win32/testtools/ctest/")
-endif(WIN32)
+add_subdirectory(azure-c-shared-utility/c)
 
 enable_testing()
 
@@ -185,6 +171,7 @@ compileAsC11()
 #these are the C source files
 set(source_c_files
 ./src/mqtt_client.c
+./src/mqtt_message.c
 )
 
 #these are the C headers
@@ -210,7 +197,16 @@ ENDIF(WIN32)
 #this is the product (a library)
 add_library(azuremqtt ${source_c_files} ${source_h_files})
 
+set(SHARED_UTIL_ADAPTER_FOLDER "${CMAKE_CURRENT_LIST_DIR}/azure-c-shared-utility/c/adapters")
+if(WIN32)
+    set(LOCK_C_FILE ${SHARED_UTIL_ADAPTER_FOLDER}/lock_c11.c)
+    set(THREAD_C_FILE ${SHARED_UTIL_ADAPTER_FOLDER}/threadapi_c11.c)
+else()
+    set(LOCK_C_FILE ${SHARED_UTIL_ADAPTER_FOLDER}/lock_pthreads.c)
+    set(THREAD_C_FILE ${SHARED_UTIL_ADAPTER_FOLDER}/threadapi_pthreads.c)
+endif()
+
 add_subdirectory(samples)
-#add_subdirectory(tests)
+add_subdirectory(tests)
 
 #target_link_libraries(azure_mqtt azure_c_shared_utility)
