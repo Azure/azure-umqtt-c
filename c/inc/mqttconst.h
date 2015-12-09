@@ -7,6 +7,7 @@
 #include "crt_abstractions.h"
 
 typedef unsigned char                   BYTE;
+typedef unsigned short                  PACKET_ID;
 
 typedef enum CONTROL_PACKET_TYPE_TAG
 {
@@ -68,12 +69,12 @@ typedef struct CONNECT_ACK_TAG
 
 typedef struct SUBSCRIBE_ACK_TAG
 {
-    BYTE packetId;
+    PACKET_ID packetId;
     QOS_VALUE qosReturn;
 } SUBSCRIBE_ACK;
 
 typedef struct PUBLISH_ACK_TAG
 {
-    BYTE packetId;
+    PACKET_ID packetId;
 } PUBLISH_ACK;
 #endif // MQTTCONST_H
