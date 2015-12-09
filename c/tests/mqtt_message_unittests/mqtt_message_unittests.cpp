@@ -46,6 +46,26 @@ typedef struct TEST_COMPLETE_DATA_INSTANCE_TAG
     size_t Length;
 } TEST_COMPLETE_DATA_INSTANCE;
 
+#ifdef CPP_UNITTEST
+template <> static std::wstring Microsoft::VisualStudio::CppUnitTestFramework::ToString < QOS_VALUE >(const QOS_VALUE & qosValue)
+{
+    std::wstring result;
+    switch (qosValue)
+    {
+        case DELIVER_AT_LEAST_ONCE: result = L"Deliver_At_Least_Once";
+            break;
+        case DELIVER_EXACTLY_ONCE: result = L"Deliver_Exactly_Once";
+            break;
+        case DELIVER_AT_MOST_ONCE: result = L"Deliver_At_Most_Once";
+            break;
+        default:
+        case DELIVER_FAILURE: result = L"Deliver_Failure";
+            break;
+    }
+    return result;
+}
+#endif
+
 static int BYTE_Compare(BYTE left, BYTE right)
 {
     return left != right;
@@ -54,6 +74,31 @@ static int BYTE_Compare(BYTE left, BYTE right)
 static void BYTE_ToString(char* string, size_t bufferSize, BYTE val)
 {
     sprintf_s(string, bufferSize, "%d", val);
+}
+
+static int QOS_VALUE_Compare(QOS_VALUE left, QOS_VALUE right)
+{
+    return left != right;
+}
+
+static void QOS_VALUE_ToString(char* string, size_t bufferSize, QOS_VALUE val)
+{
+    switch (val)
+    {
+        case DELIVER_AT_LEAST_ONCE:
+            strcpy_s(string, bufferSize, "Deliver_At_Least_Once");
+            break;
+        case DELIVER_EXACTLY_ONCE:
+            strcpy_s(string, bufferSize, "Deliver_Exactly_Once");
+            break;
+        case DELIVER_AT_MOST_ONCE:
+            strcpy_s(string, bufferSize, "Deliver_At_Most_Once");
+            break;
+        default:
+        case DELIVER_FAILURE:
+            strcpy_s(string, bufferSize, "Deliver_Failure");
+            break;
+    }
 }
 
 TYPED_MOCK_CLASS(mqtt_message_mocks, CGlobalMock)
@@ -76,22 +121,6 @@ public:
         *destination = (char*)BASEIMPLEMENTATION::gballoc_malloc(len+1);
         strcpy(*destination, source);
     MOCK_METHOD_END(int, 0);
-
-    //MOCK_STATIC_METHOD_2(, int, BUFFER_pre_build, BUFFER_HANDLE, handle, size_t, size)
-    //MOCK_METHOD_END(int, BASEIMPLEMENTATION::BUFFER_pre_build(handle, size));
-
-    //MOCK_STATIC_METHOD_2(, int, BUFFER_prepend, BUFFER_HANDLE, handle1, BUFFER_HANDLE, handle2)
-    //MOCK_METHOD_END(int, BASEIMPLEMENTATION::BUFFER_prepend(handle1, handle2));
-
-    //MOCK_STATIC_METHOD_1(, void, BUFFER_delete, BUFFER_HANDLE, s)
-    //    BASEIMPLEMENTATION::BUFFER_delete(s);
-    //MOCK_VOID_METHOD_END();
-
-    //MOCK_STATIC_METHOD_1(, unsigned char*, BUFFER_u_char, BUFFER_HANDLE, s)
-    //MOCK_METHOD_END(unsigned char*, BASEIMPLEMENTATION::BUFFER_u_char(s) );
-
-    //MOCK_STATIC_METHOD_1(, size_t, BUFFER_length, BUFFER_HANDLE, s)
-    //MOCK_METHOD_END(size_t, BASEIMPLEMENTATION::BUFFER_length(s));
 };
 
 extern "C"
@@ -100,14 +129,6 @@ extern "C"
     DECLARE_GLOBAL_MOCK_METHOD_1(mqtt_message_mocks, , void, gballoc_free, void*, ptr);
 
     DECLARE_GLOBAL_MOCK_METHOD_2(mqtt_message_mocks, , int, mallocAndStrcpy_s, char**, destination, const char*, source);
-
-    //DECLARE_GLOBAL_MOCK_METHOD_0(mqtt_message_mocks, , BUFFER_HANDLE, BUFFER_new);
-    //DECLARE_GLOBAL_MOCK_METHOD_1(mqtt_message_mocks, , void, BUFFER_delete, BUFFER_HANDLE, handle);
-    //DECLARE_GLOBAL_MOCK_METHOD_3(mqtt_message_mocks, , int, BUFFER_build, BUFFER_HANDLE, handle, const unsigned char*, source, size_t, size);
-    //DECLARE_GLOBAL_MOCK_METHOD_2(mqtt_message_mocks, , int, BUFFER_pre_build, BUFFER_HANDLE, handle, size_t, size);
-    //DECLARE_GLOBAL_MOCK_METHOD_2(mqtt_message_mocks, , int, BUFFER_prepend, BUFFER_HANDLE, handle1, BUFFER_HANDLE, handle2);
-    //DECLARE_GLOBAL_MOCK_METHOD_1(mqtt_message_mocks, , unsigned char*, BUFFER_u_char, BUFFER_HANDLE, handle);
-    //DECLARE_GLOBAL_MOCK_METHOD_1(mqtt_message_mocks, , size_t, BUFFER_length, BUFFER_HANDLE, handle);
 }
 
 MICROMOCK_MUTEX_HANDLE test_serialize_mutex;
@@ -142,8 +163,7 @@ TEST_FUNCTION_CLEANUP(method_cleanup)
     }
 }
 
-// TODO: Mallocs fail
-
+/* Test_SRS_MQTTMESSAGE_07_001:[If the parameters topicName is NULL, appMsg is NULL, or appLength is zero then mqttmsg_createMessage shall return NULL.] */
 TEST_FUNCTION(mqttmsg_createMessage_appLength_NULL_fail)
 {
     // arrange
@@ -157,6 +177,7 @@ TEST_FUNCTION(mqttmsg_createMessage_appLength_NULL_fail)
     mocks.AssertActualAndExpectedCalls();
 }
 
+/* Test_SRS_MQTTMESSAGE_07_001:[If the parameters topicName is NULL, appMsg is NULL, or appLength is zero then mqttmsg_createMessage shall return NULL.] */
 TEST_FUNCTION(mqttmsg_createMessage_applicationMsg_NULL_fail)
 {
     // arrange
@@ -170,6 +191,7 @@ TEST_FUNCTION(mqttmsg_createMessage_applicationMsg_NULL_fail)
     mocks.AssertActualAndExpectedCalls();
 }
 
+/* Test_SRS_MQTTMESSAGE_07_001:[If the parameters topicName is NULL, appMsg is NULL, or appLength is zero then mqttmsg_createMessage shall return NULL.] */
 TEST_FUNCTION(mqttmsg_createMessage_Topicname_NULL_fail)
 {
     // arrange
@@ -183,6 +205,8 @@ TEST_FUNCTION(mqttmsg_createMessage_Topicname_NULL_fail)
     mocks.AssertActualAndExpectedCalls();
 }
 
+/* Test_SRS_MQTTMESSAGE_07_002: [mqttmsg_createMessage shall allocate and copy the topicName and appMsg parameters.]*/
+/* Test_SRS_MQTTMESSAGE_07_004: [If mqttmsg_createMessage succeeds the it shall return a NON-NULL MQTT_MESSAGE_HANDLE value.] */
 TEST_FUNCTION(mqttmsg_createMessage_succeed)
 {
     // arrange
@@ -202,6 +226,7 @@ TEST_FUNCTION(mqttmsg_createMessage_succeed)
     mqttmsg_destroyMessage(handle);
 }
 
+/* Test_SRS_MQTTMESSAGE_07_006: [mqttmsg_destroyMessage shall free all resources associated with the MQTT_MESSAGE_HANDLE value] */
 TEST_FUNCTION(mqttmsg_destroyMessage_succeed)
 {
     // arrange
@@ -221,6 +246,7 @@ TEST_FUNCTION(mqttmsg_destroyMessage_succeed)
     mocks.AssertActualAndExpectedCalls();
 }
 
+/* Test_SRS_MQTTMESSAGE_07_005: [If the handle parameter is NULL then mqttmsg_destroyMessage shall do nothing] */
 TEST_FUNCTION(mqttmsg_destroyMessage_handle_NULL_fail)
 {
     // arrange
@@ -232,6 +258,7 @@ TEST_FUNCTION(mqttmsg_destroyMessage_handle_NULL_fail)
     // assert
 }
 
+/* Test_SRS_MQTTMESSAGE_07_008: [mqttmsg_clone shall create a new MQTT_MESSAGE_HANDLE with data content identical of the handle value.] */
 TEST_FUNCTION(mqttmsg_clone_succeed)
 {
     // arrange
@@ -256,6 +283,7 @@ TEST_FUNCTION(mqttmsg_clone_succeed)
     mqttmsg_destroyMessage(cloneHandle);
 }
 
+/* Test_SRS_MQTTMESSAGE_07_007: [If handle parameter is NULL then mqttmsg_clone shall return NULL.] */
 TEST_FUNCTION(mqttmsg_clone_handle_fails)
 {
     // arrange
@@ -272,6 +300,7 @@ TEST_FUNCTION(mqttmsg_clone_handle_fails)
     mocks.AssertActualAndExpectedCalls();
 }
 
+/* Test_SRS_MQTTMESSAGE_07_010: [If handle is NULL then mqttmsg_getPacketId shall return 0.] */
 TEST_FUNCTION(mqttmsg_getPacketId_handle_fails)
 {
     // arrange
@@ -284,6 +313,7 @@ TEST_FUNCTION(mqttmsg_getPacketId_handle_fails)
     ASSERT_ARE_EQUAL(BYTE, 0, packetId);
 }
 
+/* Test_SRS_MQTTMESSAGE_07_011: [mqttmsg_getPacketId shall return the packetId value contained in MQTT_MESSAGE_HANDLE handle.] */
 TEST_FUNCTION(mqttmsg_getPacketId_succeed)
 {
     // arrange
@@ -297,6 +327,193 @@ TEST_FUNCTION(mqttmsg_getPacketId_succeed)
 
     // assert
     ASSERT_ARE_EQUAL(BYTE, TEST_PACKET_ID, packetId);
+
+    mocks.AssertActualAndExpectedCalls();
+
+    mqttmsg_destroyMessage(handle);
+}
+
+/* Test_SRS_MQTTMESSAGE_07_012: [If handle is NULL then mqttmsg_getTopicName shall return a NULL string.] */
+TEST_FUNCTION(mqttmsg_getTopicName_handle_fails)
+{
+    // arrange
+    mqtt_message_mocks mocks;
+
+    // act
+    const char* topicName = mqttmsg_getTopicName(NULL);
+
+    // assert
+    ASSERT_IS_NULL(topicName);
+}
+
+/* Test_SRS_MQTTMESSAGE_07_013: [mqttmsg_getTopicName shall return the topicName contained in MQTT_MESSAGE_HANDLE handle.] */
+TEST_FUNCTION(mqttmsg_getTopicName_succeed)
+{
+    // arrange
+    mqtt_message_mocks mocks;
+
+    MQTT_MESSAGE_HANDLE handle = mqttmsg_createMessage(TEST_PACKET_ID, TEST_TOPIC_NAME, DELIVER_AT_MOST_ONCE, TEST_MESSAGE, TEST_MSG_LEN, true, true);
+    mocks.ResetAllCalls();
+
+    // act
+    const char* topicName = mqttmsg_getTopicName(handle);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, TEST_TOPIC_NAME, topicName);
+
+    mocks.AssertActualAndExpectedCalls();
+
+    mqttmsg_destroyMessage(handle);
+}
+
+/* Test_SRS_MQTTMESSAGE_07_014: [If handle is NULL then mqttmsg_getQosType shall return the default DELIVER_AT_MOST_ONCE value.] */
+TEST_FUNCTION(mqttmsg_getQosType_handle_fails)
+{
+    // arrange
+    mqtt_message_mocks mocks;
+
+    // act
+    QOS_VALUE value = mqttmsg_getQosType(NULL);
+
+    // assert
+    ASSERT_ARE_EQUAL(QOS_VALUE, DELIVER_AT_MOST_ONCE, value);
+}
+
+/* Test_SRS_MQTTMESSAGE_07_015: [mqttmsg_getQosType shall return the QOS Type value contained in MQTT_MESSAGE_HANDLE handle.] */
+TEST_FUNCTION(mqttmsg_getQosType_succeed)
+{
+    // arrange
+    mqtt_message_mocks mocks;
+
+    MQTT_MESSAGE_HANDLE handle = mqttmsg_createMessage(TEST_PACKET_ID, TEST_TOPIC_NAME, DELIVER_AT_LEAST_ONCE, TEST_MESSAGE, TEST_MSG_LEN, true, true);
+    mocks.ResetAllCalls();
+
+    // act
+    QOS_VALUE value = mqttmsg_getQosType(handle);
+
+    // assert
+    ASSERT_ARE_EQUAL(QOS_VALUE, DELIVER_AT_LEAST_ONCE, value);
+
+    mocks.AssertActualAndExpectedCalls();
+
+    mqttmsg_destroyMessage(handle);
+}
+
+/* Test_SRS_MQTTMESSAGE_07_016: [If handle is NULL then mqttmsg_isDuplicateMsg shall return false.] */
+TEST_FUNCTION(mqttmsg_isDuplicateMsg_handle_fails)
+{
+    // arrange
+    mqtt_message_mocks mocks;
+
+    // act
+    bool value = mqttmsg_isDuplicateMsg(NULL);
+
+    // assert
+    ASSERT_IS_FALSE(value);
+}
+
+/* Test_SRS_MQTTMESSAGE_07_017: [mqttmsg_isDuplicateMsg shall return the isDuplicateMsg value contained in MQTT_MESSAGE_HANDLE handle.] */
+TEST_FUNCTION(mqttmsg_isDuplicateMsg_succeed)
+{
+    // arrange
+    mqtt_message_mocks mocks;
+
+    MQTT_MESSAGE_HANDLE handle = mqttmsg_createMessage(TEST_PACKET_ID, TEST_TOPIC_NAME, DELIVER_AT_LEAST_ONCE, TEST_MESSAGE, TEST_MSG_LEN, true, true);
+    mocks.ResetAllCalls();
+
+    // act
+    bool value = mqttmsg_isDuplicateMsg(handle);
+
+    // assert
+    ASSERT_IS_TRUE(value);
+
+    mocks.AssertActualAndExpectedCalls();
+
+    mqttmsg_destroyMessage(handle);
+}
+
+/* Test_SRS_MQTTMESSAGE_07_018: [If handle is NULL then mqttmsg_isRetained shall return false.] */
+TEST_FUNCTION(mqttmsg_isRetained_handle_fails)
+{
+    // arrange
+    mqtt_message_mocks mocks;
+
+    // act
+    bool value = mqttmsg_isRetained(NULL);
+
+    // assert
+    ASSERT_IS_FALSE(value);
+}
+
+/* Test_SRS_MQTTMESSAGE_07_019: [mqttmsg_isRetained shall return the isRetained value contained in MQTT_MESSAGE_HANDLE handle.] */
+TEST_FUNCTION(mqttmsg_isRetained_succeed)
+{
+    // arrange
+    mqtt_message_mocks mocks;
+
+    MQTT_MESSAGE_HANDLE handle = mqttmsg_createMessage(TEST_PACKET_ID, TEST_TOPIC_NAME, DELIVER_AT_LEAST_ONCE, TEST_MESSAGE, TEST_MSG_LEN, true, true);
+    mocks.ResetAllCalls();
+
+    // act
+    bool value = mqttmsg_isRetained(handle);
+
+    // assert
+    ASSERT_IS_TRUE(value);
+
+    mocks.AssertActualAndExpectedCalls();
+
+    mqttmsg_destroyMessage(handle);
+}
+
+/* Test_SRS_MQTTMESSAGE_07_020: [If handle is NULL or if msgLen is 0 then mqttmsg_applicationMsg shall return NULL.] */
+TEST_FUNCTION(mqttmsg_applicationMsg_handle_fails)
+{
+    // arrange
+    mqtt_message_mocks mocks;
+
+    // act
+    const BYTE* appMsg = mqttmsg_applicationMsg(NULL, 0);
+
+    // assert
+    ASSERT_IS_NULL(appMsg);
+}
+
+/* Test_SRS_MQTTMESSAGE_07_020: [If handle is NULL or if msgLen is 0 then mqttmsg_applicationMsg shall return NULL.] */
+TEST_FUNCTION(mqttmsg_applicationMsg_msgLen_fail)
+{
+    // arrange
+    mqtt_message_mocks mocks;
+
+    MQTT_MESSAGE_HANDLE handle = mqttmsg_createMessage(TEST_PACKET_ID, TEST_TOPIC_NAME, DELIVER_AT_LEAST_ONCE, TEST_MESSAGE, TEST_MSG_LEN, true, true);
+    mocks.ResetAllCalls();
+
+    // act
+    const BYTE* appMsg = mqttmsg_applicationMsg(handle, NULL);
+
+    // assert
+    ASSERT_IS_NULL(appMsg);
+
+    mocks.AssertActualAndExpectedCalls();
+
+    mqttmsg_destroyMessage(handle);
+}
+
+/* Test_SRS_MQTTMESSAGE_07_021: [mqttmsg_applicationMsg shall return the applicationMsg value contained in MQTT_MESSAGE_HANDLE handle and the length of the appMsg in the msgLen parameter.] */
+TEST_FUNCTION(mqttmsg_applicationMsg_succeed)
+{
+    // arrange
+    mqtt_message_mocks mocks;
+
+    MQTT_MESSAGE_HANDLE handle = mqttmsg_createMessage(TEST_PACKET_ID, TEST_TOPIC_NAME, DELIVER_AT_LEAST_ONCE, TEST_MESSAGE, TEST_MSG_LEN, true, true);
+    mocks.ResetAllCalls();
+
+    // act
+    size_t length = 0;
+    const BYTE* appMsg = mqttmsg_applicationMsg(handle, &length);
+
+    // assert
+    ASSERT_IS_NOT_NULL(appMsg);
+    ASSERT_ARE_EQUAL(int, 0, memcmp(appMsg, TEST_MESSAGE, TEST_MSG_LEN) );
 
     mocks.AssertActualAndExpectedCalls();
 
