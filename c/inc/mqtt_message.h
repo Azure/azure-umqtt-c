@@ -13,18 +13,20 @@ extern "C" {
 
 #include "mqttconst.h"
 
-typedef struct MQTT_MESSAGE* MQTT_MESSAGE_HANDLE;
+typedef struct MQTT_MESSAGE_TAG* MQTT_MESSAGE_HANDLE;
 
-extern MQTT_MESSAGE_HANDLE mqttmessage_create(PACKET_ID packetId, const char* topicName, QOS_VALUE qosValue, const BYTE* appMsg, size_t appLength, bool duplicateMsg, bool retainMsg);
+extern MQTT_MESSAGE_HANDLE mqttmessage_create(PACKET_ID packetId, const char* topicName, QOS_VALUE qosValue, const BYTE* appMsg, size_t appMsgLength);
 extern void mqttmessage_destroyMessage(MQTT_MESSAGE_HANDLE handle);
 extern MQTT_MESSAGE_HANDLE mqttmessage_clone(MQTT_MESSAGE_HANDLE handle);
 
 extern PACKET_ID mqttmessage_getPacketId(MQTT_MESSAGE_HANDLE handle);
 extern const char* mqttmessage_getTopicName(MQTT_MESSAGE_HANDLE handle);
 extern QOS_VALUE mqttmessage_getQosType(MQTT_MESSAGE_HANDLE handle);
-extern bool mqttmessage_isDuplicateMsg(MQTT_MESSAGE_HANDLE handle);
-extern bool mqttmessage_isRetained(MQTT_MESSAGE_HANDLE handle);
-extern const BYTE* mqttmessage_applicationMsg(MQTT_MESSAGE_HANDLE handle, size_t* msgLen);
+extern bool mqttmessage_getIsDuplicateMsg(MQTT_MESSAGE_HANDLE handle);
+extern bool mqttmessage_getIsRetained(MQTT_MESSAGE_HANDLE handle);
+extern int mqttmessage_setIsDuplicateMsg(MQTT_MESSAGE_HANDLE handle, bool duplicateMsg);
+extern int mqttmessage_setIsRetained(MQTT_MESSAGE_HANDLE handle, bool retainMsg);
+extern const APP_PAYLOAD* mqttmessage_getApplicationMsg(MQTT_MESSAGE_HANDLE handle);
 
 #ifdef __cplusplus
 }

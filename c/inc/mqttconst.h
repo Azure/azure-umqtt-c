@@ -37,6 +37,12 @@ typedef enum QOS_VALUE_TAG
     DELIVER_FAILURE = 0x80
 } QOS_VALUE;
 
+typedef struct APP_PAYLOAD_TAG
+{
+    BYTE* message;
+    size_t messageLength;
+} APP_PAYLOAD;
+
 typedef struct MQTTCLIENT_OPTIONS_TAG
 {
     const char* clientId;
