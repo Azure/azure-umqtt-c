@@ -32,7 +32,7 @@ add_executable(mqtt_client_sample ${mqtt_client_sample_c_files} ${mqtt_client_sa
 if(WIN32)
     target_link_libraries(mqtt_client_sample 
         azuremqtt
-        ${SHARED_UTIL_LIB_DIR}/Debug/aziotsharedutil.lib
+        aziotsharedutil
         secur32
         ws2_32)
     if(${tls_openssl})

@@ -3,4 +3,5 @@
 
 #this is CMakeLists.txt for the folder tests of mqtt
 add_subdirectory(mqtt_message_unittests)
+add_subdirectory(control_packet_unittests)
 

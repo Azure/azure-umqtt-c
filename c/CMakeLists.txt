@@ -170,6 +170,8 @@ compileAsC11()
 
 #these are the C source files
 set(source_c_files
+./src/control_packet.c
+./src/data_byte_util.c
 ./src/mqtt_client.c
 ./src/mqtt_message.c
 )

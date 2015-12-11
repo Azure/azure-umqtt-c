@@ -438,6 +438,7 @@ TEST_FUNCTION(mqttmessage_getIsDuplicateMsg_handle_fails)
     ASSERT_IS_FALSE(value);
 }
 
+/* Tests_SRS_MQTTMESSAGE_07_022: [If handle is NULL then mqttmessage_setIsDuplicateMsg shall return a non-zero value.] */
 TEST_FUNCTION(mqttmessage_setIsDuplicateMsg_handle_fails)
 {
     // arrange
@@ -451,6 +452,7 @@ TEST_FUNCTION(mqttmessage_setIsDuplicateMsg_handle_fails)
 }
 
 /* Test_SRS_MQTTMESSAGE_07_017: [mqttmessage_getIsDuplicateMsg shall return the isDuplicateMsg value contained in MQTT_MESSAGE_HANDLE handle.] */
+/* Test_SRS_MQTTMESSAGE_07_023: [mqttmessage_setIsDuplicateMsg shall store the duplicateMsg value in the MQTT_MESSAGE_HANDLE handle.] */
 TEST_FUNCTION(mqttmessage_set_and_get_IsDuplicateMsg_succeed)
 {
     // arrange
@@ -486,6 +488,7 @@ TEST_FUNCTION(mqttmessage_getIsRetained_handle_fails)
     ASSERT_IS_FALSE(value);
 }
 
+/* Tests_SRS_MQTTMESSAGE_07_024: [If handle is NULL then mqttmessage_setIsRetained shall return a non-zero value.] */
 TEST_FUNCTION(mqttmessage_setIsRetained_handle_fails)
 {
     // arrange
@@ -499,6 +502,7 @@ TEST_FUNCTION(mqttmessage_setIsRetained_handle_fails)
 }
 
 /* Test_SRS_MQTTMESSAGE_07_019: [mqttmessage_getIsRetained shall return the isRetained value contained in MQTT_MESSAGE_HANDLE handle.] */
+/* Test_SRS_MQTTMESSAGE_07_025: [mqttmessage_setIsRetained shall store the retainMsg value in the MQTT_MESSAGE_HANDLE handle.] */
 TEST_FUNCTION(mqttmessage_set_and_get_IsRetained_succeed)
 {
     // arrange

@@ -25,8 +25,8 @@ extern void mqttclient_deinit(MQTTCLIENT_HANDLE handle);
 extern int mqttclient_connect(MQTTCLIENT_HANDLE handle, XIO_HANDLE ioHandle, MQTTCLIENT_OPTIONS* mqttOptions);
 extern void mqttclient_disconnect(MQTTCLIENT_HANDLE handle);
 
-extern int mqttclient_subscribe(MQTTCLIENT_HANDLE handle, BYTE packetId, const char* subscribeTopic, QOS_VALUE qosValue);
-extern int mqttclient_unsubscribe(MQTTCLIENT_HANDLE handle, BYTE packetId, const char* unsubscribeTopic, QOS_VALUE qosValue);
+extern int mqttclient_subscribe(MQTTCLIENT_HANDLE handle, BYTE packetId, SUBSCRIBE_PAYLOAD* payloadList, size_t payloadCount);
+extern int mqttclient_unsubscribe(MQTTCLIENT_HANDLE handle, BYTE packetId, const char** unsubscribeTopic);
 
 extern int mqttclient_publish(MQTTCLIENT_HANDLE handle, MQTT_MESSAGE_HANDLE msgHandle);
 

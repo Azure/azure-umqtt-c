@@ -73,6 +73,12 @@ typedef struct CONNECT_ACK_TAG
     CONNECT_RETURN_CODE returnCode;
 } CONNECT_ACK;
 
+typedef struct SUBSCRIBE_PAYLOAD_TAG
+{
+    const char* subscribeTopic;
+    QOS_VALUE qosReturn;
+} SUBSCRIBE_PAYLOAD;
+
 typedef struct SUBSCRIBE_ACK_TAG
 {
     PACKET_ID packetId;
