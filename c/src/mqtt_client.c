@@ -2,16 +2,12 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include <stdlib.h>
-#ifdef _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
-#endif
+#include "gballoc.h"
+
 #include "mqtt_client.h"
 #include "mqtt_codec.h"
-#include "control_packet.h"
 #include "data_byte_util.h"
-
 #include "platform.h"
-#include "gballoc.h"
 #include "tickcounter.h"
 
 #define KEEP_ALIVE_BUFFER_SEC           2
@@ -35,4 +31,5 @@ typedef struct MQTTCLIENT_DATA_INSTANCE_TAG
     QOS_VALUE qosValue;
     int keepAliveInterval;
 } MQTTCLIENT_DATA_INSTANCE;
+
 

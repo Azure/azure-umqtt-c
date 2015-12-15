@@ -2,45 +2,55 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include <stdlib.h>
-#ifdef _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
-#endif
-
 #include "data_byte_util.h"
 
-BYTE byteutil_readByte(BYTE** buffer)
+uint8_t byteutil_readByte(uint8_t** buffer)
 {
-    BYTE value = **buffer;
-    (*buffer)++;
-    return value;
+    uint8_t result = 0;
+    if (buffer != NULL)
+    {
+        result = **buffer;
+        (*buffer)++;
+    }
+    return result;
 }
 
-void byteutil_writeByte(char** buffer, char value)
+void byteutil_writeByte(uint8_t** buffer, uint8_t value)
 {
-    **buffer = value;
-    (*buffer)++;
+    if (buffer != NULL)
+    {
+        **buffer = value;
+        (*buffer)++;
+    }
 }
 
-int byteutil_readInt(BYTE** buffer)
+uint16_t byteutil_readInt(uint8_t** buffer)
 {
-    BYTE* iterator = *buffer;
-    int value = 256 * ((BYTE)(*iterator)) + (BYTE)(*(iterator + 1));
-    *buffer += 2; // Move the ptr
-    return value;
+    uint16_t result = 0;
+    if (buffer != NULL)
+    {
+        uint8_t* iterator = *buffer;
+        result = 256 * ((uint8_t)(*iterator)) + (uint8_t)(*(iterator + 1));
+        *buffer += 2; // Move the ptr
+    }
+    return result;
 }
 
-void byteutil_writeInt(char** buffer, int value)
+void byteutil_writeInt(uint8_t** buffer, uint16_t value)
 {
-    **buffer = (char)(value / 256);
-    (*buffer)++;
-    **buffer = (char)(value % 256);
-    (*buffer)++;
+    if (buffer != NULL)
+    {
+        **buffer = (char)(value / 256);
+        (*buffer)++;
+        **buffer = (char)(value % 256);
+        (*buffer)++;
+    }
 }
 
-char* byteutil_readUTF(BYTE** buffer)
+char* byteutil_readUTF(uint8_t** buffer)
 {
     char* result = NULL;
-    if (*buffer != NULL)
+    if (buffer != NULL)
     {
         // Get the length of the string
         int len = byteutil_readInt(buffer);
@@ -49,7 +59,7 @@ char* byteutil_readUTF(BYTE** buffer)
             result = (char*)malloc(len+1);
             if (result != NULL)
             {
-                memcpy(result, *buffer, len);
+                (void)memcpy(result, *buffer, len);
                 result[len] = '\0';
                 *buffer += len;
             }
@@ -58,9 +68,12 @@ char* byteutil_readUTF(BYTE** buffer)
     return result;
 }
 
-void byteutil_writeUTF(char** buffer, const char* stringData, size_t len)
+void byteutil_writeUTF(uint8_t** buffer, const char* stringData, uint16_t len)
 {
-    byteutil_writeInt(buffer, len);
-    memcpy(*buffer, stringData, len);
-    *buffer += len;
+    if (buffer != NULL)
+    {
+        byteutil_writeInt(buffer, len);
+        (void)memcpy(*buffer, stringData, len);
+        *buffer += len;
+    }
 }

@@ -5,14 +5,14 @@
 cmake_minimum_required(VERSION 3.0)
 
 compileAsC11()
-set(theseTestsName control_packet_unittests)
+set(theseTestsName data_byte_util_unittests)
 
 set(${theseTestsName}_cpp_files
 ${theseTestsName}.cpp
 )
 
 set(${theseTestsName}_c_files
-../../src/control_packet.c
+../../src/data_byte_util.c
 )
 
 set(${theseTestsName}_h_files

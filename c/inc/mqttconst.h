@@ -4,10 +4,16 @@
 #ifndef MQTTCONST_H
 #define MQTTCONST_H
 
-#include "crt_abstractions.h"
+#ifdef __cplusplus
+#include <cstddef>
+#include <cstdint>
+extern "C" {
+#else
+#include <stddef.h>
+#include <stdint.h>
+#endif /* __cplusplus */
 
-typedef unsigned char                   BYTE;
-typedef unsigned short                  PACKET_ID;
+#include "crt_abstractions.h"
 
 typedef enum CONTROL_PACKET_TYPE_TAG
 {
@@ -39,7 +45,7 @@ typedef enum QOS_VALUE_TAG
 
 typedef struct APP_PAYLOAD_TAG
 {
-    BYTE* message;
+    uint8_t* message;
     size_t messageLength;
 } APP_PAYLOAD;
 
@@ -81,12 +87,22 @@ typedef struct SUBSCRIBE_PAYLOAD_TAG
 
 typedef struct SUBSCRIBE_ACK_TAG
 {
-    PACKET_ID packetId;
-    QOS_VALUE qosReturn;
+    uint16_t packetId;
+    QOS_VALUE* qosReturn;
+    size_t qosCount;
 } SUBSCRIBE_ACK;
 
+typedef struct UNSUBSCRIBE_ACK_TAG
+{
+    uint16_t packetId;
+} UNSUBSCRIBE_ACK;
 typedef struct PUBLISH_ACK_TAG
 {
-    PACKET_ID packetId;
+    uint16_t packetId;
 } PUBLISH_ACK;
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
+
 #endif // MQTTCONST_H

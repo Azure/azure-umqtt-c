@@ -2,16 +2,12 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include <stdlib.h>
-#ifdef _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
-#endif
-
 #include "mqtt_message.h"
 #include "gballoc.h"
 
 typedef struct MQTT_MESSAGE_TAG
 {
-    PACKET_ID packetId;
+    uint16_t packetId;
     char* topicName;
     QOS_VALUE qosInfo;
     APP_PAYLOAD appPayload;
@@ -19,9 +15,9 @@ typedef struct MQTT_MESSAGE_TAG
     bool isMessageRetained;
 } MQTT_MESSAGE;
 
-MQTT_MESSAGE_HANDLE mqttmessage_create(PACKET_ID packetId, const char* topicName, QOS_VALUE qosValue, const BYTE* appMsg, size_t appMsgLength)
+MQTT_MESSAGE_HANDLE mqttmessage_create(uint16_t packetId, const char* topicName, QOS_VALUE qosValue, const uint8_t* appMsg, size_t appMsgLength)
 {
-    /* Code_SRS_MQTTMESSAGE_07_001:[If the parameters topicName is NULL, appMsg is NULL, or appMsgLength is zero then mqttmessage_create shall return NULL.] */
+    /* Codes_SRS_MQTTMESSAGE_07_001:[If the parameters topicName is NULL, appMsg is NULL, or appMsgLength is zero then mqttmessage_create shall return NULL.] */
     MQTT_MESSAGE* result;
     if (topicName == NULL || appMsg == NULL || appMsgLength == 0)
     {
@@ -29,24 +25,24 @@ MQTT_MESSAGE_HANDLE mqttmessage_create(PACKET_ID packetId, const char* topicName
     }
     else
     {
-        /* Code_SRS_MQTTMESSAGE_07_002: [mqttmessage_create shall allocate and copy the topicName and appMsg parameters.] */
+        /* Codes_SRS_MQTTMESSAGE_07_002: [mqttmessage_create shall allocate and copy the topicName and appMsg parameters.] */
         result = malloc(sizeof(MQTT_MESSAGE));
         if (result != NULL)
         {
             if (mallocAndStrcpy_s(&result->topicName, topicName) != 0)
             {
-                /* Code_SRS_MQTTMESSAGE_07_003: [If any memory allocation fails mqttmessage_create shall free any allocated memory and return NULL.] */
+                /* Codes_SRS_MQTTMESSAGE_07_003: [If any memory allocation fails mqttmessage_create shall free any allocated memory and return NULL.] */
                 free(result);
                 result = NULL;
             }
             else
             {
-                /* Code_SRS_MQTTMESSAGE_07_002: [mqttmessage_create shall allocate and copy the topicName and appMsg parameters.] */
+                /* Codes_SRS_MQTTMESSAGE_07_002: [mqttmessage_create shall allocate and copy the topicName and appMsg parameters.] */
                 result->appPayload.messageLength = appMsgLength;
                 result->appPayload.message = malloc(appMsgLength);
                 if (result->appPayload.message == NULL)
                 {
-                    /* Code_SRS_MQTTMESSAGE_07_003: [If any memory allocation fails mqttmessage_create shall free any allocated memory and return NULL.] */
+                    /* Codes_SRS_MQTTMESSAGE_07_003: [If any memory allocation fails mqttmessage_create shall free any allocated memory and return NULL.] */
                     free(result->topicName);
                     free(result);
                     result = NULL;
@@ -62,17 +58,17 @@ MQTT_MESSAGE_HANDLE mqttmessage_create(PACKET_ID packetId, const char* topicName
             }
         }
     }
-    /* Code_SRS_MQTTMESSAGE_07_004: [If mqttmessage_createMessage succeeds the it shall return a NON-NULL MQTT_MESSAGE_HANDLE value.] */
+    /* Codes_SRS_MQTTMESSAGE_07_004: [If mqttmessage_createMessage succeeds the it shall return a NON-NULL MQTT_MESSAGE_HANDLE value.] */
     return result;
 }
 
 void mqttmessage_destroyMessage(MQTT_MESSAGE_HANDLE handle)
 {
     MQTT_MESSAGE* msgInfo = (MQTT_MESSAGE*)handle;
-    /* Code_SRS_MQTTMESSAGE_07_005: [If the handle parameter is NULL then mqttmessage_destroyMessage shall do nothing] */
+    /* Codes_SRS_MQTTMESSAGE_07_005: [If the handle parameter is NULL then mqttmessage_destroyMessage shall do nothing] */
     if (msgInfo != NULL)
     {
-        /* Code_SRS_MQTTMESSAGE_07_006: [mqttmessage_destroyMessage shall free all resources associated with the MQTT_MESSAGE_HANDLE value] */
+        /* Codes_SRS_MQTTMESSAGE_07_006: [mqttmessage_destroyMessage shall free all resources associated with the MQTT_MESSAGE_HANDLE value] */
         free(msgInfo->topicName);
         free(msgInfo->appPayload.message);
         free(msgInfo);
@@ -84,12 +80,12 @@ MQTT_MESSAGE_HANDLE mqttmessage_clone(MQTT_MESSAGE_HANDLE handle)
     MQTT_MESSAGE_HANDLE result;
     if (handle == NULL)
     {
-        /* Code_SRS_MQTTMESSAGE_07_007: [If handle parameter is NULL then mqttmessage_clone shall return NULL.] */
+        /* Codes_SRS_MQTTMESSAGE_07_007: [If handle parameter is NULL then mqttmessage_clone shall return NULL.] */
         result = NULL;
     }
     else
     {
-        /* Code_SRS_MQTTMESSAGE_07_008: [mqttmessage_clone shall create a new MQTT_MESSAGE_HANDLE with data content identical of the handle value.] */
+        /* Codes_SRS_MQTTMESSAGE_07_008: [mqttmessage_clone shall create a new MQTT_MESSAGE_HANDLE with data content identical of the handle value.] */
         MQTT_MESSAGE* mqtt_message = (MQTT_MESSAGE*)handle;
         result = mqttmessage_create(mqtt_message->packetId, mqtt_message->topicName, mqtt_message->qosInfo, mqtt_message->appPayload.message, mqtt_message->appPayload.messageLength);
         if (result != NULL)
@@ -101,17 +97,17 @@ MQTT_MESSAGE_HANDLE mqttmessage_clone(MQTT_MESSAGE_HANDLE handle)
     return result;
 }
 
-PACKET_ID mqttmessage_getPacketId(MQTT_MESSAGE_HANDLE handle)
+uint16_t mqttmessage_getPacketId(MQTT_MESSAGE_HANDLE handle)
 {
-    PACKET_ID result;
+    uint16_t result;
     if (handle == NULL)
     {
-        /* Code_SRS_MQTTMESSAGE_07_010: [If handle is NULL then mqttmessage_getPacketId shall return 0.] */
+        /* Codes_SRS_MQTTMESSAGE_07_010: [If handle is NULL then mqttmessage_getPacketId shall return 0.] */
         result = 0;
     }
     else
     {
-        /* Code_SRS_MQTTMESSAGE_07_011: [mqttmessage_getPacketId shall return the packetId value contained in MQTT_MESSAGE_HANDLE handle.] */
+        /* Codes_SRS_MQTTMESSAGE_07_011: [mqttmessage_getPacketId shall return the packetId value contained in MQTT_MESSAGE_HANDLE handle.] */
         MQTT_MESSAGE* msgInfo = (MQTT_MESSAGE*)handle;
         result = msgInfo->packetId;
     }
@@ -123,12 +119,12 @@ const char* mqttmessage_getTopicName(MQTT_MESSAGE_HANDLE handle)
     const char* result;
     if (handle == NULL)
     {
-        /* Code_SRS_MQTTMESSAGE_07_012: [If handle is NULL then mqttmessage_getTopicName shall return a NULL string.] */
+        /* Codes_SRS_MQTTMESSAGE_07_012: [If handle is NULL then mqttmessage_getTopicName shall return a NULL string.] */
         result = NULL;
     }
     else
     {
-        /* Code_SRS_MQTTMESSAGE_07_013: [mqttmessage_getTopicName shall return the topicName contained in MQTT_MESSAGE_HANDLE handle.] */
+        /* Codes_SRS_MQTTMESSAGE_07_013: [mqttmessage_getTopicName shall return the topicName contained in MQTT_MESSAGE_HANDLE handle.] */
         MQTT_MESSAGE* msgInfo = (MQTT_MESSAGE*)handle;
         result = msgInfo->topicName;
     }
@@ -140,12 +136,12 @@ QOS_VALUE mqttmessage_getQosType(MQTT_MESSAGE_HANDLE handle)
     QOS_VALUE result;
     if (handle == NULL)
     {
-        /* Code_SRS_MQTTMESSAGE_07_014: [If handle is NULL then mqttmessage_getQosType shall return the default DELIVER_AT_MOST_ONCE value.] */
+        /* Codes_SRS_MQTTMESSAGE_07_014: [If handle is NULL then mqttmessage_getQosType shall return the default DELIVER_AT_MOST_ONCE value.] */
         result = DELIVER_AT_MOST_ONCE;
     }
     else
     {
-        /* Code_SRS_MQTTMESSAGE_07_015: [mqttmessage_getQosType shall return the QOS Type value contained in MQTT_MESSAGE_HANDLE handle.] */
+        /* Codes_SRS_MQTTMESSAGE_07_015: [mqttmessage_getQosType shall return the QOS Type value contained in MQTT_MESSAGE_HANDLE handle.] */
         MQTT_MESSAGE* msgInfo = (MQTT_MESSAGE*)handle;
         result = msgInfo->qosInfo;
     }
@@ -157,12 +153,12 @@ bool mqttmessage_getIsDuplicateMsg(MQTT_MESSAGE_HANDLE handle)
     bool result;
     if (handle == NULL)
     {
-        /* Code_SRS_MQTTMESSAGE_07_016: [If handle is NULL then mqttmessage_getIsDuplicateMsg shall return false.] */
+        /* Codes_SRS_MQTTMESSAGE_07_016: [If handle is NULL then mqttmessage_getIsDuplicateMsg shall return false.] */
         result = false;
     }
     else
     {
-        /* Code_SRS_MQTTMESSAGE_07_017: [mqttmessage_getIsDuplicateMsg shall return the isDuplicateMsg value contained in MQTT_MESSAGE_HANDLE handle.] */
+        /* Codes_SRS_MQTTMESSAGE_07_017: [mqttmessage_getIsDuplicateMsg shall return the isDuplicateMsg value contained in MQTT_MESSAGE_HANDLE handle.] */
         MQTT_MESSAGE* msgInfo = (MQTT_MESSAGE*)handle;
         result = msgInfo->isDuplicateMsg;
     }
@@ -174,12 +170,12 @@ bool mqttmessage_getIsRetained(MQTT_MESSAGE_HANDLE handle)
     bool result;
     if (handle == NULL)
     {
-        /* Code_SRS_MQTTMESSAGE_07_018: [If handle is NULL then mqttmessage_getIsRetained shall return false.] */
+        /* Codes_SRS_MQTTMESSAGE_07_018: [If handle is NULL then mqttmessage_getIsRetained shall return false.] */
         result = false;
     }
     else
     {
-        /* Code_SRS_MQTTMESSAGE_07_019: [mqttmessage_getIsRetained shall return the isRetained value contained in MQTT_MESSAGE_HANDLE handle.] */
+        /* Codes_SRS_MQTTMESSAGE_07_019: [mqttmessage_getIsRetained shall return the isRetained value contained in MQTT_MESSAGE_HANDLE handle.] */
         MQTT_MESSAGE* msgInfo = (MQTT_MESSAGE*)handle;
         result = msgInfo->isMessageRetained;
     }
@@ -227,12 +223,12 @@ const APP_PAYLOAD* mqttmessage_getApplicationMsg(MQTT_MESSAGE_HANDLE handle)
     const APP_PAYLOAD* result;
     if (handle == NULL)
     {
-        /* Code_SRS_MQTTMESSAGE_07_020: [If handle is NULL or if msgLen is 0 then mqttmessage_getApplicationMsg shall return NULL.] */
+        /* Codes_SRS_MQTTMESSAGE_07_020: [If handle is NULL or if msgLen is 0 then mqttmessage_getApplicationMsg shall return NULL.] */
         result = NULL;
     }
     else
     {
-        /* Code_SRS_MQTTMESSAGE_07_021: [mqttmessage_getApplicationMsg shall return the applicationMsg value contained in MQTT_MESSAGE_HANDLE handle and the length of the appMsg in the msgLen parameter.] */
+        /* Codes_SRS_MQTTMESSAGE_07_021: [mqttmessage_getApplicationMsg shall return the applicationMsg value contained in MQTT_MESSAGE_HANDLE handle and the length of the appMsg in the msgLen parameter.] */
         MQTT_MESSAGE* msgInfo = (MQTT_MESSAGE*)handle;
         result = &msgInfo->appPayload;
     }

@@ -10,6 +10,7 @@
 #include "micromock.h"
 #include "mqtt_message.h"
 #include "lock.h"
+#include "crt_abstractions.h"
 
 #define GBALLOC_H
 extern "C" int gballoc_init(void);
@@ -35,9 +36,9 @@ namespace BASEIMPLEMENTATION
 static bool g_fail_alloc_calls;
 
 static const char* TEST_SUBSCRIPTION_TOPIC = "subTopic";
-static const BYTE TEST_PACKET_ID = (BYTE)0x1234;
+static const uint8_t TEST_PACKET_ID = (uint8_t)0x1234;
 static const char* TEST_TOPIC_NAME = "topic Name";
-static const unsigned char* TEST_MESSAGE = (const unsigned char*)"Message to send";
+static const uint8_t* TEST_MESSAGE = (const uint8_t*)"Message to send";
 static const int TEST_MSG_LEN = sizeof(TEST_MESSAGE)/sizeof(TEST_MESSAGE[0]);
 
 typedef struct TEST_COMPLETE_DATA_INSTANCE_TAG
@@ -84,7 +85,7 @@ template <> static std::wstring Microsoft::VisualStudio::CppUnitTestFramework::T
 }*/
 #endif
 
-static int PACKET_ID_Compare(PACKET_ID left, PACKET_ID right)
+/*static int PACKET_ID_Compare(PACKET_ID left, PACKET_ID right)
 {
     return left != right;
 }
@@ -102,7 +103,7 @@ static int BYTE_Compare(BYTE left, BYTE right)
 static void BYTE_ToString(char* string, size_t bufferSize, BYTE val)
 {
     sprintf_s(string, bufferSize, "%d", val);
-}
+}*/
 
 static int QOS_VALUE_Compare(QOS_VALUE left, QOS_VALUE right)
 {
@@ -241,8 +242,7 @@ TEST_FUNCTION(mqttmessage_create_succeed)
     mqtt_message_mocks mocks;
 
     EXPECTED_CALL(mocks, mallocAndStrcpy_s(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
-    EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_PTR_ARG));
-    EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_PTR_ARG));
+    EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG)).ExpectedTimesExactly(2);
 
     // act
     MQTT_MESSAGE_HANDLE handle = mqttmessage_create(TEST_PACKET_ID, TEST_TOPIC_NAME, DELIVER_AT_MOST_ONCE, TEST_MESSAGE, TEST_MSG_LEN);
@@ -333,7 +333,7 @@ TEST_FUNCTION(mqttmessage_getPacketId_handle_fails)
     mqtt_message_mocks mocks;
 
     // act
-    PACKET_ID packetId = mqttmessage_getPacketId(NULL);
+    uint16_t packetId = mqttmessage_getPacketId(NULL);
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, packetId);
@@ -349,7 +349,7 @@ TEST_FUNCTION(mqttmessage_getPacketId_succeed)
     mocks.ResetAllCalls();
 
     // act
-    PACKET_ID packetId = mqttmessage_getPacketId(handle);
+    uint16_t packetId = mqttmessage_getPacketId(handle);
 
     // assert
     ASSERT_ARE_EQUAL(int, TEST_PACKET_ID, packetId);

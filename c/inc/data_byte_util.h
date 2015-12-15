@@ -6,20 +6,22 @@
 
 #ifdef __cplusplus
 #include <cstddef>
+#include <cstdint>
 extern "C" {
 #else
 #include <stddef.h>
+#include <stdint.h>
 #endif /* __cplusplus */
 
 #include "mqttconst.h"
 
-extern BYTE byteutil_readByte(BYTE** buffer);
-extern int byteutil_readInt(BYTE** buffer);
-extern char* byteutil_readUTF(BYTE** buffer);
+extern uint8_t byteutil_readByte(uint8_t** buffer);
+extern uint16_t byteutil_readInt(uint8_t** buffer);
+extern char* byteutil_readUTF(uint8_t** buffer);
 
-extern void byteutil_writeByte(char** buffer, char value);
-extern void byteutil_writeInt(char** buffer, int value);
-extern void byteutil_writeUTF(char** buffer, const char* stringData, size_t len);
+extern void byteutil_writeByte(uint8_t** buffer, uint8_t value);
+extern void byteutil_writeInt(uint8_t** buffer, uint16_t value);
+extern void byteutil_writeUTF(uint8_t** buffer, const char* stringData, uint16_t len);
 
 #ifdef __cplusplus
 }
