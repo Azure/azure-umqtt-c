@@ -18,7 +18,6 @@
 
 #include "mqtt_client.h"
 #include "mqtt_codec.h"
-#include "data_byte_util.h"
 #include "mqtt_message.h"
 #include "mqttconst.h"
 
@@ -44,7 +43,6 @@ namespace BASEIMPLEMENTATION
     #undef Lock_Deinit
 
     #include "buffer.c"
-    #include "data_byte_util.c"
 };
 
 static const char* TEST_USERNAME = "testuser";
@@ -121,11 +119,11 @@ public:
     MOCK_STATIC_METHOD_1(, BUFFER_HANDLE, mqtt_codec_publishComplete, int, packetId)
     MOCK_METHOD_END(BUFFER_HANDLE, TEST_BUFFER_HANDLE);
 
-    MOCK_STATIC_METHOD_2(, MQTTCODEC_HANDLE, mqtt_codec_init, ON_PACKET_COMPLETE_CALLBACK, packetComplete, void*, callContext)
+    MOCK_STATIC_METHOD_2(, MQTTCODEC_HANDLE, mqtt_codec_create, ON_PACKET_COMPLETE_CALLBACK, packetComplete, void*, callContext)
         g_packetComplete = packetComplete;
     MOCK_METHOD_END(MQTTCODEC_HANDLE, TEST_MQTTCODEC_HANDLE);
 
-    MOCK_STATIC_METHOD_1(, void, mqtt_codec_deinit, MQTTCODEC_HANDLE, handle)
+    MOCK_STATIC_METHOD_1(, void, mqtt_codec_destroy, MQTTCODEC_HANDLE, handle)
     MOCK_VOID_METHOD_END();
 
     MOCK_STATIC_METHOD_3(, int, mqtt_codec_bytesReceived, MQTTCODEC_HANDLE, handle, const void*, buffer, size_t, size)
@@ -167,27 +165,6 @@ public:
 
     MOCK_STATIC_METHOD_1(, size_t, BUFFER_length, BUFFER_HANDLE, s)
     MOCK_METHOD_END(size_t, BASEIMPLEMENTATION::BUFFER_length(s));
-
-    MOCK_STATIC_METHOD_1(, uint8_t, byteutil_readByte, uint8_t**, buffer)
-    MOCK_METHOD_END(uint8_t, BASEIMPLEMENTATION::byteutil_readByte(buffer));
-
-    MOCK_STATIC_METHOD_1(, uint8_t, byteutil_readInt, uint8_t**, buffer)
-    MOCK_METHOD_END(uint8_t, BASEIMPLEMENTATION::byteutil_readInt(buffer));
-
-    MOCK_STATIC_METHOD_1(, char*, byteutil_readUTF, uint8_t**, buffer)
-    MOCK_METHOD_END(char*, BASEIMPLEMENTATION::byteutil_readUTF(buffer));
-
-    MOCK_STATIC_METHOD_2(, void, byteutil_writeByte, uint8_t**, buffer, uint8_t, value)
-        BASEIMPLEMENTATION::byteutil_writeByte(buffer, value);
-    MOCK_VOID_METHOD_END();
-
-    MOCK_STATIC_METHOD_2(, void, byteutil_writeInt, uint8_t**, buffer, int, value)
-        BASEIMPLEMENTATION::byteutil_writeInt(buffer, value);
-    MOCK_VOID_METHOD_END();
-
-    MOCK_STATIC_METHOD_3(, void, byteutil_writeUTF, uint8_t**, buffer, const char*, stringData, uint16_t, len)
-        BASEIMPLEMENTATION::byteutil_writeUTF(buffer, stringData, len);
-    MOCK_VOID_METHOD_END();
 
     MOCK_STATIC_METHOD_5(, MQTT_MESSAGE_HANDLE, mqttmessage_create, uint16_t, packetId, const char*, topicName, QOS_VALUE, qosValue, const uint8_t*, appMsg, size_t, appLength)
     MOCK_METHOD_END(MQTT_MESSAGE_HANDLE, TEST_MESSAGE_HANDLE);
@@ -240,8 +217,8 @@ extern "C"
     DECLARE_GLOBAL_MOCK_METHOD_1(mqttclient_mocks, , BUFFER_HANDLE, mqtt_codec_publishRelease, int, packetId);
     DECLARE_GLOBAL_MOCK_METHOD_1(mqttclient_mocks, , BUFFER_HANDLE, mqtt_codec_publishComplete, int, packetId);
 
-    DECLARE_GLOBAL_MOCK_METHOD_2(mqttclient_mocks, , MQTTCODEC_HANDLE, mqtt_codec_init, ON_PACKET_COMPLETE_CALLBACK, packetComplete, void*, callContext);
-    DECLARE_GLOBAL_MOCK_METHOD_1(mqttclient_mocks, , void, mqtt_codec_deinit, MQTTCODEC_HANDLE, handle);
+    DECLARE_GLOBAL_MOCK_METHOD_2(mqttclient_mocks, , MQTTCODEC_HANDLE, mqtt_codec_create, ON_PACKET_COMPLETE_CALLBACK, packetComplete, void*, callContext);
+    DECLARE_GLOBAL_MOCK_METHOD_1(mqttclient_mocks, , void, mqtt_codec_destroy, MQTTCODEC_HANDLE, handle);
     DECLARE_GLOBAL_MOCK_METHOD_3(mqttclient_mocks, , int, mqtt_codec_bytesReceived, MQTTCODEC_HANDLE, handle, const void*, buffer, size_t, size);
 
     DECLARE_GLOBAL_MOCK_METHOD_4(mqttclient_mocks, , int, xio_open, XIO_HANDLE, handle, ON_BYTES_RECEIVED, on_bytes_received, ON_IO_STATE_CHANGED, on_io_state_changed, void*, callback_context);
@@ -259,13 +236,6 @@ extern "C"
 
     DECLARE_GLOBAL_MOCK_METHOD_1(mqttclient_mocks, , unsigned char*, BUFFER_u_char, BUFFER_HANDLE, handle);
     DECLARE_GLOBAL_MOCK_METHOD_1(mqttclient_mocks, , size_t, BUFFER_length, BUFFER_HANDLE, handle);
-
-    DECLARE_GLOBAL_MOCK_METHOD_1(mqttclient_mocks, , uint8_t, byteutil_readByte, uint8_t**, buffer);
-    DECLARE_GLOBAL_MOCK_METHOD_1(mqttclient_mocks, , uint16_t, byteutil_readInt, uint8_t**, buffer);
-    DECLARE_GLOBAL_MOCK_METHOD_1(mqttclient_mocks, , char*, byteutil_readUTF, uint8_t**, buffer);
-    DECLARE_GLOBAL_MOCK_METHOD_2(mqttclient_mocks, , void, byteutil_writeByte, uint8_t**, buffer, uint8_t, value);
-    DECLARE_GLOBAL_MOCK_METHOD_2(mqttclient_mocks, , void, byteutil_writeInt, uint8_t**, buffer, uint16_t, value);
-    DECLARE_GLOBAL_MOCK_METHOD_3(mqttclient_mocks, , void, byteutil_writeUTF, uint8_t**, buffer, const char*, stringData, uint16_t, len);
 
     DECLARE_GLOBAL_MOCK_METHOD_5(mqttclient_mocks, , MQTT_MESSAGE_HANDLE, mqttmessage_create, uint16_t, packetId, const char*, topicName, QOS_VALUE, qosValue, const uint8_t*, appMsg, size_t, appLength);
     DECLARE_GLOBAL_MOCK_METHOD_1(mqttclient_mocks, , void, mqttmessage_destroyMessage, MQTT_MESSAGE_HANDLE, handle);

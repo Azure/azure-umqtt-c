@@ -6,13 +6,12 @@
 #include "mqtt_codec.h"
 #include "buffer_.h"
 #include "macro_utils.h"
-#include "data_byte_util.h"
 #include <limits.h>
 #include "xlogging.h"
 
-#define PAYLOAD_OFFSET              5
-#define PACKET_TYPE_BYTE(p)         ((uint8_t)(((uint8_t)(p)) & 0xf0))
-#define FLAG_VALUE_BYTE(p)          ((uint8_t)(((uint8_t)(p)) & 0xf))
+#define PAYLOAD_OFFSET                      5
+#define PACKET_TYPE_BYTE(p)                 ((uint8_t)(((uint8_t)(p)) & 0xf0))
+#define FLAG_VALUE_BYTE(p)                  ((uint8_t)(((uint8_t)(p)) & 0xf))
 
 #define USERNAME_FLAG                       0x80
 #define PASSWORD_FLAG                       0x40
@@ -59,6 +58,36 @@ typedef struct PUBLISH_HEADER_INFO_TAG
     const char* msgBuffer;
     QOS_VALUE qualityOfServiceValue;
 } PUBLISH_HEADER_INFO;
+
+void byteutil_writeByte(uint8_t** buffer, uint8_t value)
+{
+    if (buffer != NULL)
+    {
+        **buffer = value;
+        (*buffer)++;
+    }
+}
+
+void byteutil_writeInt(uint8_t** buffer, uint16_t value)
+{
+    if (buffer != NULL)
+    {
+        **buffer = (char)(value / 256);
+        (*buffer)++;
+        **buffer = (char)(value % 256);
+        (*buffer)++;
+    }
+}
+
+void byteutil_writeUTF(uint8_t** buffer, const char* stringData, uint16_t len)
+{
+    if (buffer != NULL)
+    {
+        byteutil_writeInt(buffer, len);
+        (void)memcpy(*buffer, stringData, len);
+        *buffer += len;
+    }
+}
 
 CONTROL_PACKET_TYPE processControlPacketType(uint8_t pktByte, int* flags)
 {

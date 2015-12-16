@@ -11,7 +11,6 @@
 #include "mqtt_codec.h"
 #include "buffer_.h"
 #include "lock.h"
-#include "data_byte_util.h"
 
 #define GBALLOC_H
 extern "C" int gballoc_init(void);
@@ -35,7 +34,6 @@ namespace BASEIMPLEMENTATION
     #undef Lock_Deinit
 
     #include "buffer.c"
-    #include "data_byte_util.c"
 };
 
 static bool g_fail_alloc_calls;
@@ -162,27 +160,6 @@ public:
 
     MOCK_STATIC_METHOD_1(, size_t, BUFFER_length, BUFFER_HANDLE, s)
     MOCK_METHOD_END(size_t, BASEIMPLEMENTATION::BUFFER_length(s));
-
-    MOCK_STATIC_METHOD_1(, uint8_t, byteutil_readByte, uint8_t**, buffer)
-    MOCK_METHOD_END(int8_t, BASEIMPLEMENTATION::byteutil_readByte(buffer));
-
-    MOCK_STATIC_METHOD_1(, uint8_t, byteutil_readInt, uint8_t**, buffer)
-    MOCK_METHOD_END(int8_t, BASEIMPLEMENTATION::byteutil_readInt(buffer));
-
-    MOCK_STATIC_METHOD_1(, char*, byteutil_readUTF, uint8_t**, buffer)
-    MOCK_METHOD_END(char*, BASEIMPLEMENTATION::byteutil_readUTF(buffer));
-
-    MOCK_STATIC_METHOD_2(, void, byteutil_writeByte, uint8_t**, buffer, uint8_t, value)
-        BASEIMPLEMENTATION::byteutil_writeByte(buffer, value);
-    MOCK_VOID_METHOD_END();
-
-    MOCK_STATIC_METHOD_2(, void, byteutil_writeInt, uint8_t**, buffer, int, value)
-        BASEIMPLEMENTATION::byteutil_writeInt(buffer, value);
-    MOCK_VOID_METHOD_END();
-
-    MOCK_STATIC_METHOD_3(, void, byteutil_writeUTF, uint8_t**, buffer, const char*, stringData, uint16_t, len)
-        BASEIMPLEMENTATION::byteutil_writeUTF(buffer, stringData, len);
-    MOCK_VOID_METHOD_END();
 };
 
 extern "C"
@@ -192,21 +169,12 @@ extern "C"
 
     DECLARE_GLOBAL_MOCK_METHOD_0(mqtt_codec_mocks, , BUFFER_HANDLE, BUFFER_new);
     DECLARE_GLOBAL_MOCK_METHOD_1(mqtt_codec_mocks, , void, BUFFER_delete, BUFFER_HANDLE, handle);
-    /*DECLARE_GLOBAL_MOCK_METHOD_1(mqtt_codec_mocks, , unsigned char*, BUFFER_u_char, BUFFER_HANDLE, handle);
-    DECLARE_GLOBAL_MOCK_METHOD_1(mqtt_codec_mocks, , size_t, BUFFER_length, BUFFER_HANDLE, handle);*/
     DECLARE_GLOBAL_MOCK_METHOD_3(mqtt_codec_mocks, , int, BUFFER_build, BUFFER_HANDLE, handle, const unsigned char*, source, size_t, size);
     DECLARE_GLOBAL_MOCK_METHOD_2(mqtt_codec_mocks, , int, BUFFER_enlarge, BUFFER_HANDLE, handle, size_t, size);
     DECLARE_GLOBAL_MOCK_METHOD_2(mqtt_codec_mocks, , int, BUFFER_pre_build, BUFFER_HANDLE, handle, size_t, size);
     DECLARE_GLOBAL_MOCK_METHOD_2(mqtt_codec_mocks, , int, BUFFER_prepend, BUFFER_HANDLE, handle1, BUFFER_HANDLE, handle2);
     DECLARE_GLOBAL_MOCK_METHOD_1(mqtt_codec_mocks, , unsigned char*, BUFFER_u_char, BUFFER_HANDLE, handle);
     DECLARE_GLOBAL_MOCK_METHOD_1(mqtt_codec_mocks, , size_t, BUFFER_length, BUFFER_HANDLE, handle);
-
-    DECLARE_GLOBAL_MOCK_METHOD_1(mqtt_codec_mocks, , uint8_t, byteutil_readByte, uint8_t**, buffer);
-    DECLARE_GLOBAL_MOCK_METHOD_1(mqtt_codec_mocks, , uint16_t, byteutil_readInt, uint8_t**, buffer);
-    DECLARE_GLOBAL_MOCK_METHOD_1(mqtt_codec_mocks, , char*, byteutil_readUTF, uint8_t**, buffer);
-    DECLARE_GLOBAL_MOCK_METHOD_2(mqtt_codec_mocks, , void, byteutil_writeByte, uint8_t**, buffer, uint8_t, value);
-    DECLARE_GLOBAL_MOCK_METHOD_2(mqtt_codec_mocks, , void, byteutil_writeInt, uint8_t**, buffer, uint16_t, value);
-    DECLARE_GLOBAL_MOCK_METHOD_3(mqtt_codec_mocks, , void, byteutil_writeUTF, uint8_t**, buffer, const char*, stringData, uint16_t, len);
 }
 
 MICROMOCK_MUTEX_HANDLE test_serialize_mutex;
@@ -368,10 +336,6 @@ TEST_FUNCTION(mqtt_codec_connect_succeeds)
     EXPECTED_CALL(mocks, BUFFER_delete(IGNORED_PTR_ARG));
     EXPECTED_CALL(mocks, BUFFER_prepend(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
     EXPECTED_CALL(mocks, BUFFER_pre_build(IGNORED_PTR_ARG, IGNORED_NUM_ARG));
-
-    EXPECTED_CALL(mocks, byteutil_writeInt(IGNORED_PTR_ARG, IGNORED_NUM_ARG));
-    EXPECTED_CALL(mocks, byteutil_writeUTF(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG)).ExpectedAtLeastTimes(4);
-    EXPECTED_CALL(mocks, byteutil_writeByte(IGNORED_PTR_ARG, IGNORED_NUM_ARG)).ExpectedAtLeastTimes(2);
 
     // act
     BUFFER_HANDLE handle = mqtt_codec_connect(&mqttOptions);
@@ -550,8 +514,6 @@ TEST_FUNCTION(mqtt_codec_publish_BUFFER_enlarge_fails)
     EXPECTED_CALL(mocks, BUFFER_enlarge(IGNORED_PTR_ARG, IGNORED_NUM_ARG)).SetReturn(__LINE__);
     EXPECTED_CALL(mocks, BUFFER_u_char(IGNORED_PTR_ARG));
     EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG)).ExpectedAtLeastTimes(2);
-    EXPECTED_CALL(mocks, byteutil_writeUTF(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG));
-    EXPECTED_CALL(mocks, byteutil_writeInt(IGNORED_PTR_ARG, IGNORED_NUM_ARG));
 
     // act
     BUFFER_HANDLE handle = mqtt_codec_publish(DELIVER_AT_LEAST_ONCE, true, false, TEST_PACKET_ID, TEST_TOPIC_NAME, TEST_MESSAGE, TEST_MESSAGE_LEN);
@@ -572,8 +534,6 @@ TEST_FUNCTION(mqtt_codec_publish_constructFixedHeader_fails)
     EXPECTED_CALL(mocks, BUFFER_u_char(IGNORED_PTR_ARG)).ExpectedAtLeastTimes(2);
     EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG)).ExpectedAtLeastTimes(3);
     EXPECTED_CALL(mocks, BUFFER_pre_build(IGNORED_PTR_ARG, IGNORED_NUM_ARG)).SetReturn(__LINE__);
-    EXPECTED_CALL(mocks, byteutil_writeUTF(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG)).ExpectedAtLeastTimes(2);
-    EXPECTED_CALL(mocks, byteutil_writeInt(IGNORED_PTR_ARG, IGNORED_NUM_ARG));
 
     // act
     BUFFER_HANDLE handle = mqtt_codec_publish(DELIVER_AT_LEAST_ONCE, true, false, TEST_PACKET_ID, TEST_TOPIC_NAME, TEST_MESSAGE, TEST_MESSAGE_LEN);
@@ -598,8 +558,6 @@ TEST_FUNCTION(mqtt_codec_publish_succeeds)
     EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG)).ExpectedAtLeastTimes(4);
     EXPECTED_CALL(mocks, BUFFER_pre_build(IGNORED_PTR_ARG, IGNORED_NUM_ARG));
     EXPECTED_CALL(mocks, BUFFER_prepend(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
-    EXPECTED_CALL(mocks, byteutil_writeUTF(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG)).ExpectedAtLeastTimes(2);
-    EXPECTED_CALL(mocks, byteutil_writeInt(IGNORED_PTR_ARG, IGNORED_NUM_ARG));
 
     // act
     BUFFER_HANDLE handle = mqtt_codec_publish(DELIVER_AT_LEAST_ONCE, true, false, TEST_PACKET_ID, TEST_TOPIC_NAME, TEST_MESSAGE, TEST_MESSAGE_LEN);
@@ -650,7 +608,6 @@ TEST_FUNCTION(mqtt_codec_publish_ack_succeeds)
     EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(mocks, BUFFER_pre_build(IGNORED_PTR_ARG, 4))
         .IgnoreArgument(1);
-    EXPECTED_CALL(mocks, byteutil_writeInt(IGNORED_PTR_ARG, IGNORED_NUM_ARG));
 
     // act
     BUFFER_HANDLE handle = mqtt_codec_publishAck(TEST_PACKET_ID);
@@ -699,7 +656,6 @@ TEST_FUNCTION(mqtt_codec_publish_recieved_succeeds)
     EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(mocks, BUFFER_pre_build(IGNORED_PTR_ARG, 4))
         .IgnoreArgument(1);
-    EXPECTED_CALL(mocks, byteutil_writeInt(IGNORED_PTR_ARG, IGNORED_NUM_ARG));
 
     // act
     BUFFER_HANDLE handle = mqtt_codec_publishRecieved(TEST_PACKET_ID);
@@ -748,7 +704,6 @@ TEST_FUNCTION(mqtt_codec_publish_release_succeeds)
     EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(mocks, BUFFER_pre_build(IGNORED_PTR_ARG, 4))
         .IgnoreArgument(1);
-    EXPECTED_CALL(mocks, byteutil_writeInt(IGNORED_PTR_ARG, IGNORED_NUM_ARG));
 
     // act
     BUFFER_HANDLE handle = mqtt_codec_publishRelease(TEST_PACKET_ID);
@@ -797,7 +752,6 @@ TEST_FUNCTION(mqtt_codec_publish_complete_succeeds)
     EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(mocks, BUFFER_pre_build(IGNORED_PTR_ARG, 4))
         .IgnoreArgument(1);
-    EXPECTED_CALL(mocks, byteutil_writeInt(IGNORED_PTR_ARG, IGNORED_NUM_ARG));
 
     // act
     BUFFER_HANDLE handle = mqtt_codec_publishComplete(TEST_PACKET_ID);
@@ -874,9 +828,6 @@ TEST_FUNCTION(mqtt_codec_subscribe_constructFixedHeader_fails)
     EXPECTED_CALL(mocks, BUFFER_delete(IGNORED_PTR_ARG)).ExpectedAtLeastTimes(2);
     EXPECTED_CALL(mocks, BUFFER_pre_build(IGNORED_PTR_ARG, IGNORED_NUM_ARG)).SetReturn(__LINE__);
 
-    EXPECTED_CALL(mocks, byteutil_writeUTF(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG)).ExpectedAtLeastTimes(2);
-    EXPECTED_CALL(mocks, byteutil_writeInt(IGNORED_PTR_ARG, IGNORED_NUM_ARG));
-
     // act
     BUFFER_HANDLE handle = mqtt_codec_subscribe(TEST_PACKET_ID, TEST_SUBSCRIBE_PAYLOAD, 2);
 
@@ -900,9 +851,6 @@ TEST_FUNCTION(mqtt_codec_subscribe_succeeds)
     EXPECTED_CALL(mocks, BUFFER_delete(IGNORED_PTR_ARG));
     EXPECTED_CALL(mocks, BUFFER_pre_build(IGNORED_PTR_ARG, IGNORED_NUM_ARG));
     EXPECTED_CALL(mocks, BUFFER_prepend(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
-
-    EXPECTED_CALL(mocks, byteutil_writeUTF(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG)).ExpectedAtLeastTimes(2);
-    EXPECTED_CALL(mocks, byteutil_writeInt(IGNORED_PTR_ARG, IGNORED_NUM_ARG));
 
     // act
     BUFFER_HANDLE handle = mqtt_codec_subscribe(TEST_PACKET_ID, TEST_SUBSCRIBE_PAYLOAD, 2);
@@ -963,7 +911,6 @@ TEST_FUNCTION(mqtt_codec_unsubscribe_addListItemToUnsubscribePacket_BUFFER_enlar
 
     EXPECTED_CALL(mocks, BUFFER_new());
     EXPECTED_CALL(mocks, BUFFER_u_char(IGNORED_PTR_ARG));
-    EXPECTED_CALL(mocks, byteutil_writeInt(IGNORED_PTR_ARG, IGNORED_NUM_ARG));
     EXPECTED_CALL(mocks, BUFFER_enlarge(IGNORED_PTR_ARG, IGNORED_NUM_ARG));
     EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG));
     EXPECTED_CALL(mocks, BUFFER_enlarge(IGNORED_PTR_ARG, IGNORED_NUM_ARG)).SetReturn(__LINE__);
@@ -991,9 +938,6 @@ TEST_FUNCTION(mqtt_codec_unsubscribe_constructFixedHeader_fails)
     EXPECTED_CALL(mocks, BUFFER_delete(IGNORED_PTR_ARG)).ExpectedAtLeastTimes(2);
     EXPECTED_CALL(mocks, BUFFER_pre_build(IGNORED_PTR_ARG, IGNORED_NUM_ARG)).SetReturn(__LINE__);
 
-    EXPECTED_CALL(mocks, byteutil_writeUTF(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG)).ExpectedAtLeastTimes(2);
-    EXPECTED_CALL(mocks, byteutil_writeInt(IGNORED_PTR_ARG, IGNORED_NUM_ARG));
-
     // act
     BUFFER_HANDLE handle = mqtt_codec_unsubscribe(TEST_PACKET_ID, TEST_UNSUBSCRIPTION_TOPIC, 2);
 
@@ -1016,9 +960,6 @@ TEST_FUNCTION(mqtt_codec_unsubscribe_succeeds)
     EXPECTED_CALL(mocks, BUFFER_delete(IGNORED_PTR_ARG));
     EXPECTED_CALL(mocks, BUFFER_pre_build(IGNORED_PTR_ARG, IGNORED_NUM_ARG));
     EXPECTED_CALL(mocks, BUFFER_prepend(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
-
-    EXPECTED_CALL(mocks, byteutil_writeUTF(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG)).ExpectedAtLeastTimes(2);
-    EXPECTED_CALL(mocks, byteutil_writeInt(IGNORED_PTR_ARG, IGNORED_NUM_ARG));
 
     // act
     BUFFER_HANDLE handle = mqtt_codec_unsubscribe(TEST_PACKET_ID, TEST_UNSUBSCRIPTION_TOPIC, 2);

@@ -6,7 +6,6 @@
 
 #include "mqtt_client.h"
 #include "mqtt_codec.h"
-#include "data_byte_util.h"
 #include "platform.h"
 #include "tickcounter.h"
 
