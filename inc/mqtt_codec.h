@@ -24,16 +24,16 @@ typedef void(*ON_PACKET_COMPLETE_CALLBACK)(void* context, CONTROL_PACKET_TYPE pa
 extern MQTTCODEC_HANDLE mqtt_codec_create(ON_PACKET_COMPLETE_CALLBACK packetComplete, void* callbackCtx);
 extern void mqtt_codec_destroy(MQTTCODEC_HANDLE handle);
 
-extern BUFFER_HANDLE mqtt_codec_connect(const MQTTCLIENT_OPTIONS* mqttOptions);
+extern BUFFER_HANDLE mqtt_codec_connect(const MQTT_CLIENT_OPTIONS* mqttOptions);
 extern BUFFER_HANDLE mqtt_codec_disconnect();
-extern BUFFER_HANDLE mqtt_codec_publish(QOS_VALUE qosValue, bool duplicateMsg, bool serverRetain, int packetId, const char* topicName, const uint8_t* msgBuffer, size_t buffLen);
-extern BUFFER_HANDLE mqtt_codec_publishAck(int packetId);
-extern BUFFER_HANDLE mqtt_codec_publishRecieved(int packetId);
-extern BUFFER_HANDLE mqtt_codec_publishRelease(int packetId);
-extern BUFFER_HANDLE mqtt_codec_publishComplete(int packetId);
+extern BUFFER_HANDLE mqtt_codec_publish(QOS_VALUE qosValue, bool duplicateMsg, bool serverRetain, uint16_t packetId, const char* topicName, const uint8_t* msgBuffer, size_t buffLen);
+extern BUFFER_HANDLE mqtt_codec_publishAck(uint16_t packetId);
+extern BUFFER_HANDLE mqtt_codec_publishRecieved(uint16_t packetId);
+extern BUFFER_HANDLE mqtt_codec_publishRelease(uint16_t packetId);
+extern BUFFER_HANDLE mqtt_codec_publishComplete(uint16_t packetId);
 extern BUFFER_HANDLE mqtt_codec_ping();
-extern BUFFER_HANDLE mqtt_codec_subscribe(int packetId, SUBSCRIBE_PAYLOAD* subscribeList, size_t count);
-extern BUFFER_HANDLE mqtt_codec_unsubscribe(int packetId, const char** unsubscribeList, size_t count);
+extern BUFFER_HANDLE mqtt_codec_subscribe(uint16_t packetId, SUBSCRIBE_PAYLOAD* subscribeList, size_t count);
+extern BUFFER_HANDLE mqtt_codec_unsubscribe(uint16_t packetId, const char** unsubscribeList, size_t count);
 
 extern int mqtt_codec_bytesReceived(MQTTCODEC_HANDLE handle, const void* buffer, size_t size);
 

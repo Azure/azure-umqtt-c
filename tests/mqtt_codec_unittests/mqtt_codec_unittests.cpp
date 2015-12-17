@@ -101,7 +101,7 @@ static void CONTROL_PACKET_TYPE_ToString(char* string, size_t bufferSize, CONTRO
     strcpy(string, o.str().c_str());
 }
 
-static void SetupMqttLibOptions(MQTTCLIENT_OPTIONS* options, const char* clientId,
+static void SetupMqttLibOptions(MQTT_CLIENT_OPTIONS* options, const char* clientId,
     const char* willMsg,
     const char* willTopic,
     const char* username,
@@ -303,7 +303,7 @@ TEST_FUNCTION(mqtt_codec_connect_BUFFER_enlarge_fail)
     // arrange
     mqtt_codec_mocks mocks;
 
-    MQTTCLIENT_OPTIONS mqttOptions = { 0 };
+    MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
     SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, NULL, NULL, "testuser", "testpassword", 20, false, true, DELIVER_AT_MOST_ONCE);
 
     EXPECTED_CALL(mocks, BUFFER_new());
@@ -322,7 +322,7 @@ TEST_FUNCTION(mqtt_codec_connect_succeeds)
 {
     // arrange
     mqtt_codec_mocks mocks;
-    MQTTCLIENT_OPTIONS mqttOptions = { 0 };
+    MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
     SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, NULL, NULL, "testuser", "testpassword", 20, false, true, DELIVER_AT_MOST_ONCE);
 
     const unsigned char CONNECT_VALUE[] = { 0x10, 0x38, 0x00, 0x04, 0x4d, 0x51, 0x54, 0x54, 0x04, 0xc2, 0x00, 0x14, 0x00, 0x14, 0x73, 0x69, \

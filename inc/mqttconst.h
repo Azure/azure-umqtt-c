@@ -49,7 +49,7 @@ typedef struct APP_PAYLOAD_TAG
     size_t messageLength;
 } APP_PAYLOAD;
 
-typedef struct MQTTCLIENT_OPTIONS_TAG
+typedef struct MQTT_CLIENT_OPTIONS_TAG
 {
     const char* clientId;
     const char* willTopic;
@@ -60,7 +60,7 @@ typedef struct MQTTCLIENT_OPTIONS_TAG
     bool messageRetain;
     bool useCleanSession;
     QOS_VALUE qualityOfServiceValue;
-} MQTTCLIENT_OPTIONS;
+} MQTT_CLIENT_OPTIONS;
 
 typedef enum CONNECT_RETURN_CODE_TAG
 {
@@ -96,6 +96,7 @@ typedef struct UNSUBSCRIBE_ACK_TAG
 {
     uint16_t packetId;
 } UNSUBSCRIBE_ACK;
+
 typedef struct PUBLISH_ACK_TAG
 {
     uint16_t packetId;

@@ -54,7 +54,7 @@ typedef struct MQTTCODEC_INSTANCE_TAG
 typedef struct PUBLISH_HEADER_INFO_TAG
 {
     const char* topicName;
-    int packetId;
+    uint16_t packetId;
     const char* msgBuffer;
     QOS_VALUE qualityOfServiceValue;
 } PUBLISH_HEADER_INFO;
@@ -167,7 +167,7 @@ static int addListItemsToSubscribePacket(BUFFER_HANDLE ctrlPacket, SUBSCRIBE_PAY
     return result;
 }
 
-static int constructConnectVariableHeader(BUFFER_HANDLE ctrlPacket, const MQTTCLIENT_OPTIONS* mqttOptions)
+static int constructConnectVariableHeader(BUFFER_HANDLE ctrlPacket, const MQTT_CLIENT_OPTIONS* mqttOptions)
 {
     int result = 0;
     if (BUFFER_enlarge(ctrlPacket, CONNECT_VARIABLE_HEADER_SIZE) != 0)
@@ -235,7 +235,7 @@ static int constructPublishVariableHeader(BUFFER_HANDLE ctrlPacket, const PUBLIS
     return result;
 }
 
-static int constructSubscibeTypeVariableHeader(BUFFER_HANDLE ctrlPacket, int packetId)
+static int constructSubscibeTypeVariableHeader(BUFFER_HANDLE ctrlPacket, uint16_t packetId)
 {
     int result = 0;
     if (BUFFER_enlarge(ctrlPacket, 2) != 0)
@@ -258,7 +258,7 @@ static int constructSubscibeTypeVariableHeader(BUFFER_HANDLE ctrlPacket, int pac
     return result;
 }
 
-static BUFFER_HANDLE constructPublishReply(CONTROL_PACKET_TYPE type, int flags, int packetId)
+static BUFFER_HANDLE constructPublishReply(CONTROL_PACKET_TYPE type, int flags, uint16_t packetId)
 {
     BUFFER_HANDLE result = BUFFER_new();
     if (result != NULL)
@@ -339,7 +339,7 @@ static int constructFixedHeader(BUFFER_HANDLE ctrlPacket, CONTROL_PACKET_TYPE pa
     return result;
 }
 
-static int constructConnPayload(BUFFER_HANDLE ctrlPacket, const MQTTCLIENT_OPTIONS* mqttOptions)
+static int constructConnPayload(BUFFER_HANDLE ctrlPacket, const MQTT_CLIENT_OPTIONS* mqttOptions)
 {
     int result = 0;
     if (mqttOptions == NULL || ctrlPacket == NULL)
@@ -510,7 +510,7 @@ void mqtt_codec_destroy(MQTTCODEC_HANDLE handle)
     }
 }
 
-BUFFER_HANDLE mqtt_codec_connect(const MQTTCLIENT_OPTIONS* mqttOptions)
+BUFFER_HANDLE mqtt_codec_connect(const MQTT_CLIENT_OPTIONS* mqttOptions)
 {
     BUFFER_HANDLE result;
     /* Codes_SRS_MQTT_CODEC_07_008: [If the parameters mqttOptions is NULL then mqtt_codec_connect shall return a null value.] */
@@ -585,7 +585,7 @@ BUFFER_HANDLE mqtt_codec_disconnect()
     return result;
 }
 
-BUFFER_HANDLE mqtt_codec_publish(QOS_VALUE qosValue, bool duplicateMsg, bool serverRetain, int packetId, const char* topicName, const uint8_t* msgBuffer, size_t buffLen)
+BUFFER_HANDLE mqtt_codec_publish(QOS_VALUE qosValue, bool duplicateMsg, bool serverRetain, uint16_t packetId, const char* topicName, const uint8_t* msgBuffer, size_t buffLen)
 {
     BUFFER_HANDLE result;
     /* Codes_SRS_MQTT_CODEC_07_005: [If the parameters topicName, or msgBuffer is NULL or if buffLen is 0 then mqtt_codec_publish shall return NULL.] */
@@ -670,7 +670,7 @@ BUFFER_HANDLE mqtt_codec_publish(QOS_VALUE qosValue, bool duplicateMsg, bool ser
     return result;
 }
 
-BUFFER_HANDLE mqtt_codec_publishAck(int packetId)
+BUFFER_HANDLE mqtt_codec_publishAck(uint16_t packetId)
 {
     /* Codes_SRS_MQTT_CODEC_07_013: [On success mqtt_codec_publishAck shall return a BUFFER_HANDLE representation of a MQTT PUBACK packet.] */
     /* Codes_SRS_MQTT_CODEC_07_014 : [If any error is encountered then mqtt_codec_publishAck shall return NULL.] */
@@ -678,7 +678,7 @@ BUFFER_HANDLE mqtt_codec_publishAck(int packetId)
     return result;
 }
 
-BUFFER_HANDLE mqtt_codec_publishRecieved(int packetId)
+BUFFER_HANDLE mqtt_codec_publishRecieved(uint16_t packetId)
 {
     /* Codes_SRS_MQTT_CODEC_07_015: [On success mqtt_codec_publishRecieved shall return a BUFFER_HANDLE representation of a MQTT PUBREC packet.] */
     /* Codes_SRS_MQTT_CODEC_07_016 : [If any error is encountered then mqtt_codec_publishRecieved shall return NULL.] */
@@ -686,7 +686,7 @@ BUFFER_HANDLE mqtt_codec_publishRecieved(int packetId)
     return result;
 }
 
-BUFFER_HANDLE mqtt_codec_publishRelease(int packetId)
+BUFFER_HANDLE mqtt_codec_publishRelease(uint16_t packetId)
 {
     /* Codes_SRS_MQTT_CODEC_07_017: [On success mqtt_codec_publishRelease shall return a BUFFER_HANDLE representation of a MQTT PUBREL packet.] */
     /* Codes_SRS_MQTT_CODEC_07_018 : [If any error is encountered then mqtt_codec_publishRelease shall return NULL.] */
@@ -694,7 +694,7 @@ BUFFER_HANDLE mqtt_codec_publishRelease(int packetId)
     return result;
 }
 
-BUFFER_HANDLE mqtt_codec_publishComplete(int packetId)
+BUFFER_HANDLE mqtt_codec_publishComplete(uint16_t packetId)
 {
     /* Codes_SRS_MQTT_CODEC_07_019: [On success mqtt_codec_publishComplete shall return a BUFFER_HANDLE representation of a MQTT PUBCOMP packet.] */
     /* Codes_SRS_MQTT_CODEC_07_020 : [If any error is encountered then mqtt_codec_publishComplete shall return NULL.] */
@@ -733,7 +733,7 @@ BUFFER_HANDLE mqtt_codec_ping()
     return result;
 }
 
-BUFFER_HANDLE mqtt_codec_subscribe(int packetId, SUBSCRIBE_PAYLOAD* subscribeList, size_t count)
+BUFFER_HANDLE mqtt_codec_subscribe(uint16_t packetId, SUBSCRIBE_PAYLOAD* subscribeList, size_t count)
 {
     BUFFER_HANDLE result;
     /* Codes_SRS_MQTT_CODEC_07_023: [If the parameters subscribeList is NULL or if count is 0 then mqtt_codec_subscribe shall return NULL.] */
@@ -777,7 +777,7 @@ BUFFER_HANDLE mqtt_codec_subscribe(int packetId, SUBSCRIBE_PAYLOAD* subscribeLis
     return result;
 }
 
-BUFFER_HANDLE mqtt_codec_unsubscribe(int packetId, const char** unsubscribeList, size_t count)
+BUFFER_HANDLE mqtt_codec_unsubscribe(uint16_t packetId, const char** unsubscribeList, size_t count)
 {
     BUFFER_HANDLE result;
     /* Codes_SRS_MQTT_CODEC_07_027: [If the parameters unsubscribeList is NULL or if count is 0 then mqtt_codec_unsubscribe shall return NULL.] */
