@@ -79,6 +79,8 @@ uint8_t byteutil_readByte(uint8_t** buffer)
 
 static void sendComplete(void* context, IO_SEND_RESULT send_result)
 {
+    (void)context;
+    (void)send_result;
 }
 
 static int sendPacketItem(MQTT_CLIENT_DATA_INSTANCE* clientData, const int8_t* data, size_t length)
@@ -103,6 +105,10 @@ static void stateChanged(void* context, IO_STATE new_io_state, IO_STATE previous
 
 static void recvCompleteCallback(void* context, CONTROL_PACKET_TYPE packet, int flags, BUFFER_HANDLE headerData)
 {
+    (void)context;
+    (void)packet;
+    (void)flags;
+    (void)headerData;
 }
 
 MQTT_CLIENT_HANDLE mqtt_client_init(ON_MQTT_MESSAGE_RECV_CALLBACK msgRecv, ON_MQTT_OPERATION_CALLBACK opCallback, void* callbackCtx, LOGGER_LOG logger)
