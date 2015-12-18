@@ -306,7 +306,7 @@ TEST_FUNCTION(mqtt_codec_connect_BUFFER_enlarge_fail)
     MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
     SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, NULL, NULL, "testuser", "testpassword", 20, false, true, DELIVER_AT_MOST_ONCE);
 
-    EXPECTED_CALL(mocks, BUFFER_new());
+    STRICT_EXPECTED_CALL(mocks, BUFFER_new());
     EXPECTED_CALL(mocks, BUFFER_enlarge(IGNORED_PTR_ARG, IGNORED_NUM_ARG)).SetReturn(__LINE__);
     EXPECTED_CALL(mocks, BUFFER_delete(IGNORED_PTR_ARG));
 
@@ -425,7 +425,7 @@ TEST_FUNCTION(mqtt_codec_ping_succeeds)
 
     const unsigned char PING_VALUE[] = { 0xC0, 0x00 };
 
-    EXPECTED_CALL(mocks, BUFFER_new());
+    STRICT_EXPECTED_CALL(mocks, BUFFER_new());
     EXPECTED_CALL(mocks, BUFFER_enlarge(IGNORED_PTR_ARG, IGNORED_NUM_ARG));
     EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG));
     EXPECTED_CALL(mocks, BUFFER_u_char(IGNORED_PTR_ARG));
@@ -548,7 +548,7 @@ TEST_FUNCTION(mqtt_codec_publish_succeeds)
     // arrange
     mqtt_codec_mocks mocks;
 
-    const unsigned char PUBLISH_VALUE[] = { 0x30, 0x1f, 0x00, 0x0a, 0x74, 0x6f, 0x70, 0x69, 0x63, 0x20, 0x4e, 0x61, 0x6d, 0x65, 0x12, 0x34, 0x00, 0x0f, 0x4d, 0x65, \
+    const unsigned char PUBLISH_VALUE[] = { 0x3a, 0x1f, 0x00, 0x0a, 0x74, 0x6f, 0x70, 0x69, 0x63, 0x20, 0x4e, 0x61, 0x6d, 0x65, 0x12, 0x34, 0x00, 0x0f, 0x4d, 0x65, \
         0x73, 0x73, 0x61, 0x67, 0x65, 0x20, 0x74, 0x6f, 0x20, 0x73, 0x65, 0x6e, 0x64 };
 
     EXPECTED_CALL(mocks, BUFFER_new()).ExpectedAtLeastTimes(2);
@@ -625,26 +625,26 @@ TEST_FUNCTION(mqtt_codec_publish_ack_succeeds)
 }
 
 /* Codes_SRS_MQTT_CODEC_07_016 : [If any error is encountered then mqtt_codec_publishRecieved shall return NULL.] */
-TEST_FUNCTION(mqtt_codec_publish_recieved_pre_build_fail)
+TEST_FUNCTION(mqtt_codec_publish_received_pre_build_fail)
 {
     // arrange
     mqtt_codec_mocks mocks;
 
-    EXPECTED_CALL(mocks, BUFFER_new());
+    STRICT_EXPECTED_CALL(mocks, BUFFER_new());
     EXPECTED_CALL(mocks, BUFFER_delete(IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(mocks, BUFFER_pre_build(IGNORED_PTR_ARG, 4))
         .IgnoreArgument(1)
         .SetReturn(__LINE__);
 
     // act
-    BUFFER_HANDLE handle = mqtt_codec_publishRecieved(TEST_PACKET_ID);
+    BUFFER_HANDLE handle = mqtt_codec_publishReceived(TEST_PACKET_ID);
 
     // assert
     ASSERT_IS_NULL(handle);
 }
 
 /* Codes_SRS_MQTT_CODEC_07_015: [On success mqtt_codec_publishRecieved shall return a BUFFER_HANDLE representation of a MQTT PUBREC packet.] */
-TEST_FUNCTION(mqtt_codec_publish_recieved_succeeds)
+TEST_FUNCTION(mqtt_codec_publish_received_succeeds)
 {
     // arrange
     mqtt_codec_mocks mocks;
@@ -658,7 +658,7 @@ TEST_FUNCTION(mqtt_codec_publish_recieved_succeeds)
         .IgnoreArgument(1);
 
     // act
-    BUFFER_HANDLE handle = mqtt_codec_publishRecieved(TEST_PACKET_ID);
+    BUFFER_HANDLE handle = mqtt_codec_publishReceived(TEST_PACKET_ID);
 
     unsigned char* data = BASEIMPLEMENTATION::BUFFER_u_char(handle);
     size_t length = BUFFER_length(handle);
@@ -842,7 +842,7 @@ TEST_FUNCTION(mqtt_codec_subscribe_succeeds)
     // arrange
     mqtt_codec_mocks mocks;
 
-    unsigned char SUBSCRIBE_VALUE[] = { 0x80, 0x1a, 0x12, 0x34, 0x00, 0x09, 0x73, 0x75, 0x62, 0x54, 0x6f, 0x70, 0x69, 0x63, 0x31, 0x01, 0x00, 0x09, 0x73, 0x75, 0x62, 0x54, 0x6f, 0x70, 0x69, 0x63, 0x32, 0x02 };
+    unsigned char SUBSCRIBE_VALUE[] = { 0x82, 0x1a, 0x12, 0x34, 0x00, 0x09, 0x73, 0x75, 0x62, 0x54, 0x6f, 0x70, 0x69, 0x63, 0x31, 0x01, 0x00, 0x09, 0x73, 0x75, 0x62, 0x54, 0x6f, 0x70, 0x69, 0x63, 0x32, 0x02 };
 
     EXPECTED_CALL(mocks, BUFFER_new()).ExpectedAtLeastTimes(2);
     EXPECTED_CALL(mocks, BUFFER_enlarge(IGNORED_PTR_ARG, IGNORED_NUM_ARG)).ExpectedAtLeastTimes(3);
@@ -951,7 +951,7 @@ TEST_FUNCTION(mqtt_codec_unsubscribe_succeeds)
     // arrange
     mqtt_codec_mocks mocks;
 
-    unsigned char UNSUBSCRIBE_VALUE[] = { 0xa0, 0x18, 0x12, 0x34, 0x00, 0x09, 0x73, 0x75, 0x62, 0x54, 0x6f, 0x70, 0x69, 0x63, 0x31, 0x00, 0x09, 0x73, 0x75, 0x62, 0x54, 0x6f, 0x70, 0x69, 0x63, 0x32 };
+    unsigned char UNSUBSCRIBE_VALUE[] = { 0xa2, 0x18, 0x12, 0x34, 0x00, 0x09, 0x73, 0x75, 0x62, 0x54, 0x6f, 0x70, 0x69, 0x63, 0x31, 0x00, 0x09, 0x73, 0x75, 0x62, 0x54, 0x6f, 0x70, 0x69, 0x63, 0x32 };
 
     EXPECTED_CALL(mocks, BUFFER_new()).ExpectedAtLeastTimes(2);
     EXPECTED_CALL(mocks, BUFFER_enlarge(IGNORED_PTR_ARG, IGNORED_NUM_ARG)).ExpectedAtLeastTimes(3);

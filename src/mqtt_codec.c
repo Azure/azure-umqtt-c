@@ -328,7 +328,7 @@ static int constructFixedHeader(BUFFER_HANDLE ctrlPacket, CONTROL_PACKET_TYPE pa
         else
         {
             uint8_t* iterator = BUFFER_u_char(fixedHeader);
-            *iterator = (packetType & 0xff) | ((flags & 0xff) << 8);
+            *iterator = packetType | flags;
             iterator++;
             (void)memcpy(iterator, remainSize, index);
 
@@ -678,7 +678,7 @@ BUFFER_HANDLE mqtt_codec_publishAck(uint16_t packetId)
     return result;
 }
 
-BUFFER_HANDLE mqtt_codec_publishRecieved(uint16_t packetId)
+BUFFER_HANDLE mqtt_codec_publishReceived(uint16_t packetId)
 {
     /* Codes_SRS_MQTT_CODEC_07_015: [On success mqtt_codec_publishRecieved shall return a BUFFER_HANDLE representation of a MQTT PUBREC packet.] */
     /* Codes_SRS_MQTT_CODEC_07_016 : [If any error is encountered then mqtt_codec_publishRecieved shall return NULL.] */

@@ -28,7 +28,7 @@ extern BUFFER_HANDLE mqtt_codec_connect(const MQTT_CLIENT_OPTIONS* mqttOptions);
 extern BUFFER_HANDLE mqtt_codec_disconnect();
 extern BUFFER_HANDLE mqtt_codec_publish(QOS_VALUE qosValue, bool duplicateMsg, bool serverRetain, uint16_t packetId, const char* topicName, const uint8_t* msgBuffer, size_t buffLen);
 extern BUFFER_HANDLE mqtt_codec_publishAck(uint16_t packetId);
-extern BUFFER_HANDLE mqtt_codec_publishRecieved(uint16_t packetId);
+extern BUFFER_HANDLE mqtt_codec_publishReceived(uint16_t packetId);
 extern BUFFER_HANDLE mqtt_codec_publishRelease(uint16_t packetId);
 extern BUFFER_HANDLE mqtt_codec_publishComplete(uint16_t packetId);
 extern BUFFER_HANDLE mqtt_codec_ping();

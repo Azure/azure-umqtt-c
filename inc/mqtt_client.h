@@ -18,9 +18,9 @@ extern "C" {
 #include "mqtt_message.h"
 #include "list.h"
 
-typedef struct MQTT_CLIENT_DATA_INSTANCE_TAG* MQTT_CLIENT_HANDLE;
+typedef struct MQTT_CLIENT_TAG* MQTT_CLIENT_HANDLE;
 
-#define MQTT_CLIENT_ACTION_VALUES    \
+#define MQTT_CLIENT_EVENT_VALUES    \
     MQTT_CLIENT_ON_CONNACK,          \
     MQTT_CLIENT_ON_PUBLISH_ACK,      \
     MQTT_CLIENT_ON_PUBLISH_RECV,     \
@@ -31,19 +31,19 @@ typedef struct MQTT_CLIENT_DATA_INSTANCE_TAG* MQTT_CLIENT_HANDLE;
     MQTT_CLIENT_ON_DISCONNECT,       \
     MQTT_CLIENT_ON_ERROR
 
-DEFINE_ENUM(MQTT_CLIENT_ACTION_RESULT, MQTT_CLIENT_ACTION_VALUES);
+DEFINE_ENUM(MQTT_CLIENT_EVENT_RESULT, MQTT_CLIENT_EVENT_VALUES);
 
-typedef void(*ON_MQTT_OPERATION_CALLBACK)(MQTT_CLIENT_ACTION_RESULT actionResult, void* msgInfo, void* callbackCtx);
+typedef void(*ON_MQTT_OPERATION_CALLBACK)(MQTT_CLIENT_EVENT_RESULT actionResult, void* msgInfo, void* callbackCtx);
 typedef void(*ON_MQTT_MESSAGE_RECV_CALLBACK)(MQTT_MESSAGE_HANDLE msgHandle, void* callbackCtx);
 
 extern MQTT_CLIENT_HANDLE mqtt_client_init(ON_MQTT_MESSAGE_RECV_CALLBACK msgRecv, ON_MQTT_OPERATION_CALLBACK opCallback, void* callbackCtx, LOGGER_LOG logger);
 extern void mqtt_client_deinit(MQTT_CLIENT_HANDLE handle);
 
-extern int mqtt_client_connect(MQTT_CLIENT_HANDLE handle, XIO_HANDLE ioHandle, MQTT_CLIENT_OPTIONS* mqttOptions);
+extern int mqtt_client_connect(MQTT_CLIENT_HANDLE handle, XIO_HANDLE xioHandle, MQTT_CLIENT_OPTIONS* mqttOptions);
 extern int mqtt_client_disconnect(MQTT_CLIENT_HANDLE handle);
 
-extern int mqtt_client_subscribe(MQTT_CLIENT_HANDLE handle, uint8_t packetId, SUBSCRIBE_PAYLOAD* subscribeList, size_t count);
-extern int mqtt_client_unsubscribe(MQTT_CLIENT_HANDLE handle, uint8_t packetId, const char** unsubscribeList, size_t count);
+extern int mqtt_client_subscribe(MQTT_CLIENT_HANDLE handle, uint16_t packetId, SUBSCRIBE_PAYLOAD* subscribeList, size_t count);
+extern int mqtt_client_unsubscribe(MQTT_CLIENT_HANDLE handle, uint16_t packetId, const char** unsubscribeList, size_t count);
 
 extern int mqtt_client_publish(MQTT_CLIENT_HANDLE handle, MQTT_MESSAGE_HANDLE msgHandle);
 

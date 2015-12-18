@@ -39,7 +39,7 @@ static void OnRecvCallback(MQTT_MESSAGE_HANDLE msgHandle, void* context)
 
 }
 
-static int OnOperationComplete(MQTT_CLIENT_ACTION_RESULT actionResult, void* context)
+static int OnOperationComplete(MQTT_CLIENT_EVENT_RESULT actionResult, void* context)
 {
     return 0;
 }
