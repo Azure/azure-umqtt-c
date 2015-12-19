@@ -128,8 +128,8 @@ public:
     MOCK_STATIC_METHOD_1(, void, mqtt_codec_destroy, MQTTCODEC_HANDLE, handle)
     MOCK_VOID_METHOD_END();
 
-    MOCK_STATIC_METHOD_3(, int, mqtt_codec_bytesReceived, MQTTCODEC_HANDLE, handle, const void*, buffer, size_t, size)
-    MOCK_METHOD_END(int, 0);
+    MOCK_STATIC_METHOD_3(, void, mqtt_codec_bytesReceived, void*, context, const unsigned char*, buffer, size_t, size)
+    MOCK_VOID_METHOD_END();
 
     MOCK_STATIC_METHOD_4(, int, xio_open, XIO_HANDLE, handle, ON_BYTES_RECEIVED, on_bytes_received, ON_IO_STATE_CHANGED, on_io_state_changed, void*, callback_context)
     MOCK_METHOD_END(int, 0);
@@ -234,7 +234,7 @@ extern "C"
 
     DECLARE_GLOBAL_MOCK_METHOD_2(mqtt_client_mocks, , MQTTCODEC_HANDLE, mqtt_codec_create, ON_PACKET_COMPLETE_CALLBACK, packetComplete, void*, callContext);
     DECLARE_GLOBAL_MOCK_METHOD_1(mqtt_client_mocks, , void, mqtt_codec_destroy, MQTTCODEC_HANDLE, handle);
-    DECLARE_GLOBAL_MOCK_METHOD_3(mqtt_client_mocks, , int, mqtt_codec_bytesReceived, MQTTCODEC_HANDLE, handle, const void*, buffer, size_t, size);
+    DECLARE_GLOBAL_MOCK_METHOD_3(mqtt_client_mocks, , void, mqtt_codec_bytesReceived, void*, context, const unsigned char*, buffer, size_t, size);
 
     DECLARE_GLOBAL_MOCK_METHOD_4(mqtt_client_mocks, , int, xio_open, XIO_HANDLE, handle, ON_BYTES_RECEIVED, on_bytes_received, ON_IO_STATE_CHANGED, on_io_state_changed, void*, callback_context);
     DECLARE_GLOBAL_MOCK_METHOD_1(mqtt_client_mocks, , void, xio_dowork, XIO_HANDLE, ioHandle);

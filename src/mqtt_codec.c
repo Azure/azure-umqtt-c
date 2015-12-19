@@ -821,27 +821,23 @@ BUFFER_HANDLE mqtt_codec_unsubscribe(uint16_t packetId, const char** unsubscribe
     return result;
 }
 
-int mqtt_codec_bytesReceived(MQTTCODEC_HANDLE handle, const void* buffer, size_t size)
+void mqtt_codec_bytesReceived(void* context, const unsigned char* buffer, size_t size)
 {
-    int result;
-    MQTTCODEC_INSTANCE* codec_Data = (MQTTCODEC_INSTANCE*)handle;
+    MQTTCODEC_INSTANCE* codec_Data = (MQTTCODEC_INSTANCE*)context;
     /* Codes_SRS_MQTT_CODEC_07_031: [If the parameters handle or buffer is NULL then mqtt_codec_bytesReceived shall return a non-zero value.] */
     if (codec_Data == NULL)
     {
-        result = __LINE__;
     }
     /* Codes_SRS_MQTT_CODEC_07_031: [If the parameters handle or buffer is NULL then mqtt_codec_bytesReceived shall return a non-zero value.] */
     /* Codes_SRS_MQTT_CODEC_07_032: [If the parameters size is zero then mqtt_codec_bytesReceived shall return a non-zero value.] */
     else if (buffer == NULL || size == 0)
     {
         codec_Data->currPacket = PACKET_TYPE_ERROR;
-        result = __LINE__;
     }
     else
     {
         /* Codes_SRS_MQTT_CODEC_07_033: [mqtt_codec_bytesReceived constructs a sequence of bytes into the corresponding MQTT packets and on success returns zero.] */
-        result = 0;
-        for (size_t index = 0; index < size && result == 0; index++)
+        for (size_t index = 0; index < size; index++)
         {
             uint8_t iterator = ((int8_t*)buffer)[index];
             if (codec_Data->codecState == CODEC_STATE_FIXED_HEADER)
@@ -856,7 +852,7 @@ int mqtt_codec_bytesReceived(MQTTCODEC_HANDLE handle, const void* buffer, size_t
                     {
                         /* Codes_SRS_MQTT_CODEC_07_035: [If any error is encountered then the packet state will be marked as error and mqtt_codec_bytesReceived shall return a non-zero value.] */
                         codec_Data->currPacket = PACKET_TYPE_ERROR;
-                        result = __LINE__;
+                        break;
                     }
                     if (codec_Data->currPacket == PINGRESP_TYPE)
                     {
@@ -879,7 +875,7 @@ int mqtt_codec_bytesReceived(MQTTCODEC_HANDLE handle, const void* buffer, size_t
                     {
                         /* Codes_SRS_MQTT_CODEC_07_035: [If any error is encountered then the packet state will be marked as error and mqtt_codec_bytesReceived shall return a non-zero value.] */
                         codec_Data->currPacket = PACKET_TYPE_ERROR;
-                        result = __LINE__;
+                        break;
                     }
                     else
                     {
@@ -900,9 +896,7 @@ int mqtt_codec_bytesReceived(MQTTCODEC_HANDLE handle, const void* buffer, size_t
             {
                 /* Codes_SRS_MQTT_CODEC_07_035: [If any error is encountered then the packet state will be marked as error and mqtt_codec_bytesReceived shall return a non-zero value.] */
                 codec_Data->currPacket = PACKET_TYPE_ERROR;
-                result = __LINE__;
             }
         }
     }
-    return result;
 }

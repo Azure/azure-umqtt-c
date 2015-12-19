@@ -984,13 +984,10 @@ TEST_FUNCTION(mqtt_codec_bytesReceived_MQTTCODEC_HANDLE_fails)
 
     unsigned char CONNACK_RESP[] = { 0x20, 0x2, 0x1, 0x0 };
 
-    int result;
-
     // act
-    result = mqtt_codec_bytesReceived(NULL, CONNACK_RESP, 1);
+    mqtt_codec_bytesReceived(NULL, CONNACK_RESP, 1);
 
     // assert
-    ASSERT_ARE_NOT_EQUAL(int, 0, result);
 }
 
 /* Codes_SRS_MQTT_CODEC_07_031: [If the parameters handle or buffer is NULL then mqtt_codec_bytesReceived shall return a non-zero value.] */
@@ -1003,13 +1000,10 @@ TEST_FUNCTION(mqtt_codec_bytesReceived_buffer_NULL_fails)
 
     mocks.ResetAllCalls();
 
-    int result;
-
     // act
-    result = mqtt_codec_bytesReceived(handle, NULL, 1);
+    mqtt_codec_bytesReceived(handle, NULL, 1);
     
     // assert
-    ASSERT_ARE_NOT_EQUAL(int, 0, result);
     mocks.AssertActualAndExpectedCalls();
 
     // cleanup
@@ -1028,13 +1022,10 @@ TEST_FUNCTION(mqtt_codec_bytesReceived_buffer_Len_0_fails)
 
     mocks.ResetAllCalls();
 
-    int result;
-
     // act
-    result = mqtt_codec_bytesReceived(handle, CONNACK_RESP, 0);
+    mqtt_codec_bytesReceived(handle, CONNACK_RESP, 0);
 
     // assert
-    ASSERT_ARE_NOT_EQUAL(int, 0, result);
     mocks.AssertActualAndExpectedCalls();
 
     // cleanup
@@ -1068,14 +1059,11 @@ TEST_FUNCTION(mqtt_codec_bytesReceived_connack_succeed)
 
     g_curr_packet_type = CONNACK_TYPE;
 
-    int result;
-
     // act
     for (size_t index = 0; index < length; index++)
     {
         // Send 1 byte at a time
-        result = mqtt_codec_bytesReceived(handle, CONNACK_RESP+index, 1);
-        ASSERT_ARE_EQUAL(int, 0, result);
+        mqtt_codec_bytesReceived(handle, CONNACK_RESP+index, 1);
     }
 
     // assert
@@ -1113,14 +1101,11 @@ TEST_FUNCTION(mqtt_codec_bytesReceived_puback_succeed)
 
     g_curr_packet_type = PUBACK_TYPE;
 
-    int result;
-
     // act
     for (size_t index = 0; index < length; index++)
     {
         // Send 1 byte at a time
-        result = mqtt_codec_bytesReceived(handle, PUBACK_RESP + index, 1);
-        ASSERT_ARE_EQUAL(int, 0, result);
+        mqtt_codec_bytesReceived(handle, PUBACK_RESP + index, 1);
     }
 
     // assert
@@ -1150,14 +1135,11 @@ TEST_FUNCTION(mqtt_codec_bytesReceived_pingresp_succeed)
 
     g_curr_packet_type = PINGRESP_TYPE;
 
-    int result;
-
     // act
     for (size_t index = 0; index < length; index++)
     {
         // Send 1 byte at a time
-        result = mqtt_codec_bytesReceived(handle, PINGRESP_RESP + index, 1);
-        ASSERT_ARE_EQUAL(int, 0, result);
+        mqtt_codec_bytesReceived(handle, PINGRESP_RESP + index, 1);
     }
 
     // assert
@@ -1194,14 +1176,11 @@ TEST_FUNCTION(mqtt_codec_bytesReceived_publish_succeed)
     EXPECTED_CALL(mocks, BUFFER_new());
     EXPECTED_CALL(mocks, BUFFER_delete(IGNORED_PTR_ARG));
 
-    int result;
-
     // act
     for (size_t index = 0; index < length; index++)
     {
         // Send 1 byte at a time
-        result = mqtt_codec_bytesReceived(handle, PUBLISH + index, 1);
-        ASSERT_ARE_EQUAL(int, 0, result);
+        mqtt_codec_bytesReceived(handle, PUBLISH + index, 1);
     }
 
     // assert
@@ -1237,14 +1216,11 @@ TEST_FUNCTION(mqtt_codec_bytesReceived_suback_succeed)
     EXPECTED_CALL(mocks, BUFFER_new());
     EXPECTED_CALL(mocks, BUFFER_delete(IGNORED_PTR_ARG));
 
-    int result;
-
     // act
     for (size_t index = 0; index < length; index++)
     {
         // Send 1 byte at a time
-        result = mqtt_codec_bytesReceived(handle, SUBACK_RESP + index, 1);
-        ASSERT_ARE_EQUAL(int, 0, result);
+        mqtt_codec_bytesReceived(handle, SUBACK_RESP + index, 1);
     }
 
     // assert
@@ -1280,14 +1256,11 @@ TEST_FUNCTION(mqtt_codec_bytesReceived_unsuback_succeed)
     EXPECTED_CALL(mocks, BUFFER_new());
     EXPECTED_CALL(mocks, BUFFER_delete(IGNORED_PTR_ARG));
 
-    int result;
-
     // act
     for (size_t index = 0; index < length; index++)
     {
         // Send 1 byte at a time
-        result = mqtt_codec_bytesReceived(handle, UNSUBACK_RESP + index, 1);
-        ASSERT_ARE_EQUAL(int, 0, result);
+        mqtt_codec_bytesReceived(handle, UNSUBACK_RESP + index, 1);
     }
 
     // assert

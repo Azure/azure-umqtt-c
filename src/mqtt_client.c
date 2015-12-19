@@ -38,7 +38,7 @@ static uint16_t byteutil_read_uint16(uint8_t** buffer)
     uint16_t result = 0;
     if (buffer != NULL)
     {
-        result = 256 * ((uint8_t)(*buffer)) + (uint8_t)(*(buffer + 1));
+        result = 256 * ((uint8_t)(**buffer)) + (uint8_t)(*(*buffer + 1));
         *buffer += 2; // Move the ptr
     }
     return result;
@@ -196,19 +196,28 @@ int mqtt_client_connect(MQTT_CLIENT_HANDLE handle, XIO_HANDLE xioHandle, MQTT_CL
             mqttData->packetState = UNKNOWN_TYPE;
             mqttData->qosValue = mqttOptions->qualityOfServiceValue;
             mqttData->keepAliveInterval = mqttOptions->keepAliveInterval;
-                /*Codes_SRS_MQTT_CLIENT_07_008: [mqtt_client_connect shall open the XIO_HANDLE by calling into the xio_open interface.]*/
+            /*Codes_SRS_MQTT_CLIENT_07_008: [mqtt_client_connect shall open the XIO_HANDLE by calling into the xio_open interface.]*/
             if (xio_open(xioHandle, mqtt_codec_bytesReceived, stateChanged, mqttData) != 0)
+            {
+                /*Codes_SRS_MQTT_CLIENT_07_007: [If any failure is encountered then mqtt_client_connect shall return a non-zero value.]*/
+                LOG(mqttData->logFunc, LOG_LINE, "Error: io_open failed");
+                result = __LINE__;
+            }
+            else
+            {
+                mqttData->packetState = CONNECT_TYPE;
+
+                BUFFER_HANDLE connPacket = mqtt_codec_connect(mqttOptions);
+                if (connPacket == NULL)
                 {
                     /*Codes_SRS_MQTT_CLIENT_07_007: [If any failure is encountered then mqtt_client_connect shall return a non-zero value.]*/
-                    LOG(mqttData->logFunc, LOG_LINE, "Error: io_open failed");
+                    LOG(mqttData->logFunc, LOG_LINE, "Error: mqtt_codec_connect failed");
                     result = __LINE__;
                 }
                 else
                 {
-                    mqttData->packetState = CONNECT_TYPE;
-
-                    BUFFER_HANDLE connPacket = mqtt_codec_connect(mqttOptions);
-                    if (connPacket == NULL)
+                    /*Codes_SRS_MQTT_CLIENT_07_009: [On success mqtt_client_connect shall send the MQTT CONNECT to the endpoint.]*/
+                    if (sendPacketItem(mqttData, BUFFER_u_char(connPacket), BUFFER_length(connPacket) ) != 0)
                     {
                         /*Codes_SRS_MQTT_CLIENT_07_007: [If any failure is encountered then mqtt_client_connect shall return a non-zero value.]*/
                         LOG(mqttData->logFunc, LOG_LINE, "Error: mqtt_codec_connect failed");
@@ -216,22 +225,13 @@ int mqtt_client_connect(MQTT_CLIENT_HANDLE handle, XIO_HANDLE xioHandle, MQTT_CL
                     }
                     else
                     {
-                        /*Codes_SRS_MQTT_CLIENT_07_009: [On success mqtt_client_connect shall send the MQTT CONNECT to the endpoint.]*/
-                        if (sendPacketItem(mqttData, BUFFER_u_char(connPacket), BUFFER_length(connPacket) ) != 0)
-                        {
-                            /*Codes_SRS_MQTT_CLIENT_07_007: [If any failure is encountered then mqtt_client_connect shall return a non-zero value.]*/
-                            LOG(mqttData->logFunc, LOG_LINE, "Error: mqtt_codec_connect failed");
-                            result = __LINE__;
-                        }
-                        else
-                        {
-                            result = 0;
-                        }
-                        BUFFER_delete(connPacket);
+                        result = 0;
                     }
+                    BUFFER_delete(connPacket);
                 }
             }
         }
+    }
     return result;
 }
 

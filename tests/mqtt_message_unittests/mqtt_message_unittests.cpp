@@ -65,45 +65,7 @@ template <> static std::wstring Microsoft::VisualStudio::CppUnitTestFramework::T
     }
     return result;
 }
-
-/*template <> static std::wstring Microsoft::VisualStudio::CppUnitTestFramework::ToString < PACKET_ID >(const PACKET_ID & qosValue)
-{
-    std::wstring result;
-    switch (qosValue)
-    {
-    case DELIVER_AT_LEAST_ONCE: result = L"Deliver_At_Least_Once";
-        break;
-    case DELIVER_EXACTLY_ONCE: result = L"Deliver_Exactly_Once";
-        break;
-    case DELIVER_AT_MOST_ONCE: result = L"Deliver_At_Most_Once";
-        break;
-    default:
-    case DELIVER_FAILURE: result = L"Deliver_Failure";
-        break;
-    }
-    return result;
-}*/
 #endif
-
-/*static int PACKET_ID_Compare(PACKET_ID left, PACKET_ID right)
-{
-    return left != right;
-}
-
-static void PACKET_ID_ToString(char* string, size_t bufferSize, PACKET_ID val)
-{
-    sprintf_s(string, bufferSize, "%d", val);
-}
-
-static int BYTE_Compare(BYTE left, BYTE right)
-{
-    return left != right;
-}
-
-static void BYTE_ToString(char* string, size_t bufferSize, BYTE val)
-{
-    sprintf_s(string, bufferSize, "%d", val);
-}*/
 
 static int QOS_VALUE_Compare(QOS_VALUE left, QOS_VALUE right)
 {
@@ -115,17 +77,17 @@ static void QOS_VALUE_ToString(char* string, size_t bufferSize, QOS_VALUE val)
     switch (val)
     {
         case DELIVER_AT_LEAST_ONCE:
-            strcpy_s(string, bufferSize, "Deliver_At_Least_Once");
+            (void)snprintf(string, bufferSize, "%s", "Deliver_At_Least_Once");
             break;
         case DELIVER_EXACTLY_ONCE:
-            strcpy_s(string, bufferSize, "Deliver_Exactly_Once");
+            (void)snprintf(string, bufferSize, "%s", "Deliver_Exactly_Once");
             break;
         case DELIVER_AT_MOST_ONCE:
-            strcpy_s(string, bufferSize, "Deliver_At_Most_Once");
+            (void)snprintf(string, bufferSize, "%s", "Deliver_At_Most_Once");
             break;
         default:
         case DELIVER_FAILURE:
-            strcpy_s(string, bufferSize, "Deliver_Failure");
+            (void)snprintf(string, bufferSize, "%s", "Deliver_Failure");
             break;
     }
 }
@@ -295,8 +257,8 @@ TEST_FUNCTION(mqttmessage_clone_succeed)
     MQTT_MESSAGE_HANDLE handle = mqttmessage_create(TEST_PACKET_ID, TEST_TOPIC_NAME, DELIVER_AT_MOST_ONCE, TEST_MESSAGE, TEST_MSG_LEN);
     mocks.ResetAllCalls();
 
-    EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_PTR_ARG));
-    EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_PTR_ARG));
+    EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
+    EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
     EXPECTED_CALL(mocks, mallocAndStrcpy_s(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
 
     // act
