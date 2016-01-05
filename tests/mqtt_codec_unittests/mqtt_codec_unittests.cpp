@@ -46,6 +46,9 @@ static const uint8_t* TEST_MESSAGE = (const uint8_t*)"Message to send";
 static const uint16_t TEST_MESSAGE_LEN = 15;
 static SUBSCRIBE_PAYLOAD TEST_SUBSCRIBE_PAYLOAD[] = { { "subTopic1", DELIVER_AT_LEAST_ONCE },{ "subTopic2", DELIVER_EXACTLY_ONCE } };
 static const char* TEST_UNSUBSCRIPTION_TOPIC[] = { "subTopic1", "subTopic2" };
+static const char* TOPIC_NAME_A = "msgA";
+static const uint8_t* APP_NAME_A = (const uint8_t*)"This is the app msg A.";
+static size_t APP_NAME_A_LEN = 22;
 
 #define TEST_HANDLE             0x11
 #define TEST_PACKET_ID          0x1234
@@ -548,7 +551,7 @@ TEST_FUNCTION(mqtt_codec_publish_succeeds)
     // arrange
     mqtt_codec_mocks mocks;
 
-    const unsigned char PUBLISH_VALUE[] = { 0x3a, 0x1f, 0x00, 0x0a, 0x74, 0x6f, 0x70, 0x69, 0x63, 0x20, 0x4e, 0x61, 0x6d, 0x65, 0x12, 0x34, 0x00, 0x0f, 0x4d, 0x65, \
+    const unsigned char PUBLISH_VALUE[] = { 0x3a, 0x1d, 0x00, 0x0a, 0x74, 0x6f, 0x70, 0x69, 0x63, 0x20, 0x4e, 0x61, 0x6d, 0x65, 0x12, 0x34, 0x4d, 0x65, \
         0x73, 0x73, 0x61, 0x67, 0x65, 0x20, 0x74, 0x6f, 0x20, 0x73, 0x65, 0x6e, 0x64 };
 
     EXPECTED_CALL(mocks, BUFFER_new()).ExpectedAtLeastTimes(2);
@@ -561,6 +564,37 @@ TEST_FUNCTION(mqtt_codec_publish_succeeds)
 
     // act
     BUFFER_HANDLE handle = mqtt_codec_publish(DELIVER_AT_LEAST_ONCE, true, false, TEST_PACKET_ID, TEST_TOPIC_NAME, TEST_MESSAGE, TEST_MESSAGE_LEN);
+
+    unsigned char* data = BASEIMPLEMENTATION::BUFFER_u_char(handle);
+    size_t length = BUFFER_length(handle);
+
+    // assert
+    ASSERT_IS_NOT_NULL(handle);
+    ASSERT_ARE_EQUAL(int, 0, memcmp(data, PUBLISH_VALUE, length));
+
+    // cleanup
+    mocks.AssertActualAndExpectedCalls();
+    BASEIMPLEMENTATION::BUFFER_delete(handle);
+}
+
+/* Tests_SRS_MQTT_CODEC_07_007: [mqtt_codec_publish shall return a BUFFER_HANDLE that represents a MQTT PUBLISH message.] */
+TEST_FUNCTION(mqtt_codec_publish_second_succeeds)
+{
+    // arrange
+    mqtt_codec_mocks mocks;
+
+    const unsigned char PUBLISH_VALUE[] = { 0x30, 0x1c, 0x00, 0x04, 0x6d, 0x73, 0x67, 0x41, 0x54, 0x68, 0x69, 0x73, 0x20, 0x69, 0x73, 0x20, 0x74, 0x68, 0x65, 0x20, 0x61, 0x70, 0x70, 0x20, 0x6d, 0x73, 0x67, 0x20, 0x41, 0x2e };
+
+    EXPECTED_CALL(mocks, BUFFER_new()).ExpectedAtLeastTimes(2);
+    EXPECTED_CALL(mocks, BUFFER_delete(IGNORED_PTR_ARG));
+    EXPECTED_CALL(mocks, BUFFER_enlarge(IGNORED_PTR_ARG, IGNORED_NUM_ARG)).ExpectedAtLeastTimes(2);
+    EXPECTED_CALL(mocks, BUFFER_u_char(IGNORED_PTR_ARG)).ExpectedAtLeastTimes(3);
+    EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG)).ExpectedAtLeastTimes(4);
+    EXPECTED_CALL(mocks, BUFFER_pre_build(IGNORED_PTR_ARG, IGNORED_NUM_ARG));
+    EXPECTED_CALL(mocks, BUFFER_prepend(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+
+    // act
+    BUFFER_HANDLE handle = mqtt_codec_publish(DELIVER_AT_MOST_ONCE, false, false, 12, TOPIC_NAME_A, APP_NAME_A, APP_NAME_A_LEN);
 
     unsigned char* data = BASEIMPLEMENTATION::BUFFER_u_char(handle);
     size_t length = BUFFER_length(handle);
@@ -1161,6 +1195,48 @@ TEST_FUNCTION(mqtt_codec_bytesReceived_publish_succeed)
 
     //                            1    2     3     4     T     o     p     i     c     10    11    d     a     t     a     sp    M     s     g
     unsigned char PUBLISH[] = { 0x3F, 0x11, 0x00, 0x06, 0x54, 0x6f, 0x70, 0x69, 0x63, 0x12, 0x34, 0x64, 0x61, 0x74, 0x61, 0x20, 0x4d, 0x73, 0x67 };
+    size_t length = sizeof(PUBLISH) / sizeof(PUBLISH[0]);
+    TEST_COMPLETE_DATA_INSTANCE testData = { 0 };
+    testData.dataHeader = PUBLISH + FIXED_HEADER_SIZE;
+    testData.Length = length - FIXED_HEADER_SIZE;
+
+    MQTTCODEC_HANDLE handle = mqtt_codec_create(TestOnCompleteCallback, &testData);
+
+    mocks.ResetAllCalls();
+
+    EXPECTED_CALL(mocks, BUFFER_pre_build(IGNORED_PTR_ARG, IGNORED_NUM_ARG));
+    EXPECTED_CALL(mocks, BUFFER_u_char(IGNORED_PTR_ARG)).ExpectedTimesExactly(testData.Length);
+    EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG)).ExpectedTimesExactly(testData.Length);
+    EXPECTED_CALL(mocks, BUFFER_new());
+    EXPECTED_CALL(mocks, BUFFER_delete(IGNORED_PTR_ARG));
+
+    // act
+    for (size_t index = 0; index < length; index++)
+    {
+        // Send 1 byte at a time
+        mqtt_codec_bytesReceived(handle, PUBLISH + index, 1);
+    }
+
+    // assert
+    ASSERT_IS_TRUE(g_callbackInvoked);
+    mocks.AssertActualAndExpectedCalls();
+
+    // cleanup
+    mqtt_codec_destroy(handle);
+}
+
+/* Codes_SRS_MQTT_CODEC_07_033: [mqtt_codec_bytesReceived constructs a sequence of bytes into the corresponding MQTT packets and on success returns zero.] */
+/* Codes_SRS_MQTT_CODEC_07_034: [Upon a constructing a complete MQTT packet mqtt_codec_bytesReceived shall call the ON_PACKET_COMPLETE_CALLBACK function.] */
+TEST_FUNCTION(mqtt_codec_bytesReceived_publish_second_succeed)
+{
+    // arrange
+    mqtt_codec_mocks mocks;
+
+    g_curr_packet_type = PUBLISH_TYPE;
+
+    //                            1    2     3     4     T     o     p     i     c     10    11    d     a     t     a     sp    M     s     g
+    unsigned char PUBLISH[] = { 0x30, 0x1e, 0x00, 0x04, 0x6d, 0x73, 0x67, 0x41, 0x00, 0x16, 0x54, 0x68, 0x69, 0x73, 0x20, 0x69, 0x73, 0x20, 0x74, 0x68, 0x65, 0x20, 0x61, 0x70, 0x70, 0x20, 0x6d, 0x73, 0x67, 0x20, 0x41, 0x2e };
+    //unsigned char PUBLISH[] = { 0x3F, 0x11, 0x00, 0x06, 0x54, 0x6f, 0x70, 0x69, 0x63, 0x12, 0x34, 0x64, 0x61, 0x74, 0x61, 0x20, 0x4d, 0x73, 0x67 };
     size_t length = sizeof(PUBLISH) / sizeof(PUBLISH[0]);
     TEST_COMPLETE_DATA_INSTANCE testData = { 0 };
     testData.dataHeader = PUBLISH + FIXED_HEADER_SIZE;

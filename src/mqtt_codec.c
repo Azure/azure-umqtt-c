@@ -198,12 +198,18 @@ static int constructPublishVariableHeader(BUFFER_HANDLE ctrlPacket, const PUBLIS
     int result = 0;
     size_t topicLen = 0;
     size_t spaceLen = 0;
-    size_t idLen = 2;
+    size_t idLen = 0;
 
     size_t currLen = BUFFER_length(ctrlPacket);
 
     topicLen = strlen(publishHeader->topicName);
     spaceLen += 2;
+
+    if (publishHeader->qualityOfServiceValue != DELIVER_AT_MOST_ONCE)
+    {
+        // Packet Id is only set if the QOS is not 0
+        idLen = 2;
+    }
 
     if (topicLen > USHRT_MAX)
     {
@@ -225,7 +231,7 @@ static int constructPublishVariableHeader(BUFFER_HANDLE ctrlPacket, const PUBLIS
             iterator += currLen;
             /* The Topic Name MUST be present as the first field in the PUBLISH Packet Variable header.It MUST be 792 a UTF-8 encoded string [MQTT-3.3.2-1] as defined in section 1.5.3.*/
             byteutil_writeUTF(&iterator, publishHeader->topicName, (uint16_t)topicLen);
-            if (publishHeader->qualityOfServiceValue != DELIVER_AT_MOST_ONCE)
+            if (idLen > 0)
             {
                 byteutil_writeInt(&iterator, publishHeader->packetId);
             }
@@ -598,7 +604,7 @@ BUFFER_HANDLE mqtt_codec_publish(QOS_VALUE qosValue, bool duplicateMsg, bool ser
         PUBLISH_HEADER_INFO publishInfo = { 0 };
         publishInfo.topicName = topicName;
         publishInfo.packetId = packetId;
-        publishInfo.msgBuffer = msgBuffer;
+        //publishInfo.msgBuffer = msgBuffer;
         publishInfo.qualityOfServiceValue = qosValue;
 
         uint8_t headerFlags = 0;
@@ -629,14 +635,13 @@ BUFFER_HANDLE mqtt_codec_publish(QOS_VALUE qosValue, bool duplicateMsg, bool ser
             else
             {
                 size_t payloadOffset = BUFFER_length(result);
-                size_t buffLen = strlen(msgBuffer);
                 if (buffLen > USHRT_MAX)
                 {
                     /* Codes_SRS_MQTT_CODEC_07_006: [If any error is encountered then mqtt_codec_publish shall return NULL.] */
                     BUFFER_delete(result);
                     result = NULL;
                 }
-                else if (BUFFER_enlarge(result, buffLen + 2) != 0)
+                else if (BUFFER_enlarge(result, buffLen) != 0)
                 {
                     /* Codes_SRS_MQTT_CODEC_07_006: [If any error is encountered then mqtt_codec_publish shall return NULL.] */
                     BUFFER_delete(result);
@@ -655,7 +660,8 @@ BUFFER_HANDLE mqtt_codec_publish(QOS_VALUE qosValue, bool duplicateMsg, bool ser
                     {
                         iterator += payloadOffset;
                         // Write Message
-                        byteutil_writeUTF(&iterator, msgBuffer, (uint16_t)buffLen);
+                        //byteutil_writeUTF(&iterator, msgBuffer, (uint16_t)buffLen);
+                        memcpy(iterator, msgBuffer, buffLen);
                         if (constructFixedHeader(result, PUBLISH_TYPE, headerFlags) != 0)
                         {
                             /* Codes_SRS_MQTT_CODEC_07_006: [If any error is encountered then mqtt_codec_publish shall return NULL.] */
@@ -821,23 +827,27 @@ BUFFER_HANDLE mqtt_codec_unsubscribe(uint16_t packetId, const char** unsubscribe
     return result;
 }
 
-void mqtt_codec_bytesReceived(void* context, const unsigned char* buffer, size_t size)
+int mqtt_codec_bytesReceived(MQTTCODEC_HANDLE handle, const unsigned char* buffer, size_t size)
 {
-    MQTTCODEC_INSTANCE* codec_Data = (MQTTCODEC_INSTANCE*)context;
+    int result;
+    MQTTCODEC_INSTANCE* codec_Data = (MQTTCODEC_INSTANCE*)handle;
     /* Codes_SRS_MQTT_CODEC_07_031: [If the parameters handle or buffer is NULL then mqtt_codec_bytesReceived shall return a non-zero value.] */
     if (codec_Data == NULL)
     {
+        result = __LINE__;
     }
     /* Codes_SRS_MQTT_CODEC_07_031: [If the parameters handle or buffer is NULL then mqtt_codec_bytesReceived shall return a non-zero value.] */
     /* Codes_SRS_MQTT_CODEC_07_032: [If the parameters size is zero then mqtt_codec_bytesReceived shall return a non-zero value.] */
     else if (buffer == NULL || size == 0)
     {
         codec_Data->currPacket = PACKET_TYPE_ERROR;
+        result = __LINE__;
     }
     else
     {
         /* Codes_SRS_MQTT_CODEC_07_033: [mqtt_codec_bytesReceived constructs a sequence of bytes into the corresponding MQTT packets and on success returns zero.] */
-        for (size_t index = 0; index < size; index++)
+        result = 0;
+        for (size_t index = 0; index < size && result == 0; index++)
         {
             uint8_t iterator = ((int8_t*)buffer)[index];
             if (codec_Data->codecState == CODEC_STATE_FIXED_HEADER)
@@ -852,7 +862,7 @@ void mqtt_codec_bytesReceived(void* context, const unsigned char* buffer, size_t
                     {
                         /* Codes_SRS_MQTT_CODEC_07_035: [If any error is encountered then the packet state will be marked as error and mqtt_codec_bytesReceived shall return a non-zero value.] */
                         codec_Data->currPacket = PACKET_TYPE_ERROR;
-                        break;
+                        result = __LINE__;
                     }
                     if (codec_Data->currPacket == PINGRESP_TYPE)
                     {
@@ -875,7 +885,7 @@ void mqtt_codec_bytesReceived(void* context, const unsigned char* buffer, size_t
                     {
                         /* Codes_SRS_MQTT_CODEC_07_035: [If any error is encountered then the packet state will be marked as error and mqtt_codec_bytesReceived shall return a non-zero value.] */
                         codec_Data->currPacket = PACKET_TYPE_ERROR;
-                        break;
+                        result = __LINE__;
                     }
                     else
                     {
@@ -896,7 +906,9 @@ void mqtt_codec_bytesReceived(void* context, const unsigned char* buffer, size_t
             {
                 /* Codes_SRS_MQTT_CODEC_07_035: [If any error is encountered then the packet state will be marked as error and mqtt_codec_bytesReceived shall return a non-zero value.] */
                 codec_Data->currPacket = PACKET_TYPE_ERROR;
+                result = __LINE__;
             }
         }
     }
+    return result;
 }

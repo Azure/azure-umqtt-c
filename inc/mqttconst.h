@@ -46,7 +46,7 @@ typedef enum QOS_VALUE_TAG
 typedef struct APP_PAYLOAD_TAG
 {
     uint8_t* message;
-    size_t messageLength;
+    size_t length;
 } APP_PAYLOAD;
 
 typedef struct MQTT_CLIENT_OPTIONS_TAG
@@ -60,6 +60,7 @@ typedef struct MQTT_CLIENT_OPTIONS_TAG
     bool messageRetain;
     bool useCleanSession;
     QOS_VALUE qualityOfServiceValue;
+    bool log_trace;
 } MQTT_CLIENT_OPTIONS;
 
 typedef enum CONNECT_RETURN_CODE_TAG

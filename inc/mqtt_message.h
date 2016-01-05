@@ -16,7 +16,7 @@ extern "C" {
 typedef struct MQTT_MESSAGE_TAG* MQTT_MESSAGE_HANDLE;
 
 extern MQTT_MESSAGE_HANDLE mqttmessage_create(uint16_t packetId, const char* topicName, QOS_VALUE qosValue, const uint8_t* appMsg, size_t appMsgLength);
-extern void mqttmessage_destroyMessage(MQTT_MESSAGE_HANDLE handle);
+extern void mqttmessage_destroy(MQTT_MESSAGE_HANDLE handle);
 extern MQTT_MESSAGE_HANDLE mqttmessage_clone(MQTT_MESSAGE_HANDLE handle);
 
 extern uint16_t mqttmessage_getPacketId(MQTT_MESSAGE_HANDLE handle);

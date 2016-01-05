@@ -213,11 +213,11 @@ TEST_FUNCTION(mqttmessage_create_succeed)
     ASSERT_IS_NOT_NULL(handle);
     mocks.AssertActualAndExpectedCalls();
 
-    mqttmessage_destroyMessage(handle);
+    mqttmessage_destroy(handle);
 }
 
 /* Test_SRS_MQTTMESSAGE_07_006: [mqttmessage_destroyMessage shall free all resources associated with the MQTT_MESSAGE_HANDLE value] */
-TEST_FUNCTION(mqttmessage_destroyMessage_succeed)
+TEST_FUNCTION(mqttmessage_destroy_succeed)
 {
     // arrange
     mqtt_message_mocks mocks;
@@ -230,20 +230,20 @@ TEST_FUNCTION(mqttmessage_destroyMessage_succeed)
     EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
 
     // act
-    mqttmessage_destroyMessage(handle);
+    mqttmessage_destroy(handle);
 
     // assert
     mocks.AssertActualAndExpectedCalls();
 }
 
 /* Test_SRS_MQTTMESSAGE_07_005: [If the handle parameter is NULL then mqttmessage_destroyMessage shall do nothing] */
-TEST_FUNCTION(mqttmessage_destroyMessage_handle_NULL_fail)
+TEST_FUNCTION(mqttmessage_destroy_handle_NULL_fail)
 {
     // arrange
     mqtt_message_mocks mocks;
 
     // act
-    mqttmessage_destroyMessage(NULL);
+    mqttmessage_destroy(NULL);
 
     // assert
 }
@@ -269,8 +269,8 @@ TEST_FUNCTION(mqttmessage_clone_succeed)
 
     mocks.AssertActualAndExpectedCalls();
 
-    mqttmessage_destroyMessage(handle);
-    mqttmessage_destroyMessage(cloneHandle);
+    mqttmessage_destroy(handle);
+    mqttmessage_destroy(cloneHandle);
 }
 
 /* Test_SRS_MQTTMESSAGE_07_007: [If handle parameter is NULL then mqttmessage_clone shall return NULL.] */
@@ -318,7 +318,7 @@ TEST_FUNCTION(mqttmessage_getPacketId_succeed)
 
     mocks.AssertActualAndExpectedCalls();
 
-    mqttmessage_destroyMessage(handle);
+    mqttmessage_destroy(handle);
 }
 
 /* Test_SRS_MQTTMESSAGE_07_012: [If handle is NULL then mqttmessage_getTopicName shall return a NULL string.] */
@@ -351,7 +351,7 @@ TEST_FUNCTION(mqttmessage_getTopicName_succeed)
 
     mocks.AssertActualAndExpectedCalls();
 
-    mqttmessage_destroyMessage(handle);
+    mqttmessage_destroy(handle);
 }
 
 /* Test_SRS_MQTTMESSAGE_07_014: [If handle is NULL then mqttmessage_getQosType shall return the default DELIVER_AT_MOST_ONCE value.] */
@@ -384,7 +384,7 @@ TEST_FUNCTION(mqttmessage_getQosType_succeed)
 
     mocks.AssertActualAndExpectedCalls();
 
-    mqttmessage_destroyMessage(handle);
+    mqttmessage_destroy(handle);
 }
 
 /* Test_SRS_MQTTMESSAGE_07_016: [If handle is NULL then mqttmessage_getIsDuplicateMsg shall return false.] */
@@ -434,7 +434,7 @@ TEST_FUNCTION(mqttmessage_set_and_get_IsDuplicateMsg_succeed)
 
     mocks.AssertActualAndExpectedCalls();
 
-    mqttmessage_destroyMessage(handle);
+    mqttmessage_destroy(handle);
 }
 
 /* Test_SRS_MQTTMESSAGE_07_018: [If handle is NULL then mqttmessage_getIsRetained shall return false.] */
@@ -484,7 +484,7 @@ TEST_FUNCTION(mqttmessage_set_and_get_IsRetained_succeed)
 
     mocks.AssertActualAndExpectedCalls();
 
-    mqttmessage_destroyMessage(handle);
+    mqttmessage_destroy(handle);
 }
 
 /* Test_SRS_MQTTMESSAGE_07_020: [If handle is NULL or if msgLen is 0 then mqttmessage_applicationMsg shall return NULL.] */
@@ -518,7 +518,7 @@ TEST_FUNCTION(mqttmessage_getApplicationMsg_succeed)
 
     mocks.AssertActualAndExpectedCalls();
 
-    mqttmessage_destroyMessage(handle);
+    mqttmessage_destroy(handle);
 }
 
 END_TEST_SUITE(mqtt_message_unittests)

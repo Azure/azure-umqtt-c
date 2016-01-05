@@ -22,7 +22,7 @@ typedef struct MQTT_CLIENT_DATA_INSTANCE_TAG* MQTT_CLIENT_HANDLE;
 
 DEFINE_ENUM(MQTT_CLIENT_ACTION_RESULT, MQTT_CLIENT_ACTION_VALUES);
 
-typedef void(*ON_MQTT_OPERATION_CALLBACK)(MQTT_CLIENT_ACTION_RESULT actionResult, void* msgInfo, void* callbackCtx);
+typedef void(*ON_MQTT_OPERATION_CALLBACK)(MQTT_CLIENT_ACTION_RESULT actionResult, const void* msgInfo, void* callbackCtx);
 typedef void(*ON_MQTT_MESSAGE_RECV_CALLBACK)(MQTT_MESSAGE_HANDLE msgHandle, void* callbackCtx);
 
 extern MQTT_CLIENT_HANDLE mqtt_client_init(ON_MQTT_MESSAGE_RECV_CALLBACK msgRecv, ON_MQTT_OPERATION_CALLBACK opCallback, void* callbackCtx, LOGGER_LOG logger);
@@ -107,10 +107,18 @@ extern void mqtt_client_dowork(MQTT_CLIENT_HANDLE handle);
 
 ##ON_MQTT_OPERATION_CALLBACK
 ```
-typedef void(*ON_MQTT_OPERATION_CALLBACK)(MQTT_CLIENT_ACTION_RESULT actionResult, void* msgInfo, void* callbackCtx);
+typedef void(*ON_MQTT_OPERATION_CALLBACK)(MQTT_CLIENT_ACTION_RESULT actionResult, const void* msgInfo, void* callbackCtx);
 ```
+**SRS_MQTT_CLIENT_07_027: [**The callbackCtx parameter shall be an unmodified pointer that was passed to the mqtt_client_init function.**]**  
+**SRS_MQTT_CLIENT_07_028: [**If the actionResult parameter is of type CONNECT_ACK then the msgInfo value shall be a CONNECT_ACK* structure.**]**  
+**SRS_MQTT_CLIENT_07_029: [**If the actionResult parameter are of types PUBACK_TYPE, PUBREC_TYPE, PUBREL_TYPE or PUBCOMP_TYPE then the msgInfo value shall be a PUBLISH_ACK* structure.**]**  
+**SRS_MQTT_CLIENT_07_030: [**If the actionResult parameter is of type SUBACK_TYPE then the msgInfo value shall be a SUBSCRIBE_ACK* structure.**]**  
+**SRS_MQTT_CLIENT_07_031: [**If the actionResult parameter is of type UNSUBACK_TYPE then the msgInfo value shall be a UNSUBSCRIBE_ACK* structure.**]**  
+**SRS_MQTT_CLIENT_07_032: [**If the actionResult parameter is of type MQTT_CLIENT_ON_DISCONNECT or MQTT_CLIENT_ON_ERROR the the msgInfo value shall be NULL.**]**  
 
 ##ON_MQTT_MESSAGE_RECV_CALLBACK
 ```
 typedef void(*ON_MQTT_MESSAGE_RECV_CALLBACK)(MQTT_MESSAGE_HANDLE msgHandle, void* callbackCtx);
 ```
+**SRS_MQTT_CLIENT_07_033: [**The callbackCtx parameter shall be an unmodified pointer that was passed to the mqtt_client_init function.**]**  
+**SRS_MQTT_CLIENT_07_034: [**The msgHandle shall be the message that was sent from the MQTT endpoint to the client.**]**  

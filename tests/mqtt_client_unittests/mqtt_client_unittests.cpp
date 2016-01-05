@@ -128,13 +128,13 @@ public:
     MOCK_STATIC_METHOD_1(, void, mqtt_codec_destroy, MQTTCODEC_HANDLE, handle)
     MOCK_VOID_METHOD_END();
 
-    MOCK_STATIC_METHOD_3(, void, mqtt_codec_bytesReceived, void*, context, const unsigned char*, buffer, size_t, size)
-    MOCK_VOID_METHOD_END();
-
-    MOCK_STATIC_METHOD_4(, int, xio_open, XIO_HANDLE, handle, ON_BYTES_RECEIVED, on_bytes_received, ON_IO_STATE_CHANGED, on_io_state_changed, void*, callback_context)
+    MOCK_STATIC_METHOD_3(, int, mqtt_codec_bytesReceived, MQTTCODEC_HANDLE, handle, const void*, buffer, size_t, size)
     MOCK_METHOD_END(int, 0);
 
-    MOCK_STATIC_METHOD_1(, int, xio_close, XIO_HANDLE, ioHandle)
+    MOCK_STATIC_METHOD_5(, int, xio_open, XIO_HANDLE, handle, ON_IO_OPEN_COMPLETE, on_io_open_complete, ON_BYTES_RECEIVED, on_bytes_received, ON_IO_ERROR, on_io_error, void*, callback_context)
+    MOCK_METHOD_END(int, 0);
+
+    MOCK_STATIC_METHOD_3(, int, xio_close, XIO_HANDLE, ioHandle, ON_IO_CLOSE_COMPLETE, on_io_close_complete, void*, callback_context)
     MOCK_METHOD_END(int, 0);
 
     MOCK_STATIC_METHOD_1(, void, xio_dowork, XIO_HANDLE, ioHandle)
@@ -184,7 +184,7 @@ public:
     MOCK_STATIC_METHOD_5(, MQTT_MESSAGE_HANDLE, mqttmessage_create, uint16_t, packetId, const char*, topicName, QOS_VALUE, qosValue, const uint8_t*, appMsg, size_t, appLength)
     MOCK_METHOD_END(MQTT_MESSAGE_HANDLE, TEST_MESSAGE_HANDLE);
 
-    MOCK_STATIC_METHOD_1(, void, mqttmessage_destroyMessage, MQTT_MESSAGE_HANDLE, handle)
+    MOCK_STATIC_METHOD_1(, void, mqttmessage_destroy, MQTT_MESSAGE_HANDLE, handle)
     MOCK_VOID_METHOD_END();
 
     MOCK_STATIC_METHOD_1(, MQTT_MESSAGE_HANDLE, mqttmessage_clone, MQTT_MESSAGE_HANDLE, handle)
@@ -234,11 +234,11 @@ extern "C"
 
     DECLARE_GLOBAL_MOCK_METHOD_2(mqtt_client_mocks, , MQTTCODEC_HANDLE, mqtt_codec_create, ON_PACKET_COMPLETE_CALLBACK, packetComplete, void*, callContext);
     DECLARE_GLOBAL_MOCK_METHOD_1(mqtt_client_mocks, , void, mqtt_codec_destroy, MQTTCODEC_HANDLE, handle);
-    DECLARE_GLOBAL_MOCK_METHOD_3(mqtt_client_mocks, , void, mqtt_codec_bytesReceived, void*, context, const unsigned char*, buffer, size_t, size);
+    DECLARE_GLOBAL_MOCK_METHOD_3(mqtt_client_mocks, , int, mqtt_codec_bytesReceived, MQTTCODEC_HANDLE, handle, const unsigned char*, buffer, size_t, size);
 
-    DECLARE_GLOBAL_MOCK_METHOD_4(mqtt_client_mocks, , int, xio_open, XIO_HANDLE, handle, ON_BYTES_RECEIVED, on_bytes_received, ON_IO_STATE_CHANGED, on_io_state_changed, void*, callback_context);
+    DECLARE_GLOBAL_MOCK_METHOD_5(mqtt_client_mocks, , int, xio_open, XIO_HANDLE, handle, ON_IO_OPEN_COMPLETE, on_io_open_complete, ON_BYTES_RECEIVED, on_bytes_received, ON_IO_ERROR, on_io_error, void*, callback_context);
     DECLARE_GLOBAL_MOCK_METHOD_1(mqtt_client_mocks, , void, xio_dowork, XIO_HANDLE, ioHandle);
-    DECLARE_GLOBAL_MOCK_METHOD_1(mqtt_client_mocks, , int, xio_close, XIO_HANDLE, ioHandle);
+    DECLARE_GLOBAL_MOCK_METHOD_3(mqtt_client_mocks, , int, xio_close, XIO_HANDLE, ioHandle, ON_IO_CLOSE_COMPLETE, on_io_close_complete, void*, callback_context);
     DECLARE_GLOBAL_MOCK_METHOD_5(mqtt_client_mocks, , int, xio_send, XIO_HANDLE, handle, const void*, buffer, size_t, size, ON_SEND_COMPLETE, on_send_complete, void*, callback_context);
 
     DECLARE_GLOBAL_MOCK_METHOD_0(mqtt_client_mocks, , int, platform_init);
@@ -254,7 +254,7 @@ extern "C"
     DECLARE_GLOBAL_MOCK_METHOD_1(mqtt_client_mocks, , void, BUFFER_delete, BUFFER_HANDLE, s);
 
     DECLARE_GLOBAL_MOCK_METHOD_5(mqtt_client_mocks, , MQTT_MESSAGE_HANDLE, mqttmessage_create, uint16_t, packetId, const char*, topicName, QOS_VALUE, qosValue, const uint8_t*, appMsg, size_t, appLength);
-    DECLARE_GLOBAL_MOCK_METHOD_1(mqtt_client_mocks, , void, mqttmessage_destroyMessage, MQTT_MESSAGE_HANDLE, handle);
+    DECLARE_GLOBAL_MOCK_METHOD_1(mqtt_client_mocks, , void, mqttmessage_destroy, MQTT_MESSAGE_HANDLE, handle);
     DECLARE_GLOBAL_MOCK_METHOD_1(mqtt_client_mocks, , MQTT_MESSAGE_HANDLE, mqttmessage_clone, MQTT_MESSAGE_HANDLE, handle);
     DECLARE_GLOBAL_MOCK_METHOD_1(mqtt_client_mocks, , uint16_t, mqttmessage_getPacketId, MQTT_MESSAGE_HANDLE, handle);
     DECLARE_GLOBAL_MOCK_METHOD_1(mqtt_client_mocks, , const char*, mqttmessage_getTopicName, MQTT_MESSAGE_HANDLE, handle);
@@ -318,11 +318,81 @@ static void TestRecvCallback(MQTT_MESSAGE_HANDLE msgHandle, void* context)
     g_msgRecvCallbackInvoked = true;
 }
 
-static void TestOpCallback(MQTT_CLIENT_EVENT_RESULT actionResult, void* msgInfo, void* context)
+static void TestOpCallback(MQTT_CLIENT_HANDLE handle, MQTT_CLIENT_EVENT_RESULT actionResult, const void* msgInfo, void* context)
 {
-    (void)actionResult;
-    (void)msgInfo;
-    (void)context;
+    if (context != NULL && msgInfo != NULL)
+    {
+        switch (actionResult)
+        {
+            case MQTT_CLIENT_ON_CONNACK:
+            {
+                const CONNECT_ACK* connack = (CONNECT_ACK*)msgInfo;
+                TEST_COMPLETE_DATA_INSTANCE* testData = (TEST_COMPLETE_DATA_INSTANCE*)context;
+                CONNECT_ACK* validate = (CONNECT_ACK*)testData->msgInfo;
+                if (connack->isSessionPresent == validate->isSessionPresent &&
+                    connack->returnCode == validate->returnCode)
+                {
+                    g_operationCallbackInvoked = true;
+                }
+                break;
+            }
+            case MQTT_CLIENT_ON_PUBLISH_ACK:
+            case MQTT_CLIENT_ON_PUBLISH_RECV:
+            case MQTT_CLIENT_ON_PUBLISH_REL:
+            case MQTT_CLIENT_ON_PUBLISH_COMP:
+            {
+                const PUBLISH_ACK* puback = (PUBLISH_ACK*)msgInfo;
+                TEST_COMPLETE_DATA_INSTANCE* testData = (TEST_COMPLETE_DATA_INSTANCE*)context;
+                PUBLISH_ACK* validate = (PUBLISH_ACK*)testData->msgInfo;
+                if (testData->actionResult == actionResult && puback->packetId == validate->packetId)
+                {
+                    g_operationCallbackInvoked = true;
+                }
+                break;
+            }
+            case MQTT_CLIENT_ON_SUBSCRIBE_ACK:
+            {
+                const SUBSCRIBE_ACK* suback = (SUBSCRIBE_ACK*)msgInfo;
+                TEST_COMPLETE_DATA_INSTANCE* testData = (TEST_COMPLETE_DATA_INSTANCE*)context;
+                SUBSCRIBE_ACK* validate = (SUBSCRIBE_ACK*)testData->msgInfo;
+                if (testData->actionResult == actionResult && validate->packetId == suback->packetId && validate->qosCount == suback->qosCount)
+                {
+                    for (size_t index = 0; index < suback->qosCount; index++)
+                    {
+                        if (suback->qosReturn[index] == validate->qosReturn[index])
+                        {
+                            g_operationCallbackInvoked = true;
+                        }
+                        else
+                        {
+                            g_operationCallbackInvoked = false;
+                            break;
+                        }
+                    }
+                }
+                break;
+            }
+            case MQTT_CLIENT_ON_UNSUBSCRIBE_ACK:
+            {
+                const UNSUBSCRIBE_ACK* suback = (UNSUBSCRIBE_ACK*)msgInfo;
+                TEST_COMPLETE_DATA_INSTANCE* testData = (TEST_COMPLETE_DATA_INSTANCE*)context;
+                UNSUBSCRIBE_ACK* validate = (UNSUBSCRIBE_ACK*)testData->msgInfo;
+                if (testData->actionResult == actionResult && validate->packetId == suback->packetId)
+                {
+                    g_operationCallbackInvoked = true;
+                }
+                break;
+            }
+            case MQTT_CLIENT_ON_DISCONNECT:
+            case MQTT_CLIENT_ON_ERROR:
+            {
+                if (msgInfo == NULL)
+                {
+                    g_operationCallbackInvoked = true;
+                }
+            }
+        }
+    }
 }
 
 static void SetupMqttLibOptions(MQTT_CLIENT_OPTIONS* options, const char* clientId,
@@ -541,9 +611,10 @@ TEST_FUNCTION(mqtt_client_connect_xio_open_fails)
     MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
     SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, NULL, NULL, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
 
-    STRICT_EXPECTED_CALL(mocks, xio_open(TEST_IO_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG, mqttHandle))
+    STRICT_EXPECTED_CALL(mocks, xio_open(TEST_IO_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, mqttHandle))
         .IgnoreArgument(2)
         .IgnoreArgument(3)
+        .IgnoreArgument(4)
         .SetReturn(__LINE__);
 
     // act
@@ -570,9 +641,10 @@ TEST_FUNCTION(mqtt_client_connect_mqtt_codec_connect_fails)
     MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
     SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, NULL, NULL, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
 
-    STRICT_EXPECTED_CALL(mocks, xio_open(TEST_IO_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG, mqttHandle))
+    STRICT_EXPECTED_CALL(mocks, xio_open(TEST_IO_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, mqttHandle))
         .IgnoreArgument(2)
-        .IgnoreArgument(3);
+        .IgnoreArgument(3)
+        .IgnoreArgument(4);
     STRICT_EXPECTED_CALL(mocks, mqtt_codec_connect(&mqttOptions)).SetReturn((BUFFER_HANDLE)NULL);
 
     // act
@@ -599,9 +671,10 @@ TEST_FUNCTION(mqtt_client_connect_succeeds)
     MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
     SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, NULL, NULL, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
 
-    STRICT_EXPECTED_CALL(mocks, xio_open(TEST_IO_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG, mqttHandle))
+    STRICT_EXPECTED_CALL(mocks, xio_open(TEST_IO_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, mqttHandle))
         .IgnoreArgument(2)
-        .IgnoreArgument(3);
+        .IgnoreArgument(3)
+        .IgnoreArgument(4);
     EXPECTED_CALL(mocks, xio_send(TEST_IO_HANDLE, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(mocks, tickcounter_get_current_ms(TEST_COUNTER_HANDLE, IGNORED_PTR_ARG)).IgnoreArgument(2);
     STRICT_EXPECTED_CALL(mocks, mqtt_codec_connect(&mqttOptions));
@@ -1035,4 +1108,450 @@ TEST_FUNCTION(mqtt_client_dowork_no_ping_succeeds)
     // cleanup
     mqtt_client_deinit(mqttHandle);
 }
+
+/*Test_SRS_MQTT_CLIENT_07_027: [The callbackCtx parameter shall be an unmodified pointer that was passed to the mqtt_client_init function.]*/
+TEST_FUNCTION(mqtt_client_recvCompleteCallback_context_NULL_fails)
+{
+    // arrange
+    mqtt_client_mocks mocks;
+    unsigned char CONNACK_RESP[] = { 0x1, 0x0 };
+    size_t length = sizeof(CONNACK_RESP) / sizeof(CONNACK_RESP[0]);
+    TEST_COMPLETE_DATA_INSTANCE testData;
+
+
+    CONNECT_ACK connack = { 0 };
+    connack.isSessionPresent = true;
+    connack.returnCode = CONNECTION_ACCEPTED;
+    testData.actionResult = MQTT_CLIENT_ON_CONNACK;
+    testData.msgInfo = &connack;
+
+    BUFFER_HANDLE connack_handle = BASEIMPLEMENTATION::BUFFER_create(CONNACK_RESP, length);
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, (void*)&testData, PrintLogFunction);
+    mocks.ResetAllCalls();
+
+    // act
+    g_packetComplete(NULL, CONNACK_TYPE, 0, connack_handle);
+
+    // assert
+    ASSERT_IS_FALSE(g_operationCallbackInvoked);
+    mocks.AssertActualAndExpectedCalls();
+
+    // cleanup
+    BASEIMPLEMENTATION::BUFFER_delete(connack_handle);
+}
+
+/*Test_SRS_MQTT_CLIENT_07_027: [The callbackCtx parameter shall be an unmodified pointer that was passed to the mqtt_client_init function.]*/
+TEST_FUNCTION(mqtt_client_recvCompleteCallback_BUFFER_HANDLE_NULL_fails)
+{
+    // arrange
+    mqtt_client_mocks mocks;
+
+    unsigned char CONNACK_RESP[] = { 0x1, 0x0 };
+    size_t length = sizeof(CONNACK_RESP) / sizeof(CONNACK_RESP[0]);
+    TEST_COMPLETE_DATA_INSTANCE testData;
+
+    CONNECT_ACK connack = { 0 };
+    connack.isSessionPresent = true;
+    connack.returnCode = CONNECTION_ACCEPTED;
+    testData.actionResult = MQTT_CLIENT_ON_CONNACK;
+    testData.msgInfo = &connack;
+
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, (void*)&testData, PrintLogFunction);
+    mocks.ResetAllCalls();
+
+    // act
+    g_packetComplete(mqttHandle, CONNACK_TYPE, 0, NULL);
+
+    // assert
+    ASSERT_IS_FALSE(g_operationCallbackInvoked);
+    mocks.AssertActualAndExpectedCalls();
+
+    // cleanup
+    mqtt_client_deinit(mqttHandle);
+}
+
+/*Test_SRS_MQTT_CLIENT_07_028: [If the actionResult parameter is of type CONNECT_ACK then the msgInfo value shall be a CONNECT_ACK structure.]*/
+TEST_FUNCTION(mqtt_client_recvCompleteCallback_CONNACK_succeeds)
+{
+    // arrange
+    mqtt_client_mocks mocks;
+
+    unsigned char CONNACK_RESP[] = { 0x1, 0x0 };
+    size_t length = sizeof(CONNACK_RESP) / sizeof(CONNACK_RESP[0]);
+    TEST_COMPLETE_DATA_INSTANCE testData;
+
+    CONNECT_ACK connack = { 0 };
+    connack.isSessionPresent = true;
+    connack.returnCode = CONNECTION_ACCEPTED;
+    testData.actionResult = MQTT_CLIENT_ON_CONNACK;
+    testData.msgInfo = &connack;
+        
+    BUFFER_HANDLE connack_handle = BASEIMPLEMENTATION::BUFFER_create(CONNACK_RESP, length);
+
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, (void*)&testData, PrintLogFunction);
+    mocks.ResetAllCalls();
+
+    EXPECTED_CALL(mocks, BUFFER_u_char(IGNORED_PTR_ARG));
+    EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG));
+
+    // act
+    g_packetComplete(mqttHandle, CONNACK_TYPE, 0, connack_handle);
+
+    // assert
+    ASSERT_IS_TRUE(g_operationCallbackInvoked);
+    mocks.AssertActualAndExpectedCalls();
+
+    // cleanup
+    BASEIMPLEMENTATION::BUFFER_delete(connack_handle);
+    mqtt_client_deinit(mqttHandle);
+}
+
+/*Test_SRS_MQTT_CLIENT_07_029: [If the actionResult parameter are of types PUBACK_TYPE, PUBREC_TYPE, PUBREL_TYPE or PUBCOMP_TYPE then the msgInfo value shall be a PUBLISH_ACK structure.]*/
+TEST_FUNCTION(mqtt_client_recvCompleteCallback_PUBLISH_EXACTLY_ONCE_succeeds)
+{
+    // arrange
+    mqtt_client_mocks mocks;
+
+    unsigned char PUBLISH_RESP[] = { 0x00, 0x0a, 0x74, 0x6f, 0x70, 0x69, 0x63, 0x20, 0x4e, 0x61, 0x6d, 0x65, 0x12, 0x34, \
+        0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x20, 0x74, 0x6f, 0x20, 0x73, 0x65, 0x6e, 0x64 };
+    size_t length = sizeof(PUBLISH_RESP) / sizeof(PUBLISH_RESP[0]);
+
+    uint8_t flag = 0x0d;
+
+    BUFFER_HANDLE publish_handle = BASEIMPLEMENTATION::BUFFER_create(PUBLISH_RESP, length);
+
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, (void*)&PUBLISH_RESP, PrintLogFunction);
+    mocks.ResetAllCalls();
+
+    EXPECTED_CALL(mocks, BUFFER_u_char(IGNORED_PTR_ARG)).ExpectedTimesExactly(2);
+    EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG)).ExpectedTimesExactly(2);
+    EXPECTED_CALL(mocks, BUFFER_delete(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(mocks, mqttmessage_create(TEST_PACKET_ID, IGNORED_PTR_ARG, DELIVER_EXACTLY_ONCE, IGNORED_PTR_ARG, TEST_APP_PAYLOAD.length))
+        .IgnoreArgument(2)
+        .IgnoreArgument(4);
+    STRICT_EXPECTED_CALL(mocks, mqttmessage_setIsDuplicateMsg(TEST_MESSAGE_HANDLE, true));
+    STRICT_EXPECTED_CALL(mocks, mqttmessage_setIsRetained(TEST_MESSAGE_HANDLE, true));
+    STRICT_EXPECTED_CALL(mocks, mqtt_codec_publishReceived(TEST_PACKET_ID));
+    EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
+    EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(mocks, mqttmessage_destroy(TEST_MESSAGE_HANDLE));
+    EXPECTED_CALL(mocks, xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(mocks, tickcounter_get_current_ms(TEST_COUNTER_HANDLE, IGNORED_PTR_ARG)).IgnoreArgument(2);
+
+    // act
+    g_packetComplete(mqttHandle, PUBLISH_TYPE, flag, publish_handle);
+
+    // assert
+    ASSERT_IS_TRUE(g_msgRecvCallbackInvoked);
+    mocks.AssertActualAndExpectedCalls();
+
+    // cleanup
+    BASEIMPLEMENTATION::BUFFER_delete(publish_handle);
+    mqtt_client_deinit(mqttHandle);
+}
+
+/*Test_SRS_MQTT_CLIENT_07_029: [If the actionResult parameter are of types PUBACK_TYPE, PUBREC_TYPE, PUBREL_TYPE or PUBCOMP_TYPE then the msgInfo value shall be a PUBLISH_ACK structure.]*/
+TEST_FUNCTION(mqtt_client_recvCompleteCallback_PUBLISH_AT_LEAST_ONCE_succeeds)
+{
+    // arrange
+    mqtt_client_mocks mocks;
+
+    unsigned char PUBLISH_RESP[] = { 0x00, 0x0a, 0x74, 0x6f, 0x70, 0x69, 0x63, 0x20, 0x4e, 0x61, 0x6d, 0x65, 0x12, 0x34, \
+        0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x20, 0x74, 0x6f, 0x20, 0x73, 0x65, 0x6e, 0x64 };
+    size_t length = sizeof(PUBLISH_RESP) / sizeof(PUBLISH_RESP[0]);
+
+    uint8_t flag = 0x0a;
+
+    BUFFER_HANDLE publish_handle = BASEIMPLEMENTATION::BUFFER_create(PUBLISH_RESP, length);
+
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, (void*)&PUBLISH_RESP, PrintLogFunction);
+    mocks.ResetAllCalls();
+
+    EXPECTED_CALL(mocks, BUFFER_u_char(IGNORED_PTR_ARG)).ExpectedTimesExactly(2);
+    EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG)).ExpectedTimesExactly(2);
+    EXPECTED_CALL(mocks, BUFFER_delete(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(mocks, mqttmessage_create(TEST_PACKET_ID, IGNORED_PTR_ARG, DELIVER_AT_LEAST_ONCE, IGNORED_PTR_ARG, TEST_APP_PAYLOAD.length))
+        .IgnoreArgument(2)
+        .IgnoreArgument(4);
+    STRICT_EXPECTED_CALL(mocks, mqttmessage_setIsDuplicateMsg(TEST_MESSAGE_HANDLE, true));
+    STRICT_EXPECTED_CALL(mocks, mqttmessage_setIsRetained(TEST_MESSAGE_HANDLE, false));
+    STRICT_EXPECTED_CALL(mocks, mqtt_codec_publishAck(TEST_PACKET_ID));
+    EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
+    EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(mocks, mqttmessage_destroy(TEST_MESSAGE_HANDLE));
+    EXPECTED_CALL(mocks, xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(mocks, tickcounter_get_current_ms(TEST_COUNTER_HANDLE, IGNORED_PTR_ARG)).IgnoreArgument(2);
+
+    // act
+    g_packetComplete(mqttHandle, PUBLISH_TYPE, flag, publish_handle);
+
+    // assert
+    ASSERT_IS_TRUE(g_msgRecvCallbackInvoked);
+    mocks.AssertActualAndExpectedCalls();
+
+    // cleanup
+    BASEIMPLEMENTATION::BUFFER_delete(publish_handle);
+    mqtt_client_deinit(mqttHandle);
+}
+
+/*Test_SRS_MQTT_CLIENT_07_029: [If the actionResult parameter are of types PUBACK_TYPE, PUBREC_TYPE, PUBREL_TYPE or PUBCOMP_TYPE then the msgInfo value shall be a PUBLISH_ACK structure.]*/
+TEST_FUNCTION(mqtt_client_recvCompleteCallback_PUBLISH_AT_MOST_ONCE_succeeds)
+{
+    // arrange
+    mqtt_client_mocks mocks;
+
+    const unsigned char PUBLISH_VALUE[] = { 0x00, 0x04, 0x6d, 0x73, 0x67, 0x41, 0x54, 0x68, 0x69, 0x73, 0x20, 0x69, 0x73, 0x20, 0x74, 0x68, 0x65, 0x20, 0x61, 0x70, 0x70, 0x20, 0x6d, 0x73, 0x67, 0x20, 0x41, 0x2e };
+    size_t length = sizeof(PUBLISH_VALUE) / sizeof(PUBLISH_VALUE[0]);
+
+    uint8_t flag = 0x00;
+
+    BUFFER_HANDLE publish_handle = BASEIMPLEMENTATION::BUFFER_create(PUBLISH_VALUE, length);
+
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, (void*)&PUBLISH_VALUE, PrintLogFunction);
+    mocks.ResetAllCalls();
+
+    EXPECTED_CALL(mocks, BUFFER_u_char(IGNORED_PTR_ARG));
+    EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(mocks, mqttmessage_create(0, IGNORED_PTR_ARG, DELIVER_AT_MOST_ONCE, IGNORED_PTR_ARG, 22))
+        .IgnoreArgument(2)
+        .IgnoreArgument(4);
+    STRICT_EXPECTED_CALL(mocks, mqttmessage_setIsDuplicateMsg(TEST_MESSAGE_HANDLE, false));
+    STRICT_EXPECTED_CALL(mocks, mqttmessage_setIsRetained(TEST_MESSAGE_HANDLE, false));
+    EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
+    EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(mocks, mqttmessage_destroy(TEST_MESSAGE_HANDLE));
+
+    // act
+    g_packetComplete(mqttHandle, PUBLISH_TYPE, flag, publish_handle);
+
+    // assert
+    ASSERT_IS_TRUE(g_msgRecvCallbackInvoked);
+    mocks.AssertActualAndExpectedCalls();
+
+    // cleanup
+    BASEIMPLEMENTATION::BUFFER_delete(publish_handle);
+    mqtt_client_deinit(mqttHandle);
+}
+
+/*Test_SRS_MQTT_CLIENT_07_029: [If the actionResult parameter are of types PUBACK_TYPE, PUBREC_TYPE, PUBREL_TYPE or PUBCOMP_TYPE then the msgInfo value shall be a PUBLISH_ACK structure.]*/
+TEST_FUNCTION(mqtt_client_recvCompleteCallback_PUBLISH_ACK_succeeds)
+{
+    // arrange
+    mqtt_client_mocks mocks;
+
+    unsigned char PUBLISH_ACK_RESP[] = { 0x12, 0x34 };
+    size_t length = sizeof(PUBLISH_ACK_RESP) / sizeof(PUBLISH_ACK_RESP[0]);
+    TEST_COMPLETE_DATA_INSTANCE testData;
+    PUBLISH_ACK puback = { 0 };
+    puback.packetId = 0x1234;
+
+    testData.actionResult = MQTT_CLIENT_ON_PUBLISH_ACK;
+    testData.msgInfo = &puback;
+
+    BUFFER_HANDLE packet_handle = BASEIMPLEMENTATION::BUFFER_create(PUBLISH_ACK_RESP, length);
+
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, (void*)&testData, PrintLogFunction);
+    mocks.ResetAllCalls();
+
+    EXPECTED_CALL(mocks, BUFFER_u_char(IGNORED_PTR_ARG));
+    EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG));
+
+    // act
+    g_packetComplete(mqttHandle, PUBACK_TYPE, 0, packet_handle);
+
+    // assert
+    ASSERT_IS_TRUE(g_operationCallbackInvoked);
+    mocks.AssertActualAndExpectedCalls();
+
+    // cleanup
+    BASEIMPLEMENTATION::BUFFER_delete(packet_handle);
+    mqtt_client_deinit(mqttHandle);
+}
+
+/*Test_SRS_MQTT_CLIENT_07_029: [If the actionResult parameter are of types PUBACK_TYPE, PUBREC_TYPE, PUBREL_TYPE or PUBCOMP_TYPE then the msgInfo value shall be a PUBLISH_ACK structure.]*/
+TEST_FUNCTION(mqtt_client_recvCompleteCallback_PUBLISH_RECIEVE_succeeds)
+{
+    // arrange
+    mqtt_client_mocks mocks;
+
+    unsigned char PUBLISH_ACK_RESP[] = { 0x12, 0x34 };
+    size_t length = sizeof(PUBLISH_ACK_RESP) / sizeof(PUBLISH_ACK_RESP[0]);
+    TEST_COMPLETE_DATA_INSTANCE testData;
+    PUBLISH_ACK puback = { 0 };
+    puback.packetId = 0x1234;
+
+    testData.actionResult = MQTT_CLIENT_ON_PUBLISH_RECV;
+    testData.msgInfo = &puback;
+
+    BUFFER_HANDLE packet_handle = BASEIMPLEMENTATION::BUFFER_create(PUBLISH_ACK_RESP, length);
+
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, (void*)&testData, PrintLogFunction);
+    mocks.ResetAllCalls();
+
+    EXPECTED_CALL(mocks, mqtt_codec_publishRelease(IGNORED_NUM_ARG));
+    EXPECTED_CALL(mocks, BUFFER_u_char(IGNORED_PTR_ARG)).ExpectedTimesExactly(2);
+    EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG)).ExpectedTimesExactly(2);
+    EXPECTED_CALL(mocks, xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(mocks, tickcounter_get_current_ms(TEST_COUNTER_HANDLE, IGNORED_PTR_ARG)).IgnoreArgument(2);
+    EXPECTED_CALL(mocks, BUFFER_delete(IGNORED_PTR_ARG));
+
+    // act
+    g_packetComplete(mqttHandle, PUBREC_TYPE, 0, packet_handle);
+
+    // assert
+    ASSERT_IS_TRUE(g_operationCallbackInvoked);
+    mocks.AssertActualAndExpectedCalls();
+
+    // cleanup
+    BASEIMPLEMENTATION::BUFFER_delete(packet_handle);
+    mqtt_client_deinit(mqttHandle);
+}
+
+/*Test_SRS_MQTT_CLIENT_07_029: [If the actionResult parameter are of types PUBACK_TYPE, PUBREC_TYPE, PUBREL_TYPE or PUBCOMP_TYPE then the msgInfo value shall be a PUBLISH_ACK structure.]*/
+TEST_FUNCTION(mqtt_client_recvCompleteCallback_PUBLISH_RELEASE_succeeds)
+{
+    // arrange
+    mqtt_client_mocks mocks;
+
+    unsigned char PUBLISH_ACK_RESP[] = { 0x12, 0x34 };
+    size_t length = sizeof(PUBLISH_ACK_RESP) / sizeof(PUBLISH_ACK_RESP[0]);
+    TEST_COMPLETE_DATA_INSTANCE testData;
+    PUBLISH_ACK puback = { 0 };
+    puback.packetId = 0x1234;
+
+    testData.actionResult = MQTT_CLIENT_ON_PUBLISH_REL;
+    testData.msgInfo = &puback;
+
+    BUFFER_HANDLE packet_handle = BASEIMPLEMENTATION::BUFFER_create(PUBLISH_ACK_RESP, length);
+
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, (void*)&testData, PrintLogFunction);
+    mocks.ResetAllCalls();
+
+    EXPECTED_CALL(mocks, mqtt_codec_publishComplete(IGNORED_NUM_ARG));
+    EXPECTED_CALL(mocks, BUFFER_u_char(IGNORED_PTR_ARG)).ExpectedTimesExactly(2);
+    EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG)).ExpectedTimesExactly(2);
+    EXPECTED_CALL(mocks, xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(mocks, tickcounter_get_current_ms(TEST_COUNTER_HANDLE, IGNORED_PTR_ARG)).IgnoreArgument(2);
+    EXPECTED_CALL(mocks, BUFFER_delete(IGNORED_PTR_ARG));
+
+    // act
+    g_packetComplete(mqttHandle, PUBREL_TYPE, 0, packet_handle);
+
+    // assert
+    ASSERT_IS_TRUE(g_operationCallbackInvoked);
+    mocks.AssertActualAndExpectedCalls();
+
+    // cleanup
+    BASEIMPLEMENTATION::BUFFER_delete(packet_handle);
+    mqtt_client_deinit(mqttHandle);
+}
+
+/*Test_SRS_MQTT_CLIENT_07_029: [If the actionResult parameter are of types PUBACK_TYPE, PUBREC_TYPE, PUBREL_TYPE or PUBCOMP_TYPE then the msgInfo value shall be a PUBLISH_ACK structure.]*/
+TEST_FUNCTION(mqtt_client_recvCompleteCallback_PUBLISH_COMPLETE_succeeds)
+{
+    // arrange
+    mqtt_client_mocks mocks;
+
+    unsigned char PUBLISH_ACK_RESP[] = { 0x12, 0x34 };
+    size_t length = sizeof(PUBLISH_ACK_RESP) / sizeof(PUBLISH_ACK_RESP[0]);
+    TEST_COMPLETE_DATA_INSTANCE testData;
+    PUBLISH_ACK puback = { 0 };
+    puback.packetId = 0x1234;
+
+    testData.actionResult = MQTT_CLIENT_ON_PUBLISH_COMP;
+    testData.msgInfo = &puback;
+
+    BUFFER_HANDLE packet_handle = BASEIMPLEMENTATION::BUFFER_create(PUBLISH_ACK_RESP, length);
+
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, (void*)&testData, PrintLogFunction);
+    mocks.ResetAllCalls();
+
+    EXPECTED_CALL(mocks, BUFFER_u_char(IGNORED_PTR_ARG));
+    EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG));
+
+    // act
+    g_packetComplete(mqttHandle, PUBCOMP_TYPE, 0, packet_handle);
+
+    // assert
+    ASSERT_IS_TRUE(g_operationCallbackInvoked);
+    mocks.AssertActualAndExpectedCalls();
+
+    // cleanup
+    BASEIMPLEMENTATION::BUFFER_delete(packet_handle);
+    mqtt_client_deinit(mqttHandle);
+}
+
+/*Test_SRS_MQTT_CLIENT_07_031: [If the actionResult parameter is of type UNSUBACK_TYPE then the msgInfo value shall be a UNSUBSCRIBE_ACK structure.]*/
+TEST_FUNCTION(mqtt_client_recvCompleteCallback_SUBACK_succeeds)
+{
+    // arrange
+    mqtt_client_mocks mocks;
+
+    const size_t PACKET_RETCODE_COUNT = 4;
+    unsigned char SUBSCRIBE_ACK_RESP[] = { 0x90, 0x06, 0x12, 0x34, 0x00, 0x02, 0x01, 0x80 };
+    size_t length = sizeof(SUBSCRIBE_ACK_RESP) / sizeof(SUBSCRIBE_ACK_RESP[0]);
+    TEST_COMPLETE_DATA_INSTANCE testData;
+    SUBSCRIBE_ACK suback = { 0 };
+    suback.packetId = 0x1234;
+    suback.qosReturn = (QOS_VALUE*)malloc(sizeof(QOS_VALUE)*PACKET_RETCODE_COUNT);
+    suback.qosCount = PACKET_RETCODE_COUNT;
+    suback.qosReturn[0] = DELIVER_AT_MOST_ONCE;
+    suback.qosReturn[1] = DELIVER_EXACTLY_ONCE;
+    suback.qosReturn[2] = DELIVER_AT_LEAST_ONCE;
+    suback.qosReturn[3] = DELIVER_FAILURE;
+
+    testData.actionResult = MQTT_CLIENT_ON_SUBSCRIBE_ACK;
+    testData.msgInfo = &suback;
+
+    BUFFER_HANDLE packet_handle = BASEIMPLEMENTATION::BUFFER_create(SUBSCRIBE_ACK_RESP, length);
+
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, (void*)&testData, PrintLogFunction);
+    mocks.ResetAllCalls();
+
+    EXPECTED_CALL(mocks, BUFFER_u_char(IGNORED_PTR_ARG));
+    EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG));
+    EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
+    EXPECTED_CALL(mocks, gballoc_free(IGNORED_PTR_ARG));
+
+    // act
+    g_packetComplete(mqttHandle, SUBACK_TYPE, 0, packet_handle);
+
+    // assert
+    ASSERT_IS_TRUE(g_operationCallbackInvoked);
+    mocks.AssertActualAndExpectedCalls();
+
+    // cleanup
+    free(suback.qosReturn);
+    BASEIMPLEMENTATION::BUFFER_delete(packet_handle);
+    mqtt_client_deinit(mqttHandle);
+}
+
+TEST_FUNCTION(mqtt_client_recvCompleteCallback_PINGRESP_succeeds)
+{
+    // arrange
+    mqtt_client_mocks mocks;
+
+    unsigned char PINGRESP_ACK_RESP[] = { 0x0d, 0x00 };
+    size_t length = sizeof(PINGRESP_ACK_RESP) / sizeof(PINGRESP_ACK_RESP[0]);
+
+    BUFFER_HANDLE packet_handle = BASEIMPLEMENTATION::BUFFER_create(PINGRESP_ACK_RESP, length);
+
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, PrintLogFunction);
+    mocks.ResetAllCalls();
+
+    EXPECTED_CALL(mocks, BUFFER_u_char(IGNORED_PTR_ARG));
+    EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG));
+
+    // act
+    g_packetComplete(mqttHandle, PINGRESP_TYPE, 0, packet_handle);
+
+    // assert
+    ASSERT_IS_FALSE(g_operationCallbackInvoked);
+    mocks.AssertActualAndExpectedCalls();
+
+    // cleanup
+    BASEIMPLEMENTATION::BUFFER_delete(packet_handle);
+    mqtt_client_deinit(mqttHandle);
+}
+
 END_TEST_SUITE(mqtt_client_unittests)

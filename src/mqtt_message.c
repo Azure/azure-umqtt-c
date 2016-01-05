@@ -38,7 +38,7 @@ MQTT_MESSAGE_HANDLE mqttmessage_create(uint16_t packetId, const char* topicName,
             else
             {
                 /* Codes_SRS_MQTTMESSAGE_07_002: [mqttmessage_create shall allocate and copy the topicName and appMsg parameters.] */
-                result->appPayload.messageLength = appMsgLength;
+                result->appPayload.length = appMsgLength;
                 result->appPayload.message = malloc(appMsgLength);
                 if (result->appPayload.message == NULL)
                 {
@@ -62,7 +62,7 @@ MQTT_MESSAGE_HANDLE mqttmessage_create(uint16_t packetId, const char* topicName,
     return result;
 }
 
-void mqttmessage_destroyMessage(MQTT_MESSAGE_HANDLE handle)
+void mqttmessage_destroy(MQTT_MESSAGE_HANDLE handle)
 {
     MQTT_MESSAGE* msgInfo = (MQTT_MESSAGE*)handle;
     /* Codes_SRS_MQTTMESSAGE_07_005: [If the handle parameter is NULL then mqttmessage_destroyMessage shall do nothing] */
@@ -87,7 +87,7 @@ MQTT_MESSAGE_HANDLE mqttmessage_clone(MQTT_MESSAGE_HANDLE handle)
     {
         /* Codes_SRS_MQTTMESSAGE_07_008: [mqttmessage_clone shall create a new MQTT_MESSAGE_HANDLE with data content identical of the handle value.] */
         MQTT_MESSAGE* mqtt_message = (MQTT_MESSAGE*)handle;
-        result = mqttmessage_create(mqtt_message->packetId, mqtt_message->topicName, mqtt_message->qosInfo, mqtt_message->appPayload.message, mqtt_message->appPayload.messageLength);
+        result = mqttmessage_create(mqtt_message->packetId, mqtt_message->topicName, mqtt_message->qosInfo, mqtt_message->appPayload.message, mqtt_message->appPayload.length);
         if (result != NULL)
         {
             (void)mqttmessage_setIsDuplicateMsg(result, mqtt_message->isDuplicateMsg);

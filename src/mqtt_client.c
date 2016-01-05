@@ -28,10 +28,9 @@ typedef struct MQTT_CLIENT_TAG
     ON_MQTT_MESSAGE_RECV_CALLBACK fnMessageRecv;
     void* ctx;
     QOS_VALUE qosValue;
-    int keepAliveInterval;
+    uint16_t keepAliveInterval;
+    bool log_trace;
 } MQTT_CLIENT;
-
-
 
 static uint16_t byteutil_read_uint16(uint8_t** buffer)
 {
@@ -44,7 +43,7 @@ static uint16_t byteutil_read_uint16(uint8_t** buffer)
     return result;
 }
 
-static char* byteutil_readUTF(uint8_t** buffer)
+static char* byteutil_readUTF(uint8_t** buffer, size_t* byteLen)
 {
     char* result = NULL;
     if (buffer != NULL)
@@ -59,6 +58,10 @@ static char* byteutil_readUTF(uint8_t** buffer)
                 (void)memcpy(result, *buffer, len);
                 result[len] = '\0';
                 *buffer += len;
+                if (byteLen != NULL)
+                {
+                    *byteLen = len;
+                }
             }
         }
     }
@@ -78,8 +81,18 @@ static uint8_t byteutil_readByte(uint8_t** buffer)
 
 static void sendComplete(void* context, IO_SEND_RESULT send_result)
 {
-    (void)context;
-    (void)send_result;
+    MQTT_CLIENT* mqttData = (MQTT_CLIENT*)context;
+    if (mqttData != NULL && mqttData->fnOperationCallback != NULL)
+    {
+        if (mqttData->packetState == DISCONNECT_TYPE)
+        {
+            /*Codes_SRS_MQTT_CLIENT_07_032: [If the actionResult parameter is of type MQTT_CLIENT_ON_DISCONNECT or MQTT_CLIENT_ON_ERROR the the msgInfo value shall be NULL.]*/
+            mqttData->fnOperationCallback(mqttData, MQTT_CLIENT_ON_DISCONNECT, NULL, mqttData->ctx);
+
+            // close the xio
+            (void)xio_close(mqttData->xioHandle, NULL, mqttData->ctx);
+        }
+    }
 }
 
 static int sendPacketItem(MQTT_CLIENT* clientData, const int8_t* data, size_t length)
@@ -94,20 +107,196 @@ static int sendPacketItem(MQTT_CLIENT* clientData, const int8_t* data, size_t le
     return result;
 }
 
-static void stateChanged(void* context, IO_STATE new_io_state, IO_STATE previous_io_state)
+static void onOpenComplete(void* context, IO_OPEN_RESULT open_result)
+{
+    (void)context;
+    (void)open_result;
+}
+
+static void onBytesReceived(void* context, const unsigned char* buffer, size_t size)
 {
     MQTT_CLIENT* mqttData = (MQTT_CLIENT*)context;
     if (mqttData != NULL)
     {
+        if (mqtt_codec_bytesReceived(mqttData->codec_handle, buffer, size) != 0)
+        {
+            if (mqttData->fnOperationCallback)
+            {
+                mqttData->fnOperationCallback(mqttData, MQTT_CLIENT_ON_ERROR, NULL, mqttData->ctx);
+            }
+        }
+    }
+}
+
+static void onIoError(void* context)
+{
+    MQTT_CLIENT* mqttData = (MQTT_CLIENT*)context;
+    if (mqttData != NULL && mqttData->fnOperationCallback)
+    {
+        /*Codes_SRS_MQTT_CLIENT_07_032: [If the actionResult parameter is of type MQTT_CLIENT_ON_DISCONNECT or MQTT_CLIENT_ON_ERROR the the msgInfo value shall be NULL.]*/
+        mqttData->fnOperationCallback(mqttData, MQTT_CLIENT_ON_ERROR, NULL, mqttData->ctx);
     }
 }
 
 static void recvCompleteCallback(void* context, CONTROL_PACKET_TYPE packet, int flags, BUFFER_HANDLE headerData)
 {
-    (void)context;
-    (void)packet;
-    (void)flags;
-    (void)headerData;
+    MQTT_CLIENT* mqttData = (MQTT_CLIENT*)context;
+    if (mqttData != NULL && headerData != NULL)
+    {
+        size_t len = BUFFER_length(headerData);
+        uint8_t* iterator = BUFFER_u_char(headerData);
+        if (iterator != NULL && len > 0)
+        {
+            switch (packet)
+            {
+                case CONNACK_TYPE:
+                {
+                    if (mqttData->fnOperationCallback != NULL)
+                    {
+                        /*Codes_SRS_MQTT_CLIENT_07_028: [If the actionResult parameter is of type CONNECT_ACK then the msgInfo value shall be a CONNECT_ACK structure.]*/
+                        CONNECT_ACK connack = { 0 };
+                        connack.isSessionPresent = (byteutil_readByte(&iterator) == 0x1) ? true : false;
+                        connack.returnCode = byteutil_readByte(&iterator);
+
+                        mqttData->fnOperationCallback(mqttData, MQTT_CLIENT_ON_CONNACK, (void*)&connack, mqttData->ctx);
+                    }
+                    break;
+                }
+                case PUBLISH_TYPE:
+                {
+                    if (mqttData->fnMessageRecv != NULL)
+                    {
+                        //uint8_t ctrlPacket = byteutil_readByte(&iterator);
+                        bool isDuplicateMsg = (flags & DUPLICATE_FLAG_MASK) ? true : false;
+                        bool isRetainMsg = (flags & RETAIN_FLAG_MASK) ? true : false;
+                        QOS_VALUE qosValue = (flags == 0) ? DELIVER_AT_MOST_ONCE : (flags & QOS_LEAST_ONCE_FLAG_MASK) ? DELIVER_AT_LEAST_ONCE : DELIVER_EXACTLY_ONCE;
+
+                        uint8_t* initialPos = iterator;
+                        char* topicName = byteutil_readUTF(&iterator, NULL);
+                        uint16_t packetId = 0;
+                        if (qosValue != DELIVER_AT_MOST_ONCE)
+                        {
+                            packetId = byteutil_read_uint16(&iterator);
+                        }
+                        size_t length = len - (iterator - initialPos);
+
+                        MQTT_MESSAGE_HANDLE msgHandle = mqttmessage_create(packetId, topicName, qosValue, iterator, length);
+                        if (msgHandle == NULL)
+                        {
+                            LOG(mqttData->logFunc, LOG_LINE, "failure in mqttmessage_create");
+                        }
+                        else
+                        {
+                            (void)mqttmessage_setIsDuplicateMsg(msgHandle, isDuplicateMsg);
+                            (void)mqttmessage_setIsRetained(msgHandle, isRetainMsg);
+                            mqttData->fnMessageRecv(msgHandle, mqttData->ctx);
+
+                            BUFFER_HANDLE pubRel = NULL;
+                            if (qosValue == DELIVER_EXACTLY_ONCE)
+                            {
+                                pubRel = mqtt_codec_publishReceived(packetId);
+                            }
+                            else if (qosValue == DELIVER_AT_LEAST_ONCE)
+                            {
+                                pubRel = mqtt_codec_publishAck(packetId);
+                            }
+                            if (pubRel != NULL)
+                            {
+                                (void)sendPacketItem(mqttData, BUFFER_u_char(pubRel), BUFFER_length(pubRel));
+                                BUFFER_delete(pubRel);
+                            }
+                            free(topicName);
+                            mqttmessage_destroy(msgHandle);
+                        }
+                    }
+                    break;
+                }
+                case PUBACK_TYPE:
+                case PUBREC_TYPE:
+                case PUBREL_TYPE:
+                case PUBCOMP_TYPE:
+                {
+                    if (mqttData->fnOperationCallback)
+                    {
+                        /*Codes_SRS_MQTT_CLIENT_07_029: [If the actionResult parameter are of types PUBACK_TYPE, PUBREC_TYPE, PUBREL_TYPE or PUBCOMP_TYPE then the msgInfo value shall be a PUBLISH_ACK structure.]*/
+                        MQTT_CLIENT_EVENT_RESULT action = (packet == PUBACK_TYPE) ? MQTT_CLIENT_ON_PUBLISH_ACK :
+                            (packet == PUBREC_TYPE) ? MQTT_CLIENT_ON_PUBLISH_RECV :
+                            (packet == PUBREL_TYPE) ? MQTT_CLIENT_ON_PUBLISH_REL : MQTT_CLIENT_ON_PUBLISH_COMP;
+
+                        PUBLISH_ACK publish_ack = { 0 };
+                        publish_ack.packetId = byteutil_read_uint16(&iterator);
+
+                        BUFFER_HANDLE pubRel = NULL;
+                        mqttData->fnOperationCallback(mqttData, action, (void*)&publish_ack, mqttData->ctx);
+                        if (packet == PUBREC_TYPE)
+                        {
+                            pubRel = mqtt_codec_publishRelease(publish_ack.packetId);
+                        }
+                        else if (packet == PUBREL_TYPE)
+                        {
+                            pubRel = mqtt_codec_publishComplete(publish_ack.packetId);
+                        }
+                        if (pubRel != NULL)
+                        {
+                            (void)sendPacketItem(mqttData, BUFFER_u_char(pubRel), BUFFER_length(pubRel));
+                            BUFFER_delete(pubRel);
+                        }
+                    }
+                    break;
+                }
+                case SUBACK_TYPE:
+                {
+                    if (mqttData->fnOperationCallback)
+                    {
+                        /*Codes_SRS_MQTT_CLIENT_07_030: [If the actionResult parameter is of type SUBACK_TYPE then the msgInfo value shall be a SUBSCRIBE_ACK structure.]*/
+                        SUBSCRIBE_ACK suback = { 0 };
+
+                        // Get the the Remaining length field
+                        iterator++;
+
+                        uint8_t remainLen = byteutil_readByte(&iterator);
+                        suback.packetId = byteutil_read_uint16(&iterator);
+                        remainLen -= 2;
+
+                        // Allocate the remaining len
+                        suback.qosReturn = (QOS_VALUE*)malloc(sizeof(QOS_VALUE)*remainLen);
+                        if (suback.qosReturn != NULL)
+                        {
+                            while (remainLen > 0)
+                            {
+                                suback.qosReturn[suback.qosCount++] = byteutil_readByte(&iterator);
+                                remainLen--;
+                            }
+                            (void)mqttData->fnOperationCallback(mqttData, MQTT_CLIENT_ON_SUBSCRIBE_ACK, (void*)&suback, mqttData->ctx);
+                            free(suback.qosReturn);
+                        }
+                    }
+                    break;
+                }
+                case UNSUBACK_TYPE:
+                {
+                    if (mqttData->fnOperationCallback)
+                    {
+                        if (iterator != NULL)
+                        {
+                            /*Codes_SRS_MQTT_CLIENT_07_031: [If the actionResult parameter is of type UNSUBACK_TYPE then the msgInfo value shall be a UNSUBSCRIBE_ACK structure.]*/
+                            UNSUBSCRIBE_ACK unsuback = { 0 };
+                            iterator += VARIABLE_HEADER_OFFSET;
+                            unsuback.packetId = byteutil_read_uint16(&iterator);
+
+                            (void)mqttData->fnOperationCallback(mqttData, MQTT_CLIENT_ON_UNSUBSCRIBE_ACK, (void*)&unsuback, mqttData->ctx);
+                        }
+                    }
+                    break;
+                }
+                case PINGRESP_TYPE:
+                    // Ping responses do not get forwarded
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
 }
 
 MQTT_CLIENT_HANDLE mqtt_client_init(ON_MQTT_MESSAGE_RECV_CALLBACK msgRecv, ON_MQTT_OPERATION_CALLBACK opCallback, void* callbackCtx, LOGGER_LOG logger)
@@ -121,26 +310,29 @@ MQTT_CLIENT_HANDLE mqtt_client_init(ON_MQTT_MESSAGE_RECV_CALLBACK msgRecv, ON_MQ
     else
     {
         result = malloc(sizeof(MQTT_CLIENT));
-            if (result == NULL)
-            {
-                /*Codes_SRS_MQTT_CLIENT_07_002: [If any failure is encountered then mqttclient_init shall return NULL.]*/
-            LOG(logger, LOG_LINE, "Allocation Failure: MQTT_CLIENT");
-            }
-            else
-            {
-                /*Codes_SRS_MQTT_CLIENT_07_003: [mqttclient_init shall allocate MQTTCLIENT_DATA_INSTANCE and return the MQTTCLIENT_HANDLE on success.]*/
+        if (result == NULL)
+        {
+            /*Codes_SRS_MQTT_CLIENT_07_002: [If any failure is encountered then mqttclient_init shall return NULL.]*/
+            LOG(logger, LOG_LINE, "mqtt_client_inti failure: Allocation Failure");
+        }
+        else
+        {
+            /*Codes_SRS_MQTT_CLIENT_07_003: [mqttclient_init shall allocate MQTTCLIENT_DATA_INSTANCE and return the MQTTCLIENT_HANDLE on success.]*/
             result->xioHandle = NULL;
-                result->packetState = UNKNOWN_TYPE;
-                result->fnOperationCallback = opCallback;
+            result->packetState = UNKNOWN_TYPE;
+            result->logFunc = logger;
+            result->packetSendTimeMs = 0;
+            result->fnOperationCallback = opCallback;
             result->fnMessageRecv = msgRecv;
-                result->logFunc = logger;
             result->ctx = callbackCtx;
-                result->qosValue = DELIVER_AT_MOST_ONCE;
-                result->keepAliveInterval = 0;
+            result->qosValue = DELIVER_AT_MOST_ONCE;
+            result->keepAliveInterval = 0;
+            result->log_trace = true;
             result->packetTickCntr = tickcounter_create();
             if (result->packetTickCntr == NULL)
             {
                 /*Codes_SRS_MQTT_CLIENT_07_002: [If any failure is encountered then mqttclient_init shall return NULL.]*/
+                LOG(logger, LOG_LINE, "mqtt_client_init failure: tickcounter_create failure");
                 free(result);
                 result = NULL;
             }
@@ -150,6 +342,7 @@ MQTT_CLIENT_HANDLE mqtt_client_init(ON_MQTT_MESSAGE_RECV_CALLBACK msgRecv, ON_MQ
                 if (result->codec_handle == NULL)
                 {
                     /*Codes_SRS_MQTT_CLIENT_07_002: [If any failure is encountered then mqttclient_init shall return NULL.]*/
+                    LOG(logger, LOG_LINE, "mqtt_client_init failure: mqtt_codec_create failure");
                     tickcounter_destroy(result->packetTickCntr);
                     free(result);
                     result = NULL;
@@ -197,7 +390,7 @@ int mqtt_client_connect(MQTT_CLIENT_HANDLE handle, XIO_HANDLE xioHandle, MQTT_CL
             mqttData->qosValue = mqttOptions->qualityOfServiceValue;
             mqttData->keepAliveInterval = mqttOptions->keepAliveInterval;
             /*Codes_SRS_MQTT_CLIENT_07_008: [mqtt_client_connect shall open the XIO_HANDLE by calling into the xio_open interface.]*/
-            if (xio_open(xioHandle, mqtt_codec_bytesReceived, stateChanged, mqttData) != 0)
+            if (xio_open(xioHandle, onOpenComplete, onBytesReceived, onIoError, mqttData) != 0)
             {
                 /*Codes_SRS_MQTT_CLIENT_07_007: [If any failure is encountered then mqtt_client_connect shall return a non-zero value.]*/
                 LOG(mqttData->logFunc, LOG_LINE, "Error: io_open failed");
@@ -251,12 +444,13 @@ int mqtt_client_publish(MQTT_CLIENT_HANDLE handle, MQTT_MESSAGE_HANDLE msgHandle
         if (payload == NULL)
         {
             /*Codes_SRS_MQTT_CLIENT_07_020: [If any failure is encountered then mqtt_client_unsubscribe shall return a non-zero value.]*/
+            LOG(mqttData->logFunc, LOG_LINE, "Error: mqttmessage_getApplicationMsg failed");
             result = __LINE__;
         }
         else
         {
             BUFFER_HANDLE publishPacket = mqtt_codec_publish(mqttmessage_getQosType(msgHandle), mqttmessage_getIsDuplicateMsg(msgHandle),
-                mqttmessage_getIsRetained(msgHandle), mqttmessage_getPacketId(msgHandle), mqttmessage_getTopicName(msgHandle), payload->message, payload->messageLength);
+                mqttmessage_getIsRetained(msgHandle), mqttmessage_getPacketId(msgHandle), mqttmessage_getTopicName(msgHandle), payload->message, payload->length);
             if (publishPacket == NULL)
             {
                 /*Codes_SRS_MQTT_CLIENT_07_020: [If any failure is encountered then mqtt_client_unsubscribe shall return a non-zero value.]*/
@@ -265,6 +459,8 @@ int mqtt_client_publish(MQTT_CLIENT_HANDLE handle, MQTT_MESSAGE_HANDLE msgHandle
             }
             else
             {
+                mqttData->packetState = PUBLISH_TYPE;
+
                 /*Codes_SRS_MQTT_CLIENT_07_022: [On success mqtt_client_publish shall send the MQTT SUBCRIBE packet to the endpoint.]*/
                 if (sendPacketItem(mqttData, BUFFER_u_char(publishPacket), BUFFER_length(publishPacket)) != 0)
                 {
@@ -303,6 +499,8 @@ int mqtt_client_subscribe(MQTT_CLIENT_HANDLE handle, uint16_t packetId, SUBSCRIB
         }
         else
         {
+            mqttData->packetState = SUBSCRIBE_TYPE;
+
             /*Codes_SRS_MQTT_CLIENT_07_015: [On success mqtt_client_subscribe shall send the MQTT SUBCRIBE packet to the endpoint.]*/
             if (sendPacketItem(mqttData, BUFFER_u_char(subPacket), BUFFER_length(subPacket)) != 0)
             {
@@ -340,6 +538,8 @@ int mqtt_client_unsubscribe(MQTT_CLIENT_HANDLE handle, uint16_t packetId, const 
         }
         else
         {
+            mqttData->packetState = UNSUBSCRIBE_TYPE;
+
             /*Codes_SRS_MQTT_CLIENT_07_018: [On success mqtt_client_unsubscribe shall send the MQTT SUBCRIBE packet to the endpoint.]*/
             if (sendPacketItem(mqttData, BUFFER_u_char(unsubPacket), BUFFER_length(unsubPacket)) != 0)
             {
@@ -378,6 +578,8 @@ int mqtt_client_disconnect(MQTT_CLIENT_HANDLE handle)
         }
         else
         {
+            mqttData->packetState = DISCONNECT_TYPE;
+
             /*Codes_SRS_MQTT_CLIENT_07_012: [On success mqtt_client_disconnect shall send the MQTT DISCONNECT packet to the endpoint.]*/
             if (sendPacketItem(mqttData, BUFFER_u_char(disconnectPacket), BUFFER_length(disconnectPacket)) != 0)
             {
@@ -405,8 +607,9 @@ void mqtt_client_dowork(MQTT_CLIENT_HANDLE handle)
         xio_dowork(mqttData->xioHandle);
 
         /*Codes_SRS_MQTT_CLIENT_07_025: [mqtt_client_dowork shall retrieve the the last packet send value and ...]*/
-        (void)tickcounter_get_current_ms(mqttData->packetTickCntr, &mqttData->packetSendTimeMs);
-        if ( ( (mqttData->packetSendTimeMs/1000)+ KEEP_ALIVE_BUFFER_SEC) > mqttData->keepAliveInterval)
+        uint64_t current_ms;
+        (void)tickcounter_get_current_ms(mqttData->packetTickCntr, &current_ms);
+        if ( ( ( (current_ms - mqttData->packetSendTimeMs)/1000)+ KEEP_ALIVE_BUFFER_SEC) > mqttData->keepAliveInterval)
         {
             /*Codes_SRS_MQTT_CLIENT_07_026: [if this value is greater than the MQTT KeepAliveInterval then it shall construct an MQTT PINGREQ packet.]*/
             BUFFER_HANDLE pingPacket = mqtt_codec_ping();

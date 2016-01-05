@@ -35,7 +35,7 @@ extern BUFFER_HANDLE mqtt_codec_ping();
 extern BUFFER_HANDLE mqtt_codec_subscribe(uint16_t packetId, SUBSCRIBE_PAYLOAD* subscribeList, size_t count);
 extern BUFFER_HANDLE mqtt_codec_unsubscribe(uint16_t packetId, const char** unsubscribeList, size_t count);
 
-extern void mqtt_codec_bytesReceived(void* context, const unsigned char* buffer, size_t size);
+extern int mqtt_codec_bytesReceived(MQTTCODEC_HANDLE handle, const unsigned char* buffer, size_t size);
 
 #ifdef __cplusplus
 }
