@@ -2,9 +2,7 @@
 @REM Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 @setlocal EnableExtensions EnableDelayedExpansion
-REM @echo off
-
-set shared-util-repo=https://github.com/Azure/azure-c-shared-utility.git
+rem @echo off
 
 set current-path=%~dp0
 rem // remove trailing slash
@@ -20,23 +18,13 @@ set repo_root=%build-root%\..\..
 rem // resolve to fully qualified path
 for %%i in ("%repo_root%") do set repo_root=%%~fi
 
-echo Repo Root: %build-root%
+echo Build Root: %build-root%
 echo Repo Root: %repo_root%
 
 rem -----------------------------------------------------------------------------
 rem -- check prerequisites
 rem -----------------------------------------------------------------------------
 
-rem -- Check Shared-Library
-if not defined SHARED_UTIL_LIB (
-    set SHARED_UTIL_LIB=%repo_root%\azure-c-shared-utility
-)
-
-if not exist %SHARED_UTIL_LIB% (
-	echo The Azure_Shared_Util does not exist, it shall be built
-	git clone %shared-util-repo%
-	call %SHARED_UTIL_LIB%\c\build_all\windows\build.cmd
-)
 
 rem -----------------------------------------------------------------------------
 rem -- parse script arguments
@@ -46,6 +34,7 @@ rem // default build options
 set build-clean=0
 set build-config=Debug
 set build-platform=Win32
+set CMAKE_skip_unittests=OFF
 
 :args-loop
 if "%1" equ "" goto args-done
@@ -53,6 +42,7 @@ if "%1" equ "-c" goto arg-build-clean
 if "%1" equ "--clean" goto arg-build-clean
 if "%1" equ "--config" goto arg-build-config
 if "%1" equ "--platform" goto arg-build-platform
+if "%1" equ "--skip-unittests" goto arg-skip-unittests
 call :usage && exit /b 1
 
 :arg-build-clean
@@ -71,6 +61,10 @@ if "%1" equ "" call :usage && exit /b 1
 set build-platform=%1
 goto args-continue
 
+:arg-skip-unittests
+set CMAKE_skip_unittests=ON
+goto args-continue
+
 :args-continue
 shift
 goto args-loop
@@ -82,8 +76,8 @@ rem -- clean solutions
 rem -----------------------------------------------------------------------------
 
 if %build-clean%==1 (
-    rem -- call nuget restore "%build-root%\iothub_client\samples\iothub_client_sample_amqp\windows\iothub_client_sample_amqp.sln"
-    rem -- call :clean-a-solution "%build-root%\iothub_client\samples\iothub_client_sample_amqp\windows\iothub_client_sample_amqp.sln"
+    rem -- call nuget restore "%build-root%\samples\mqtt_client_sample\windows\mqtt_client_sample.sln"
+    rem -- call :clean-a-solution "%build-root%\samples\mqtt_client_sample\windows\mqtt_client_sample.sln"
     rem -- if not %errorlevel%==0 exit /b %errorlevel%
 )
 
@@ -98,15 +92,19 @@ mkdir %USERPROFILE%\azure_mqtt
 rem no error checking
 
 pushd %USERPROFILE%\azure_mqtt
-
-cmake %build-root%
+cmake %build-root% -Dskip_unittests:BOOL=%CMAKE_skip_unittests%
 if not %errorlevel%==0 exit /b %errorlevel%
 
-msbuild /m azure_mqtt.sln
+rem msbuild /m azure_mqtt.sln
+call :_run-msbuild "Build" azure_mqtt.sln %2 %3
 if not %errorlevel%==0 exit /b %errorlevel%
 
-ctest -C "debug" -V
-if not %errorlevel%==0 exit /b %errorlevel%
+echo Build Config: %build-config%
+
+if "%build-config%" == "Debug" (
+    ctest -C "debug" -V
+    if not %errorlevel%==0 exit /b %errorlevel%
+)
 
 popd
 goto :eof
@@ -130,14 +128,18 @@ goto :eof
 :usage
 echo build.cmd [options]
 echo options:
-echo  -c, --clean           delete artifacts from previous build before building
+echo  -c, --clean             delete artifacts from previous build before building
 echo  --config ^<value^>      [Debug] build configuration (e.g. Debug, Release)
 echo  --platform ^<value^>    [Win32] build platform (e.g. Win32, x64, ...)
+echo  --skip-unittests        skip the unit tests
 goto :eof
 
 rem -----------------------------------------------------------------------------
 rem -- helper subroutines
 rem -----------------------------------------------------------------------------
+
+echo build config: %build-config%
+echo platform:     %build-platform%
 
 :_run-msbuild
 rem // optionally override configuration|platform
@@ -150,7 +152,6 @@ if "%~4" neq "" set build-platform=%~4
 msbuild /m %build-target% "/p:Configuration=%build-config%;Platform=%build-platform%" %2
 if not %errorlevel%==0 exit /b %errorlevel%
 goto :eof
-
 
 :_run-tests
 rem // discover tests

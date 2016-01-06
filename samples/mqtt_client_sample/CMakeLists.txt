@@ -3,8 +3,6 @@
 
 #this is CMakeLists.txt for mqtt_client_sample
 
-compileAsC11()
-
 set(mqtt_client_sample_c_files
     mqtt_client_sample.c
 )
