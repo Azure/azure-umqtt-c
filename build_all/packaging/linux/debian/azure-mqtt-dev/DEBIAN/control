@@ -1,0 +1,15 @@
+Package: azure-mqtt-dev
+Source: azure-mqtt
+Version: 0.1.0-1
+Architecture: amd64
+Maintainer: Azure User <aziotsdklinux@outlook.com>
+Installed-Size: 46
+Depends: azure-mqtt-lib (= 0.1.0-1)
+Section: libdevel
+Priority: optional
+Homepage: https://github.com/Azure/azure-mqtt.git
+Description: azure-mqtt is a general purpose library build for MQTT protocol
+ Azure-mqtt client use the azure-c-shared-utility, which is a C library provisioning
+ common functionality for basic tasks (like string, list manipulation, IO, etc.).
+ azure-c-shared-utility is available here: https://github.com/Azure/azure-c-shared-utility.
+ azure-c-shared-utility needs to be built before building azure-mqtt

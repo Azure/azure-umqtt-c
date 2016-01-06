@@ -1,0 +1,28 @@
+Source: azure-mqtt
+Priority: optional
+Maintainer: Azure User <aziotsdklinux@outlook.com>
+Build-Depends: debhelper (>= 9), cmake (>= 3), libssl-dev, libcurl4-openssl-dev, curl
+Standards-Version: 3.9.6
+Section: libs
+Homepage: https://github.com/Azure/azure-mqtt.git
+#Vcs-Git: git://anonscm.debian.org/collab-maint/azure-mqtt.git
+#Vcs-Browser: http://anonscm.debian.org/?p=collab-maint/azure-mqtt.git;a=summary
+
+Package: azure-mqtt-dev
+Section: libdevel
+Architecture: any
+Depends: azure-mqtt-lib (= ${binary:Version}), ${misc:Depends}
+Description: azure-mqtt is a general purpose library build for MQTT protocol
+ Azure-mqtt client use the azure-c-shared-utility, which is a C library provisioning
+ common functionality for basic tasks (like string, list manipulation, IO, etc.).
+ azure-c-shared-utility is available here: https://github.com/Azure/azure-c-shared-utility.
+ azure-c-shared-utility needs to be built before building azure-mqtt
+
+Package: azure-mqtt-lib
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: azure-mqtt is a general purpose library build for MQTT protocol
+  Azure-mqtt client use the azure-c-shared-utility, which is a C library provisioning
+ common functionality for basic tasks (like string, list manipulation, IO, etc.).
+ azure-c-shared-utility is available here: https://github.com/Azure/azure-c-shared-utility.
+ azure-c-shared-utility needs to be built before building azure-mqtt

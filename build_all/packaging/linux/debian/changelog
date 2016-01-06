@@ -1,0 +1,6 @@
+azure-mqtt (0.1.0-1) vivid; urgency=low
+
+  * Initial release (Closes: #5479749)
+
+ -- AzureIoT User <aziotsdklinux@outlook.com>  Mon, 5 Jan 2016 12:18:53 -0800
+
