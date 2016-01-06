@@ -1,7 +1,0 @@
-4d55ff5d79b780d99e4b568f9b7efd7e  usr/include/azuremqtt/mqtt_client.h
-b7d31bbab8a9d2f074cd467cf9fd4f62  usr/include/azuremqtt/mqtt_codec.h
-858f740381ca5bce4a32adb80d179ccc  usr/include/azuremqtt/mqtt_message.h
-f0e660ea0555386d6b36978a8ce11bd6  usr/include/azuremqtt/mqttconst.h
-938cfaf0fd09a9bc87464b83a8dff198  usr/share/doc/azure-mqtt-dev/changelog.Debian.gz
-8098cc17195f0fbe93a75feb46ee1d8b  usr/share/doc/azure-mqtt-dev/copyright
-5df9f3863261e25fe3302da3f596a677  usr/share/doc/azure-mqtt-dev/readme.md
