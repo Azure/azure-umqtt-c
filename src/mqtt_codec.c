@@ -399,6 +399,10 @@ static int constructConnPayload(BUFFER_HANDLE ctrlPacket, const MQTT_CLIENT_OPTI
         {
             result = __LINE__;
         }
+        else if ( (willMessageLen > 0 && willTopicLen == 0) || (willTopicLen > 0 && willMessageLen == 0) )
+        {
+            result = __LINE__;
+        }
         else if (BUFFER_enlarge(ctrlPacket, totalLen) != 0)
         {
             result = __LINE__;
@@ -418,15 +422,16 @@ static int constructConnPayload(BUFFER_HANDLE ctrlPacket, const MQTT_CLIENT_OPTI
             }
             else
             {
-                if (willMessageLen > 0)
+                if (willMessageLen > 0 && willTopicLen > 0)
                 {
                     packet[CONN_FLAG_BYTE_OFFSET] |= WILL_FLAG_FLAG;
-                    byteutil_writeUTF(&iterator, mqttOptions->willMessage, (uint16_t)willMessageLen);
-                    packet[CONN_FLAG_BYTE_OFFSET] |= mqttOptions->qualityOfServiceValue;
-                }
-                if (willTopicLen > 0)
-                {
                     byteutil_writeUTF(&iterator, mqttOptions->willTopic, (uint16_t)willTopicLen);
+                    packet[CONN_FLAG_BYTE_OFFSET] |= mqttOptions->qualityOfServiceValue;
+                    if (mqttOptions->messageRetain)
+                    {
+                        packet[CONN_FLAG_BYTE_OFFSET] |= WILL_RETAIN_FLAG;
+                    }
+                    byteutil_writeUTF(&iterator, mqttOptions->willMessage, (uint16_t)willMessageLen);
                 }
                 if (usernameLen > 0)
                 {

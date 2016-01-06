@@ -658,6 +658,40 @@ TEST_FUNCTION(mqtt_client_connect_mqtt_codec_connect_fails)
     mqtt_client_deinit(mqttHandle);
 }
 
+TEST_FUNCTION(mqtt_client_connect_xio_send_fails)
+{
+    // arrange
+    mqtt_client_mocks mocks;
+
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, PrintLogFunction);
+    mocks.ResetAllCalls();
+
+    // Arrange
+    MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
+    SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, NULL, NULL, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
+
+    STRICT_EXPECTED_CALL(mocks, xio_open(TEST_IO_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, mqttHandle))
+        .IgnoreArgument(2)
+        .IgnoreArgument(3)
+        .IgnoreArgument(4);
+    EXPECTED_CALL(mocks, xio_send(TEST_IO_HANDLE, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG)).SetReturn(__LINE__);
+    STRICT_EXPECTED_CALL(mocks, tickcounter_get_current_ms(TEST_COUNTER_HANDLE, IGNORED_PTR_ARG)).IgnoreArgument(2);
+    STRICT_EXPECTED_CALL(mocks, mqtt_codec_connect(&mqttOptions));
+    STRICT_EXPECTED_CALL(mocks, BUFFER_u_char(TEST_BUFFER_HANDLE));
+    STRICT_EXPECTED_CALL(mocks, BUFFER_length(TEST_BUFFER_HANDLE));
+    STRICT_EXPECTED_CALL(mocks, BUFFER_delete(TEST_BUFFER_HANDLE));
+
+    // act
+    int result = mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    mocks.AssertActualAndExpectedCalls();
+
+    // cleanup
+    mqtt_client_deinit(mqttHandle);
+}
+
 /*Codes_SRS_MQTT_CLIENT_07_009: [On success mqtt_client_connect shall send the MQTT CONNECT to the endpoint.]*/
 TEST_FUNCTION(mqtt_client_connect_succeeds)
 {
@@ -906,6 +940,27 @@ TEST_FUNCTION(mqtt_client_publish_MQTT_MESSAGE_HANDLE_NULL_fail)
     mqtt_client_deinit(mqttHandle);
 }
 
+TEST_FUNCTION(mqtt_client_publish_getApplicationMsg_fail)
+{
+    // arrange
+    mqtt_client_mocks mocks;
+
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, PrintLogFunction);
+    mocks.ResetAllCalls();
+
+    STRICT_EXPECTED_CALL(mocks, mqttmessage_getApplicationMsg(TEST_MESSAGE_HANDLE)).SetReturn((const APP_PAYLOAD*)NULL);
+
+    // act
+    int result = mqtt_client_publish(mqttHandle, TEST_MESSAGE_HANDLE);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    mocks.AssertActualAndExpectedCalls();
+
+    // cleanup
+    mqtt_client_deinit(mqttHandle);
+}
+
 TEST_FUNCTION(mqtt_client_publish_mqtt_codec_publish_fail)
 {
     // arrange
@@ -922,6 +977,39 @@ TEST_FUNCTION(mqtt_client_publish_mqtt_codec_publish_fail)
     STRICT_EXPECTED_CALL(mocks, mqttmessage_getApplicationMsg(TEST_MESSAGE_HANDLE));
     EXPECTED_CALL(mocks, mqtt_codec_publish(DELIVER_AT_MOST_ONCE, true, true, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG))
         .SetReturn((BUFFER_HANDLE)NULL);
+
+    // act
+    int result = mqtt_client_publish(mqttHandle, TEST_MESSAGE_HANDLE);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    mocks.AssertActualAndExpectedCalls();
+
+    // cleanup
+    mqtt_client_deinit(mqttHandle);
+}
+
+/*Test_SRS_MQTT_CLIENT_07_020: [If any failure is encountered then mqtt_client_publish shall return a non-zero value.]*/
+TEST_FUNCTION(mqtt_client_publish_xio_send_fails)
+{
+    // arrange
+    mqtt_client_mocks mocks;
+
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, PrintLogFunction);
+    mocks.ResetAllCalls();
+
+    STRICT_EXPECTED_CALL(mocks, mqttmessage_getApplicationMsg(TEST_MESSAGE_HANDLE));
+    STRICT_EXPECTED_CALL(mocks, mqttmessage_getQosType(TEST_MESSAGE_HANDLE));
+    STRICT_EXPECTED_CALL(mocks, mqttmessage_getIsDuplicateMsg(TEST_MESSAGE_HANDLE));
+    STRICT_EXPECTED_CALL(mocks, mqttmessage_getIsRetained(TEST_MESSAGE_HANDLE));
+    STRICT_EXPECTED_CALL(mocks, mqttmessage_getPacketId(TEST_MESSAGE_HANDLE));
+    STRICT_EXPECTED_CALL(mocks, mqttmessage_getTopicName(TEST_MESSAGE_HANDLE));
+    EXPECTED_CALL(mocks, mqtt_codec_publish(DELIVER_AT_MOST_ONCE, true, true, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG));
+    STRICT_EXPECTED_CALL(mocks, tickcounter_get_current_ms(TEST_COUNTER_HANDLE, IGNORED_PTR_ARG)).IgnoreArgument(2);
+    EXPECTED_CALL(mocks, xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG)).SetReturn(__LINE__);
+    STRICT_EXPECTED_CALL(mocks, BUFFER_u_char(TEST_BUFFER_HANDLE));
+    STRICT_EXPECTED_CALL(mocks, BUFFER_length(TEST_BUFFER_HANDLE));
+    STRICT_EXPECTED_CALL(mocks, BUFFER_delete(TEST_BUFFER_HANDLE));
 
     // act
     int result = mqtt_client_publish(mqttHandle, TEST_MESSAGE_HANDLE);
@@ -1525,6 +1613,42 @@ TEST_FUNCTION(mqtt_client_recvCompleteCallback_SUBACK_succeeds)
     BASEIMPLEMENTATION::BUFFER_delete(packet_handle);
     mqtt_client_deinit(mqttHandle);
 }
+
+/*Test_SRS_MQTT_CLIENT_07_031: [If the actionResult parameter is of type UNSUBACK_TYPE then the msgInfo value shall be a UNSUBSCRIBE_ACK structure.]*/
+TEST_FUNCTION(mqtt_client_recvCompleteCallback_UNSUBACK_succeeds)
+{
+    // arrange
+    mqtt_client_mocks mocks;
+
+    const size_t PACKET_RETCODE_COUNT = 4;
+    unsigned char UNSUBSCRIBE_ACK_RESP[] = { 0xB0, 0x02, 0x12, 0x34 };
+    size_t length = sizeof(UNSUBSCRIBE_ACK_RESP) / sizeof(UNSUBSCRIBE_ACK_RESP[0]);
+    TEST_COMPLETE_DATA_INSTANCE testData;
+    UNSUBSCRIBE_ACK unsuback = { 0 };
+    unsuback.packetId = 0x1234;
+
+    testData.actionResult = MQTT_CLIENT_ON_UNSUBSCRIBE_ACK;
+    testData.msgInfo = &unsuback;
+
+    BUFFER_HANDLE packet_handle = BASEIMPLEMENTATION::BUFFER_create(UNSUBSCRIBE_ACK_RESP, length);
+
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, (void*)&testData, PrintLogFunction);
+    mocks.ResetAllCalls();
+
+    EXPECTED_CALL(mocks, BUFFER_u_char(IGNORED_PTR_ARG));
+    EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG));
+
+    // act
+    g_packetComplete(mqttHandle, UNSUBACK_TYPE, 0, packet_handle);
+
+    // assert
+    ASSERT_IS_TRUE(g_operationCallbackInvoked);
+    mocks.AssertActualAndExpectedCalls();
+
+    // cleanup
+    mqtt_client_deinit(mqttHandle);
+}
+
 
 TEST_FUNCTION(mqtt_client_recvCompleteCallback_PINGRESP_succeeds)
 {
