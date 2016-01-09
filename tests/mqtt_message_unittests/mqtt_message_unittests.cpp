@@ -154,35 +154,8 @@ TEST_FUNCTION_CLEANUP(method_cleanup)
     }
 }
 
-/* Test_SRS_MQTTMESSAGE_07_001:[If the parameters topicName is NULL, appMsg is NULL, or appMsgLength is zero then mqttmessage_create shall return NULL.] */
-TEST_FUNCTION(mqttmessage_create_appMsgLength_NULL_fail)
-{
-    // arrange
-    mqtt_message_mocks mocks;
 
-    // act
-    MQTT_MESSAGE_HANDLE handle = mqttmessage_create(TEST_PACKET_ID, TEST_TOPIC_NAME, DELIVER_AT_MOST_ONCE, TEST_MESSAGE, 0);
-
-    // assert
-    ASSERT_IS_NULL(handle);
-    mocks.AssertActualAndExpectedCalls();
-}
-
-/* Test_SRS_MQTTMESSAGE_07_001:[If the parameters topicName is NULL, appMsg is NULL, or appMsgLength is zero then mqttmessage_create shall return NULL.] */
-TEST_FUNCTION(mqttmessage_create_applicationMsg_NULL_fail)
-{
-    // arrange
-    mqtt_message_mocks mocks;
-
-    // act
-    MQTT_MESSAGE_HANDLE handle = mqttmessage_create(TEST_PACKET_ID, TEST_TOPIC_NAME, DELIVER_AT_MOST_ONCE, NULL, 0);
-
-    // assert
-    ASSERT_IS_NULL(handle);
-    mocks.AssertActualAndExpectedCalls();
-}
-
-/* Test_SRS_MQTTMESSAGE_07_001:[If the parameters topicName is NULL, appMsg is NULL, or appMsgLength is zero then mqttmessage_create shall return NULL.] */
+/* Test_SRS_MQTTMESSAGE_07_001:[If the parameters topicName is NULL then mqttmessage_createMessage shall return NULL.] */
 TEST_FUNCTION(mqttmessage_create_Topicname_NULL_fail)
 {
     // arrange
@@ -196,6 +169,26 @@ TEST_FUNCTION(mqttmessage_create_Topicname_NULL_fail)
     mocks.AssertActualAndExpectedCalls();
 }
 
+/* Test_SRS_MQTTMESSAGE_07_001:[If the parameters topicName is NULL then mqttmessage_create shall return NULL.] */
+TEST_FUNCTION(mqttmessage_create_appMsgLength_NULL_succeed)
+{
+    // arrange
+    mqtt_message_mocks mocks;
+
+    STRICT_EXPECTED_CALL(mocks, mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_TOPIC_NAME))
+        .IgnoreArgument(1);
+    EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
+
+    // act
+    MQTT_MESSAGE_HANDLE handle = mqttmessage_create(TEST_PACKET_ID, TEST_TOPIC_NAME, DELIVER_AT_MOST_ONCE, NULL, 0);
+
+    // assert
+    ASSERT_IS_NOT_NULL(handle);
+    mocks.AssertActualAndExpectedCalls();
+
+    mqttmessage_destroy(handle);
+}
+
 /* Test_SRS_MQTTMESSAGE_07_002: [mqttmessage_create shall allocate and copy the topicName and appMsg parameters.]*/
 /* Test_SRS_MQTTMESSAGE_07_004: [If mqttmessage_create succeeds the it shall return a NON-NULL MQTT_MESSAGE_HANDLE value.] */
 TEST_FUNCTION(mqttmessage_create_succeed)
@@ -203,7 +196,8 @@ TEST_FUNCTION(mqttmessage_create_succeed)
     // arrange
     mqtt_message_mocks mocks;
 
-    EXPECTED_CALL(mocks, mallocAndStrcpy_s(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(mocks, mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_TOPIC_NAME))
+        .IgnoreArgument(1);
     EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG)).ExpectedTimesExactly(2);
 
     // act
@@ -259,7 +253,8 @@ TEST_FUNCTION(mqttmessage_clone_succeed)
 
     EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
     EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
-    EXPECTED_CALL(mocks, mallocAndStrcpy_s(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(mocks, mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_TOPIC_NAME))
+        .IgnoreArgument(1);
 
     // act
     MQTT_MESSAGE_HANDLE cloneHandle = mqttmessage_clone(handle);

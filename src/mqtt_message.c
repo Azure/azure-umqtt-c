@@ -17,9 +17,9 @@ typedef struct MQTT_MESSAGE_TAG
 
 MQTT_MESSAGE_HANDLE mqttmessage_create(uint16_t packetId, const char* topicName, QOS_VALUE qosValue, const uint8_t* appMsg, size_t appMsgLength)
 {
-    /* Codes_SRS_MQTTMESSAGE_07_001:[If the parameters topicName is NULL, appMsg is NULL, or appMsgLength is zero then mqttmessage_create shall return NULL.] */
+    /* Codes_SRS_MQTTMESSAGE_07_001:[If the parameters topicName is NULL is zero then mqttmessage_create shall return NULL.] */
     MQTT_MESSAGE* result;
-    if (topicName == NULL || appMsg == NULL || appMsgLength == 0)
+    if (topicName == NULL)
     {
         result = NULL;
     }
@@ -37,23 +37,31 @@ MQTT_MESSAGE_HANDLE mqttmessage_create(uint16_t packetId, const char* topicName,
             }
             else
             {
+                result->packetId = packetId;
+                result->isDuplicateMsg = false;
+                result->isMessageRetained = false;
+                result->qosInfo = qosValue;
+
                 /* Codes_SRS_MQTTMESSAGE_07_002: [mqttmessage_create shall allocate and copy the topicName and appMsg parameters.] */
                 result->appPayload.length = appMsgLength;
-                result->appPayload.message = malloc(appMsgLength);
-                if (result->appPayload.message == NULL)
+                if (result->appPayload.length > 0)
                 {
-                    /* Codes_SRS_MQTTMESSAGE_07_003: [If any memory allocation fails mqttmessage_create shall free any allocated memory and return NULL.] */
-                    free(result->topicName);
-                    free(result);
-                    result = NULL;
+                    result->appPayload.message = malloc(appMsgLength);
+                    if (result->appPayload.message == NULL)
+                    {
+                        /* Codes_SRS_MQTTMESSAGE_07_003: [If any memory allocation fails mqttmessage_create shall free any allocated memory and return NULL.] */
+                        free(result->topicName);
+                        free(result);
+                        result = NULL;
+                    }
+                    else
+                    {
+                        memcpy(result->appPayload.message, appMsg, appMsgLength);
+                    }
                 }
                 else
                 {
-                    memcpy(result->appPayload.message, appMsg, appMsgLength);
-                    result->packetId = packetId;
-                    result->isDuplicateMsg = false;
-                    result->isMessageRetained = false;
-                    result->qosInfo = qosValue;
+                    result->appPayload.message = NULL;
                 }
             }
         }
@@ -70,7 +78,10 @@ void mqttmessage_destroy(MQTT_MESSAGE_HANDLE handle)
     {
         /* Codes_SRS_MQTTMESSAGE_07_006: [mqttmessage_destroyMessage shall free all resources associated with the MQTT_MESSAGE_HANDLE value] */
         free(msgInfo->topicName);
-        free(msgInfo->appPayload.message);
+        if (msgInfo->appPayload.message != NULL)
+        {
+            free(msgInfo->appPayload.message);
+        }
         free(msgInfo);
     }
 }

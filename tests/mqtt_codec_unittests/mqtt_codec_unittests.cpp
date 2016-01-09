@@ -504,7 +504,7 @@ TEST_FUNCTION(mqtt_codec_ping_succeeds)
     BASEIMPLEMENTATION::BUFFER_delete(handle);
 }
 
-/* Tests_SRS_MQTT_CODEC_07_005: [If the parameters topicName, or msgBuffer is NULL or if buffLen is 0 then mqtt_codec_publish shall return NULL.] */
+/* Tests_SRS_MQTT_CODEC_07_005: [If the parameters topicName is NULL then mqtt_codec_publish shall return NULL.] */
 TEST_FUNCTION(mqtt_codec_publish_topicName_NULL_fail)
 {
     // arrange
@@ -512,32 +512,6 @@ TEST_FUNCTION(mqtt_codec_publish_topicName_NULL_fail)
 
     // act
     BUFFER_HANDLE handle = mqtt_codec_publish(DELIVER_AT_MOST_ONCE, true, false, TEST_PACKET_ID, NULL, TEST_MESSAGE, TEST_MESSAGE_LEN);
-
-    // assert
-    ASSERT_IS_NULL(handle);
-}
-
-/* Codes_SRS_MQTT_CODEC_07_005: [If the parameters topicName, or msgBuffer is NULL or if buffLen is 0 then mqtt_codec_publish shall return NULL.] */
-TEST_FUNCTION(mqtt_codec_publish_msgBuffer_NULL_fail)
-{
-    // arrange
-    mqtt_codec_mocks mocks;
-
-    // act
-    BUFFER_HANDLE handle = mqtt_codec_publish(DELIVER_AT_MOST_ONCE, true, false, TEST_PACKET_ID, TEST_TOPIC_NAME, NULL, 0);
-
-    // assert
-    ASSERT_IS_NULL(handle);
-}
-
-/* Tests_SRS_MQTT_CODEC_07_005: [If the parameters topicName, or msgBuffer is NULL or if buffLen is 0 then mqtt_codec_publish shall return NULL.] */
-TEST_FUNCTION(mqtt_codec_publish_buffLen_0_fail)
-{
-    // arrange
-    mqtt_codec_mocks mocks;
-
-    // act
-    BUFFER_HANDLE handle = mqtt_codec_publish(DELIVER_AT_MOST_ONCE, true, false, TEST_PACKET_ID, NULL, TEST_MESSAGE, 0);
 
     // assert
     ASSERT_IS_NULL(handle);
@@ -599,6 +573,37 @@ TEST_FUNCTION(mqtt_codec_publish_constructFixedHeader_fails)
 
     // assert
     ASSERT_IS_NULL(handle);
+}
+
+/* Codes_SRS_MQTT_CODEC_07_005: [If the parameters topicName is NULL then mqtt_codec_publish shall return NULL.] */
+TEST_FUNCTION(mqtt_codec_publish_msgBuffer_NULL_succeeds)
+{
+    // arrange
+    mqtt_codec_mocks mocks;
+
+    const unsigned char PUBLISH_VALUE[] = { 0x38, 0x0c, 0x00, 0x0a, 0x74, 0x6f, 0x70, 0x69, 0x63, 0x20, 0x4e, 0x61, 0x6d, 0x65 };
+
+    EXPECTED_CALL(mocks, BUFFER_new()).ExpectedAtLeastTimes(2);
+    EXPECTED_CALL(mocks, BUFFER_delete(IGNORED_PTR_ARG));
+    EXPECTED_CALL(mocks, BUFFER_enlarge(IGNORED_PTR_ARG, IGNORED_NUM_ARG));
+    EXPECTED_CALL(mocks, BUFFER_u_char(IGNORED_PTR_ARG)).ExpectedAtLeastTimes(2);
+    EXPECTED_CALL(mocks, BUFFER_length(IGNORED_PTR_ARG)).ExpectedAtLeastTimes(4);
+    EXPECTED_CALL(mocks, BUFFER_pre_build(IGNORED_PTR_ARG, IGNORED_NUM_ARG));
+    EXPECTED_CALL(mocks, BUFFER_prepend(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+
+    // act
+    BUFFER_HANDLE handle = mqtt_codec_publish(DELIVER_AT_MOST_ONCE, true, false, TEST_PACKET_ID, TEST_TOPIC_NAME, NULL, 0);
+
+    unsigned char* data = BASEIMPLEMENTATION::BUFFER_u_char(handle);
+    size_t length = BUFFER_length(handle);
+
+    // assert
+    ASSERT_IS_NOT_NULL(handle);
+    ASSERT_ARE_EQUAL(int, 0, memcmp(data, PUBLISH_VALUE, length));
+
+    // cleanup
+    mocks.AssertActualAndExpectedCalls();
+    BASEIMPLEMENTATION::BUFFER_delete(handle);
 }
 
 /* Tests_SRS_MQTT_CODEC_07_007: [mqtt_codec_publish shall return a BUFFER_HANDLE that represents a MQTT PUBLISH message.] */

@@ -599,8 +599,8 @@ BUFFER_HANDLE mqtt_codec_disconnect()
 BUFFER_HANDLE mqtt_codec_publish(QOS_VALUE qosValue, bool duplicateMsg, bool serverRetain, uint16_t packetId, const char* topicName, const uint8_t* msgBuffer, size_t buffLen)
 {
     BUFFER_HANDLE result;
-    /* Codes_SRS_MQTT_CODEC_07_005: [If the parameters topicName, or msgBuffer is NULL or if buffLen is 0 then mqtt_codec_publish shall return NULL.] */
-    if (topicName == NULL || msgBuffer == NULL || buffLen == 0)
+    /* Codes_SRS_MQTT_CODEC_07_005: [If the parameters topicName is NULL then mqtt_codec_publish shall return NULL.] */
+    if (topicName == NULL)
     {
         result = NULL;
     }
@@ -609,7 +609,6 @@ BUFFER_HANDLE mqtt_codec_publish(QOS_VALUE qosValue, bool duplicateMsg, bool ser
         PUBLISH_HEADER_INFO publishInfo = { 0 };
         publishInfo.topicName = topicName;
         publishInfo.packetId = packetId;
-        //publishInfo.msgBuffer = msgBuffer;
         publishInfo.qualityOfServiceValue = qosValue;
 
         uint8_t headerFlags = 0;
@@ -646,16 +645,9 @@ BUFFER_HANDLE mqtt_codec_publish(QOS_VALUE qosValue, bool duplicateMsg, bool ser
                     BUFFER_delete(result);
                     result = NULL;
                 }
-                else if (BUFFER_enlarge(result, buffLen) != 0)
+                else if (buffLen > 0)
                 {
-                    /* Codes_SRS_MQTT_CODEC_07_006: [If any error is encountered then mqtt_codec_publish shall return NULL.] */
-                    BUFFER_delete(result);
-                    result = NULL;
-                }
-                else
-                {
-                    uint8_t* iterator = BUFFER_u_char(result);
-                    if (iterator == NULL)
+                    if (BUFFER_enlarge(result, buffLen) != 0)
                     {
                         /* Codes_SRS_MQTT_CODEC_07_006: [If any error is encountered then mqtt_codec_publish shall return NULL.] */
                         BUFFER_delete(result);
@@ -663,16 +655,29 @@ BUFFER_HANDLE mqtt_codec_publish(QOS_VALUE qosValue, bool duplicateMsg, bool ser
                     }
                     else
                     {
-                        iterator += payloadOffset;
-                        // Write Message
-                        //byteutil_writeUTF(&iterator, msgBuffer, (uint16_t)buffLen);
-                        memcpy(iterator, msgBuffer, buffLen);
-                        if (constructFixedHeader(result, PUBLISH_TYPE, headerFlags) != 0)
+                        uint8_t* iterator = BUFFER_u_char(result);
+                        if (iterator == NULL)
                         {
                             /* Codes_SRS_MQTT_CODEC_07_006: [If any error is encountered then mqtt_codec_publish shall return NULL.] */
                             BUFFER_delete(result);
                             result = NULL;
                         }
+                        else
+                        {
+                            iterator += payloadOffset;
+                            // Write Message
+                            memcpy(iterator, msgBuffer, buffLen);
+                        }
+                    }
+                }
+
+                if (result != NULL)
+                {
+                    if (constructFixedHeader(result, PUBLISH_TYPE, headerFlags) != 0)
+                    {
+                        /* Codes_SRS_MQTT_CODEC_07_006: [If any error is encountered then mqtt_codec_publish shall return NULL.] */
+                        BUFFER_delete(result);
+                        result = NULL;
                     }
                 }
             }
