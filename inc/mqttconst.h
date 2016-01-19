@@ -51,11 +51,11 @@ typedef struct APP_PAYLOAD_TAG
 
 typedef struct MQTT_CLIENT_OPTIONS_TAG
 {
-    const char* clientId;
-    const char* willTopic;
-    const char* willMessage;
-    const char* username;
-    const char* password;
+    char* clientId;
+    char* willTopic;
+    char* willMessage;
+    char* username;
+    char* password;
     int keepAliveInterval;
     bool messageRetain;
     bool useCleanSession;

@@ -3,7 +3,11 @@
 
 cmake_minimum_required(VERSION 2.8.11)
 
-project(azure_mqtt)
+if (DEFINED AZURE_MQTT_BUILT)
+    RETURN()
+endif()
+
+project(umqtt)
 
 include(ExternalProject)
 
@@ -61,7 +65,6 @@ macro(compileAsC11)
     set (CMAKE_CXX_STANDARD 11)
   endif()
 endmacro(compileAsC11)
-
 
 function(windows_unittests_add_dll whatIsBuilding)
     link_directories(${whatIsBuilding}_dll ${MICROMOCK_UNITTEST_LIB_DIR} ${CTEST_LIB_DIR} ${SHARED_UTIL_LIB_DIR} $ENV{VCInstallDir}UnitTest/lib)
@@ -150,7 +153,6 @@ function(build_test_artifacts whatIsBuilding use_gballoc)
     if(WIN32)
         #to disable unittests tests for windows, we build the the same thing as "static library" so it is not picked up by visual studio
         if(("${whatIsBuilding}" MATCHES ".*unittests.*") AND ${skip_unittests})
-            windows_unittests_add_lib(${whatIsBuilding} ${ARGN})
         else()
             windows_unittests_add_exe(${whatIsBuilding} ${ARGN})
             windows_unittests_add_dll(${whatIsBuilding} ${ARGN})			
@@ -188,13 +190,18 @@ set(MQTT_INC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/inc CACHE INTERNAL "this is what n
 set(MQTT_SRC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/src CACHE INTERNAL "this is what needs to be included when doing include sources" FORCE)
 include_directories(${MQTT_INC_FOLDER} ${SHARED_UTIL_INC_FOLDER})
 
+get_directory_property(hasParent PARENT_DIRECTORY)
+if(hasParent)
+    set(AZURE_MQTT_BUILT "1C283849-1933-4197-B9AC" PARENT_SCOPE)
+endif()
+
 IF(WIN32)
     #windows needs this define
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 ENDIF(WIN32)
 
 #this is the product (a library)
-add_library(azuremqtt ${source_c_files} ${source_h_files})
+add_library(umqtt ${source_c_files} ${source_h_files})
 
 set(SHARED_UTIL_ADAPTER_FOLDER "${CMAKE_CURRENT_LIST_DIR}/azure-c-shared-utility/c/adapters")
 if(WIN32)
@@ -205,7 +212,7 @@ else()
     set(THREAD_C_FILE ${SHARED_UTIL_ADAPTER_FOLDER}/threadapi_pthreads.c)
 endif()
 
+target_link_libraries(umqtt aziotsharedutil)
+
 add_subdirectory(samples)
 add_subdirectory(tests)
-
-#target_link_libraries(azure_mqtt azure_c_shared_utility)

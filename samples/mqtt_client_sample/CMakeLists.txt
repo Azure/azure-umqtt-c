@@ -27,23 +27,26 @@ include_directories(.)
 
 add_executable(mqtt_client_sample ${mqtt_client_sample_c_files} ${mqtt_client_sample_h_files})
 
-if(WIN32)
+if (WIN32)
     target_link_libraries(mqtt_client_sample 
-        azuremqtt
         aziotsharedutil
+        umqtt
         secur32
         ws2_32)
-    if(${tls_openssl})
+    if(${use_openssl})
         target_link_libraries(mqtt_client_sample $ENV{OpenSSLDir}/lib/ssleay32.lib $ENV{OpenSSLDir}/lib/libeay32.lib)
         file(COPY $ENV{OpenSSLDir}/bin/libeay32.dll DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/Debug)
         file(COPY $ENV{OpenSSLDir}/bin/ssleay32.dll DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/Debug)
     endif()
+    if(${use_wolfssl})
+        target_link_libraries(mqtt_client_sample $ENV{WolfSSLDir}/Debug/wolfssl.lib)
+    endif()
 else()
     target_link_libraries(mqtt_client_sample 
+        aziotsharedutil
         pthread
-        azuremqtt
-        aziotsharedutil)
-    #if(${tls_openssl})
+        umqtt)
+    #if(${use_openssl})
         target_link_libraries(mqtt_client_sample ssl crypto)
     #endif()
 endif()

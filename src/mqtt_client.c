@@ -8,6 +8,7 @@
 #include "mqtt_codec.h"
 #include "platform.h"
 #include "tickcounter.h"
+#include "crt_abstractions.h"
 
 #define KEEP_ALIVE_BUFFER_SEC           2
 #define VARIABLE_HEADER_OFFSET          2
@@ -29,7 +30,7 @@ typedef struct MQTT_CLIENT_TAG
     void* ctx;
     QOS_VALUE qosValue;
     uint16_t keepAliveInterval;
-    bool log_trace;
+    MQTT_CLIENT_OPTIONS mqttOptions;
 } MQTT_CLIENT;
 
 static uint16_t byteutil_read_uint16(uint8_t** buffer)
@@ -101,7 +102,7 @@ static int sendPacketItem(MQTT_CLIENT* clientData, const int8_t* data, size_t le
     int result = xio_send(clientData->xioHandle, data, length, sendComplete, clientData);
     if (result != 0)
     {
-        clientData->logFunc(0, "%d: Failure sending control packet data", result);
+        LOG(clientData->logFunc, LOG_LINE, "%d: Failure sending control packet data", result);
         result = __LINE__;
     }
     return result;
@@ -109,8 +110,29 @@ static int sendPacketItem(MQTT_CLIENT* clientData, const int8_t* data, size_t le
 
 static void onOpenComplete(void* context, IO_OPEN_RESULT open_result)
 {
-    (void)context;
-    (void)open_result;
+    MQTT_CLIENT* mqttData = (MQTT_CLIENT*)context;
+    if (mqttData != NULL && open_result == IO_OPEN_OK)
+    {
+        mqttData->packetState = CONNECT_TYPE;
+
+        // Send the Connect packet
+        BUFFER_HANDLE connPacket = mqtt_codec_connect(&mqttData->mqttOptions);
+        if (connPacket == NULL)
+        {
+            /*Codes_SRS_MQTT_CLIENT_07_007: [If any failure is encountered then mqtt_client_connect shall return a non-zero value.]*/
+            LOG(mqttData->logFunc, LOG_LINE, "Error: mqtt_codec_connect failed");
+        }
+        else
+        {
+            /*Codes_SRS_MQTT_CLIENT_07_009: [On success mqtt_client_connect shall send the MQTT CONNECT to the endpoint.]*/
+            if (sendPacketItem(mqttData, BUFFER_u_char(connPacket), BUFFER_length(connPacket)) != 0)
+            {
+                /*Codes_SRS_MQTT_CLIENT_07_007: [If any failure is encountered then mqtt_client_connect shall return a non-zero value.]*/
+                LOG(mqttData->logFunc, LOG_LINE, "Error: mqtt_codec_connect failed");
+            }
+            BUFFER_delete(connPacket);
+        }
+    }
 }
 
 static void onBytesReceived(void* context, const unsigned char* buffer, size_t size)
@@ -138,6 +160,62 @@ static void onIoError(void* context)
     }
 }
 
+static int cloneMqttOptions(MQTT_CLIENT* mqttData, const MQTT_CLIENT_OPTIONS* mqttOptions)
+{
+    int result = 0;
+    if (mqttOptions->clientId != NULL)
+    {
+        if (mallocAndStrcpy_s(&mqttData->mqttOptions.clientId, mqttOptions->clientId) != 0)
+        {
+            result = __LINE__;
+        }
+    }
+    if (result == 0 && mqttOptions->willTopic != NULL)
+    {
+        if (mallocAndStrcpy_s(&mqttData->mqttOptions.willTopic, mqttOptions->willTopic) != 0)
+        {
+            result = __LINE__;
+        }
+    }
+    if (result == 0 && mqttOptions->willMessage != NULL)
+    {
+        if (mallocAndStrcpy_s(&mqttData->mqttOptions.willMessage, mqttOptions->willMessage) != 0)
+        {
+            result = __LINE__;
+        }
+    }
+    if (result == 0 && mqttOptions->username != NULL)
+    {
+        if (mallocAndStrcpy_s(&mqttData->mqttOptions.username, mqttOptions->username) != 0)
+        {
+            result = __LINE__;
+        }
+    }
+    if (result == 0 && mqttOptions->password != NULL)
+    {
+        if (mallocAndStrcpy_s(&mqttData->mqttOptions.password, mqttOptions->password) != 0)
+        {
+            result = __LINE__;
+        }
+    }
+    if (result == 0)
+    {
+        mqttData->mqttOptions.keepAliveInterval = mqttOptions->keepAliveInterval;
+        mqttData->mqttOptions.messageRetain = mqttOptions->messageRetain;
+        mqttData->mqttOptions.useCleanSession = mqttOptions->useCleanSession;
+        mqttData->mqttOptions.qualityOfServiceValue = mqttOptions->qualityOfServiceValue;
+    }
+    else
+    {
+        free(mqttData->mqttOptions.clientId);
+        free(mqttData->mqttOptions.willTopic);
+        free(mqttData->mqttOptions.willMessage);
+        free(mqttData->mqttOptions.username);
+        free(mqttData->mqttOptions.password);
+    }
+    return result;
+}
+
 static void recvCompleteCallback(void* context, CONTROL_PACKET_TYPE packet, int flags, BUFFER_HANDLE headerData)
 {
     MQTT_CLIENT* mqttData = (MQTT_CLIENT*)context;
@@ -151,6 +229,7 @@ static void recvCompleteCallback(void* context, CONTROL_PACKET_TYPE packet, int 
             {
                 case CONNACK_TYPE:
                 {
+                    LOG(mqttData->logFunc, LOG_LINE, "Connack Recieved");
                     if (mqttData->fnOperationCallback != NULL)
                     {
                         /*Codes_SRS_MQTT_CLIENT_07_028: [If the actionResult parameter is of type CONNECT_ACK then the msgInfo value shall be a CONNECT_ACK structure.]*/
@@ -159,11 +238,13 @@ static void recvCompleteCallback(void* context, CONTROL_PACKET_TYPE packet, int 
                         connack.returnCode = byteutil_readByte(&iterator);
 
                         mqttData->fnOperationCallback(mqttData, MQTT_CLIENT_ON_CONNACK, (void*)&connack, mqttData->ctx);
+
                     }
                     break;
                 }
                 case PUBLISH_TYPE:
                 {
+                    LOG(mqttData->logFunc, LOG_LINE, "Publish Type");
                     if (mqttData->fnMessageRecv != NULL)
                     {
                         //uint8_t ctrlPacket = byteutil_readByte(&iterator);
@@ -216,6 +297,8 @@ static void recvCompleteCallback(void* context, CONTROL_PACKET_TYPE packet, int 
                 case PUBREL_TYPE:
                 case PUBCOMP_TYPE:
                 {
+                    LOG(mqttData->logFunc, LOG_LINE, "pub type %d", (int)packet);
+
                     if (mqttData->fnOperationCallback)
                     {
                         /*Codes_SRS_MQTT_CLIENT_07_029: [If the actionResult parameter are of types PUBACK_TYPE, PUBREC_TYPE, PUBREL_TYPE or PUBCOMP_TYPE then the msgInfo value shall be a PUBLISH_ACK structure.]*/
@@ -246,6 +329,7 @@ static void recvCompleteCallback(void* context, CONTROL_PACKET_TYPE packet, int 
                 }
                 case SUBACK_TYPE:
                 {
+                    LOG(mqttData->logFunc, LOG_LINE, "suback Type");
                     if (mqttData->fnOperationCallback)
                     {
                         /*Codes_SRS_MQTT_CLIENT_07_030: [If the actionResult parameter is of type SUBACK_TYPE then the msgInfo value shall be a SUBSCRIBE_ACK structure.]*/
@@ -275,6 +359,7 @@ static void recvCompleteCallback(void* context, CONTROL_PACKET_TYPE packet, int 
                 }
                 case UNSUBACK_TYPE:
                 {
+                    LOG(mqttData->logFunc, LOG_LINE, "unsuback Type");
                     if (mqttData->fnOperationCallback)
                     {
                         if (iterator != NULL)
@@ -327,8 +412,12 @@ MQTT_CLIENT_HANDLE mqtt_client_init(ON_MQTT_MESSAGE_RECV_CALLBACK msgRecv, ON_MQ
             result->ctx = callbackCtx;
             result->qosValue = DELIVER_AT_MOST_ONCE;
             result->keepAliveInterval = 0;
-            result->log_trace = true;
             result->packetTickCntr = tickcounter_create();
+            result->mqttOptions.clientId = NULL;
+            result->mqttOptions.willTopic = NULL;
+            result->mqttOptions.willMessage = NULL;
+            result->mqttOptions.username = NULL;
+            result->mqttOptions.password = NULL;
             if (result->packetTickCntr == NULL)
             {
                 /*Codes_SRS_MQTT_CLIENT_07_002: [If any failure is encountered then mqttclient_init shall return NULL.]*/
@@ -362,6 +451,11 @@ void mqtt_client_deinit(MQTT_CLIENT_HANDLE handle)
         MQTT_CLIENT* mqttData = (MQTT_CLIENT*)handle;
         tickcounter_destroy(mqttData->packetTickCntr);
         mqtt_codec_destroy(mqttData->codec_handle);
+        free(mqttData->mqttOptions.clientId);
+        free(mqttData->mqttOptions.willTopic);
+        free(mqttData->mqttOptions.willMessage);
+        free(mqttData->mqttOptions.username);
+        free(mqttData->mqttOptions.password);
         free(handle);
     }
 }
@@ -389,8 +483,13 @@ int mqtt_client_connect(MQTT_CLIENT_HANDLE handle, XIO_HANDLE xioHandle, MQTT_CL
             mqttData->packetState = UNKNOWN_TYPE;
             mqttData->qosValue = mqttOptions->qualityOfServiceValue;
             mqttData->keepAliveInterval = mqttOptions->keepAliveInterval;
+            if (cloneMqttOptions(mqttData, mqttOptions) != 0)
+            {
+                LOG(mqttData->logFunc, LOG_LINE, "Error: Clone Mqtt Options failed");
+                result = __LINE__;
+            }
             /*Codes_SRS_MQTT_CLIENT_07_008: [mqtt_client_connect shall open the XIO_HANDLE by calling into the xio_open interface.]*/
-            if (xio_open(xioHandle, onOpenComplete, onBytesReceived, onIoError, mqttData) != 0)
+            else if (xio_open(xioHandle, onOpenComplete, onBytesReceived, onIoError, mqttData) != 0)
             {
                 /*Codes_SRS_MQTT_CLIENT_07_007: [If any failure is encountered then mqtt_client_connect shall return a non-zero value.]*/
                 LOG(mqttData->logFunc, LOG_LINE, "Error: io_open failed");
@@ -398,30 +497,7 @@ int mqtt_client_connect(MQTT_CLIENT_HANDLE handle, XIO_HANDLE xioHandle, MQTT_CL
             }
             else
             {
-                mqttData->packetState = CONNECT_TYPE;
-
-                BUFFER_HANDLE connPacket = mqtt_codec_connect(mqttOptions);
-                if (connPacket == NULL)
-                {
-                    /*Codes_SRS_MQTT_CLIENT_07_007: [If any failure is encountered then mqtt_client_connect shall return a non-zero value.]*/
-                    LOG(mqttData->logFunc, LOG_LINE, "Error: mqtt_codec_connect failed");
-                    result = __LINE__;
-                }
-                else
-                {
-                    /*Codes_SRS_MQTT_CLIENT_07_009: [On success mqtt_client_connect shall send the MQTT CONNECT to the endpoint.]*/
-                    if (sendPacketItem(mqttData, BUFFER_u_char(connPacket), BUFFER_length(connPacket) ) != 0)
-                    {
-                        /*Codes_SRS_MQTT_CLIENT_07_007: [If any failure is encountered then mqtt_client_connect shall return a non-zero value.]*/
-                        LOG(mqttData->logFunc, LOG_LINE, "Error: mqtt_codec_connect failed");
-                        result = __LINE__;
-                    }
-                    else
-                    {
-                        result = 0;
-                    }
-                    BUFFER_delete(connPacket);
-                }
+                result = 0;
             }
         }
     }

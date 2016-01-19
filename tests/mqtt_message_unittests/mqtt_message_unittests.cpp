@@ -253,8 +253,7 @@ TEST_FUNCTION(mqttmessage_clone_succeed)
 
     EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
     EXPECTED_CALL(mocks, gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(mocks, mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_TOPIC_NAME))
-        .IgnoreArgument(1);
+    EXPECTED_CALL(mocks, mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_TOPIC_NAME));
 
     // act
     MQTT_MESSAGE_HANDLE cloneHandle = mqttmessage_clone(handle);

@@ -20,6 +20,7 @@
 #define WILL_FLAG_FLAG                      0x04
 #define CLEAN_SESSION_FLAG                  0x02
 
+#define NEXT_128_CHUNK                      0x80
 #define PUBLISH_DUP_FLAG                    0x8
 #define PUBLISH_QOS_EXACTLY_ONCE            0x4
 #define PUBLISH_QOS_AT_LEAST_ONCE           0x2
@@ -316,7 +317,7 @@ static int constructFixedHeader(BUFFER_HANDLE ctrlPacket, CONTROL_PACKET_TYPE pa
             // if there are more data to encode, set the top bit of this byte
             if (packetLen > 0)
             {
-                encode = encode |= 0x80;
+                encode |= NEXT_128_CHUNK;
             }
             remainSize[index++] = encode;
         } while (packetLen > 0);
