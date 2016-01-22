@@ -679,7 +679,7 @@ TEST_FUNCTION(mqtt_client_connect_mqtt_codec_connect_fails)
     // act
     int result = mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
 
-    ASSERT_IS_NOT_NULL(g_callbackCtx);
+    ASSERT_IS_NOT_NULL(g_openComplete);
     g_openComplete(g_callbackCtx, IO_OPEN_OK);
 
     // assert
@@ -722,7 +722,7 @@ TEST_FUNCTION(mqtt_client_connect_xio_send_fails)
     // act
     int result = mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
 
-    ASSERT_IS_NOT_NULL(g_callbackCtx);
+    ASSERT_IS_NOT_NULL(g_openComplete);
     g_openComplete(g_callbackCtx, IO_OPEN_OK);
 
     // assert
@@ -766,7 +766,7 @@ TEST_FUNCTION(mqtt_client_connect_succeeds)
     // act
     int result = mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
 
-    ASSERT_IS_NOT_NULL(g_callbackCtx);
+    ASSERT_IS_NOT_NULL(g_openComplete);
     g_openComplete(g_callbackCtx, IO_OPEN_OK);
 
     // assert
@@ -1192,10 +1192,16 @@ TEST_FUNCTION(mqtt_client_dowork_ping_succeeds)
     // arrange
     mqtt_client_mocks mocks;
 
-    g_current_ms = TEST_KEEP_ALIVE_INTERVAL*1000;
-
     MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, PrintLogFunction);
+
+    MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
+    SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, NULL, NULL, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
+
+    int result = mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
+    g_openComplete(g_callbackCtx, IO_OPEN_OK);
     mocks.ResetAllCalls();
+
+    g_current_ms = TEST_KEEP_ALIVE_INTERVAL * 2 * 1000;
 
     STRICT_EXPECTED_CALL(mocks, tickcounter_get_current_ms(TEST_COUNTER_HANDLE, IGNORED_PTR_ARG)).IgnoreArgument(2);
     STRICT_EXPECTED_CALL(mocks, tickcounter_get_current_ms(TEST_COUNTER_HANDLE, IGNORED_PTR_ARG)).IgnoreArgument(2);
@@ -1226,16 +1232,19 @@ TEST_FUNCTION(mqtt_client_dowork_no_ping_succeeds)
     g_current_ms = (TEST_KEEP_ALIVE_INTERVAL-5)*1000;
 
     MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, PrintLogFunction);
+
+    MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
+    SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, NULL, NULL, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
+
+    int result = mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
+    g_openComplete(g_callbackCtx, IO_OPEN_OK);
     mocks.ResetAllCalls();
 
+    //STRICT_EXPECTED_CALL(mocks, tickcounter_get_current_ms(TEST_COUNTER_HANDLE, IGNORED_PTR_ARG)).IgnoreArgument(2);
     STRICT_EXPECTED_CALL(mocks, tickcounter_get_current_ms(TEST_COUNTER_HANDLE, IGNORED_PTR_ARG)).IgnoreArgument(2);
-    STRICT_EXPECTED_CALL(mocks, tickcounter_get_current_ms(TEST_COUNTER_HANDLE, IGNORED_PTR_ARG)).IgnoreArgument(2);
-    EXPECTED_CALL(mocks, xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    //EXPECTED_CALL(mocks, xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
     EXPECTED_CALL(mocks, xio_dowork(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(mocks, mqtt_codec_ping());
-    STRICT_EXPECTED_CALL(mocks, BUFFER_u_char(TEST_BUFFER_HANDLE));
-    STRICT_EXPECTED_CALL(mocks, BUFFER_length(TEST_BUFFER_HANDLE));
-    STRICT_EXPECTED_CALL(mocks, BUFFER_delete(TEST_BUFFER_HANDLE));
+    //STRICT_EXPECTED_CALL(mocks, mqtt_codec_ping());
 
     // act
     mqtt_client_dowork(mqttHandle);
@@ -1726,6 +1735,40 @@ TEST_FUNCTION(mqtt_client_recvCompleteCallback_PINGRESP_succeeds)
     // cleanup
     BASEIMPLEMENTATION::BUFFER_delete(packet_handle);
     mqtt_client_deinit(mqttHandle);
+}
+
+TEST_FUNCTION(mqtt_client_set_trace_succeeds)
+{
+    // arrange
+    mqtt_client_mocks mocks;
+
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, PrintLogFunction);
+    mocks.ResetAllCalls();
+
+    // act
+    mqtt_client_set_trace(mqttHandle, true);
+
+    // assert
+    mocks.AssertActualAndExpectedCalls();
+
+    // cleanup
+    mqtt_client_deinit(mqttHandle);
+}
+
+TEST_FUNCTION(mqtt_client_set_trace_traceOn_NULL_fail)
+{
+    // arrange
+    mqtt_client_mocks mocks;
+
+    mocks.ResetAllCalls();
+
+    // act
+    mqtt_client_set_trace(NULL, true);
+
+    // assert
+    mocks.AssertActualAndExpectedCalls();
+
+    // cleanup
 }
 
 END_TEST_SUITE(mqtt_client_unittests)

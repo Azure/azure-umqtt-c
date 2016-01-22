@@ -49,6 +49,8 @@ extern int mqtt_client_publish(MQTT_CLIENT_HANDLE handle, MQTT_MESSAGE_HANDLE ms
 
 extern void mqtt_client_dowork(MQTT_CLIENT_HANDLE handle);
 
+extern void mqtt_client_set_trace(MQTT_CLIENT_HANDLE handle, bool traceOn);
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus

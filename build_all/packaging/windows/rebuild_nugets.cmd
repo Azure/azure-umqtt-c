@@ -65,14 +65,14 @@ rem Build Win32
 cmake %build-root%
 if not %errorlevel%==0 exit /b %errorlevel%
 
-call :_run-msbuild "Build" azure_mqtt.sln Debug Win32
+call :_run-msbuild "Build" umqtt.sln Debug Win32
 if not %errorlevel%==0 exit /b %errorlevel%
 
 rem -- Copy all Win32 files from cmake build directory to the repo directory
 xcopy /q /y /R %USERPROFILE%\azure_mqtt_nuget\Debug\*.* %client-root%\azure_mqtt_output\win32\debug\*.*
 if %errorlevel% neq 0 exit /b %errorlevel%
 
-call :_run-msbuild "Build" azure_mqtt.sln Release Win32
+call :_run-msbuild "Build" umqtt.sln Release Win32
 if not %errorlevel%==0 exit /b %errorlevel%
 
 rem -- Copy all Win32 Release files from cmake build directory to the repo directory
@@ -90,14 +90,14 @@ rem ----------------------------------------------------------------------------
 cmake %build-root% -G "Visual Studio 14 Win64"
 if not %errorlevel%==0 exit /b %errorlevel%
 
-call :_run-msbuild "Build" azure_mqtt.sln Debug x64
+call :_run-msbuild "Build" umqtt.sln Debug x64
 if not %errorlevel%==0 exit /b %errorlevel%
 
 rem -- Copy all x64 files from cmake build directory to the repo directory
 xcopy /q /y /R %USERPROFILE%\azure_mqtt_nuget\Debug\*.* %client-root%\azure_mqtt_output\x64\debug\*.*
 if %errorlevel% neq 0 exit /b %errorlevel%
 
-call :_run-msbuild "Build" azure_mqtt.sln Release x64
+call :_run-msbuild "Build" umqtt.sln Release x64
 if not %errorlevel%==0 exit /b %errorlevel%
 
 rem -- Copy all x64 Release files from cmake build directory to the repo directory
