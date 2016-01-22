@@ -95,8 +95,8 @@ pushd %USERPROFILE%\azure_mqtt
 cmake %build-root% -Dskip_unittests:BOOL=%CMAKE_skip_unittests%
 if not %errorlevel%==0 exit /b %errorlevel%
 
-rem msbuild /m azure_mqtt.sln
-call :_run-msbuild "Build" azure_mqtt.sln %2 %3
+rem msbuild /m umqtt.sln
+call :_run-msbuild "Build" umqtt.sln %2 %3
 if not %errorlevel%==0 exit /b %errorlevel%
 
 echo Build Config: %build-config%
