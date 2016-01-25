@@ -305,7 +305,6 @@ static void recvCompleteCallback(void* context, CONTROL_PACKET_TYPE packet, int 
                     connack.returnCode = byteutil_readByte(&iterator);
 
                     mqttData->fnOperationCallback(mqttData, MQTT_CLIENT_ON_CONNACK, (void*)&connack, mqttData->ctx);
-
                 }
                 break;
             }
@@ -398,10 +397,7 @@ static void recvCompleteCallback(void* context, CONTROL_PACKET_TYPE packet, int 
                     /*Codes_SRS_MQTT_CLIENT_07_030: [If the actionResult parameter is of type SUBACK_TYPE then the msgInfo value shall be a SUBSCRIBE_ACK structure.]*/
                     SUBSCRIBE_ACK suback = { 0 };
 
-                    // Get the the Remaining length field
-                    iterator++;
-
-                    uint8_t remainLen = byteutil_readByte(&iterator);
+                    size_t remainLen = len;
                     suback.packetId = byteutil_read_uint16(&iterator);
                     remainLen -= 2;
 
@@ -424,15 +420,12 @@ static void recvCompleteCallback(void* context, CONTROL_PACKET_TYPE packet, int 
             {
                 if (mqttData->fnOperationCallback)
                 {
-                    if (iterator != NULL)
-                    {
-                        /*Codes_SRS_MQTT_CLIENT_07_031: [If the actionResult parameter is of type UNSUBACK_TYPE then the msgInfo value shall be a UNSUBSCRIBE_ACK structure.]*/
-                        UNSUBSCRIBE_ACK unsuback = { 0 };
-                        iterator += VARIABLE_HEADER_OFFSET;
-                        unsuback.packetId = byteutil_read_uint16(&iterator);
+                    /*Codes_SRS_MQTT_CLIENT_07_031: [If the actionResult parameter is of type UNSUBACK_TYPE then the msgInfo value shall be a UNSUBSCRIBE_ACK structure.]*/
+                    UNSUBSCRIBE_ACK unsuback = { 0 };
+                    iterator += VARIABLE_HEADER_OFFSET;
+                    unsuback.packetId = byteutil_read_uint16(&iterator);
 
-                        (void)mqttData->fnOperationCallback(mqttData, MQTT_CLIENT_ON_UNSUBSCRIBE_ACK, (void*)&unsuback, mqttData->ctx);
-                    }
+                    (void)mqttData->fnOperationCallback(mqttData, MQTT_CLIENT_ON_UNSUBSCRIBE_ACK, (void*)&unsuback, mqttData->ctx);
                 }
                 break;
             }

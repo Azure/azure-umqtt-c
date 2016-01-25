@@ -1635,7 +1635,7 @@ TEST_FUNCTION(mqtt_client_recvCompleteCallback_SUBACK_succeeds)
     mqtt_client_mocks mocks;
 
     const size_t PACKET_RETCODE_COUNT = 4;
-    unsigned char SUBSCRIBE_ACK_RESP[] = { 0x90, 0x06, 0x12, 0x34, 0x00, 0x02, 0x01, 0x80 };
+    unsigned char SUBSCRIBE_ACK_RESP[] = { 0x12, 0x34, 0x00, 0x02, 0x01, 0x80 };
     size_t length = sizeof(SUBSCRIBE_ACK_RESP) / sizeof(SUBSCRIBE_ACK_RESP[0]);
     TEST_COMPLETE_DATA_INSTANCE testData;
     SUBSCRIBE_ACK suback = { 0 };
