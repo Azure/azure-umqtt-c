@@ -50,6 +50,8 @@ typedef struct MQTTCODEC_INSTANCE_TAG
     BUFFER_HANDLE headerData;
     ON_PACKET_COMPLETE_CALLBACK packetComplete;
     void* callContext;
+    uint8_t storeRemainLen[4];
+    size_t remainLenIndex;
 } MQTTCODEC_INSTANCE;
 
 typedef struct PUBLISH_HEADER_INFO_TAG
@@ -461,14 +463,36 @@ static int prepareheaderDataInfo(MQTTCODEC_INSTANCE* codecData, uint8_t remainLe
     }
     else
     {
-        codecData->codecState = CODEC_STATE_VAR_HEADER;
-        if (remainLen > 0)
-        {
-            codecData->headerData = BUFFER_new();
-            BUFFER_pre_build(codecData->headerData, remainLen);
-            codecData->bufferOffset = 0;
-        }
         result = 0;
+        codecData->storeRemainLen[codecData->remainLenIndex++] = remainLen;
+        if (remainLen < 0x7f)
+        {
+            int multiplier = 1;
+            int totalLen = 0;
+            size_t index = 0;
+            uint8_t encodeByte = 0;
+            do
+            {
+                encodeByte = codecData->storeRemainLen[index++];
+                totalLen += (encodeByte & 127) * multiplier;
+                multiplier *= NEXT_128_CHUNK;
+
+                if (multiplier > 128 * 128 * 128)
+                {
+                    result = __LINE__;
+                    break;
+                }
+            } while ( (encodeByte & NEXT_128_CHUNK) != 0);
+
+            codecData->headerData = BUFFER_new();
+            BUFFER_pre_build(codecData->headerData, totalLen);
+            codecData->bufferOffset = 0;
+            codecData->codecState = CODEC_STATE_VAR_HEADER;
+
+            // Reset remainLen Index
+            codecData->remainLenIndex = 0;
+            memset(codecData->storeRemainLen, 0, 4 * sizeof(uint8_t));
+        }
     }
     return result;
 }
@@ -506,6 +530,8 @@ MQTTCODEC_HANDLE mqtt_codec_create(ON_PACKET_COMPLETE_CALLBACK packetComplete, v
         result->packetComplete = packetComplete;
         result->callContext = callbackCtx;
         result->headerData = NULL;
+        memset(result->storeRemainLen, 0, 4 * sizeof(uint8_t));
+        result->remainLenIndex = 0;
     }
     return result;
 }
