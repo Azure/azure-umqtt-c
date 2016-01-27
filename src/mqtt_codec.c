@@ -484,9 +484,12 @@ static int prepareheaderDataInfo(MQTTCODEC_INSTANCE* codecData, uint8_t remainLe
                 }
             } while ( (encodeByte & NEXT_128_CHUNK) != 0);
 
-            codecData->headerData = BUFFER_new();
-            BUFFER_pre_build(codecData->headerData, totalLen);
-            codecData->bufferOffset = 0;
+            if (totalLen > 0)
+            {
+                codecData->headerData = BUFFER_new();
+                (void)BUFFER_pre_build(codecData->headerData, totalLen);
+                codecData->bufferOffset = 0;
+            }
             codecData->codecState = CODEC_STATE_VAR_HEADER;
 
             // Reset remainLen Index
