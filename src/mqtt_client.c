@@ -34,8 +34,10 @@ typedef struct MQTT_CLIENT_TAG
     QOS_VALUE qosValue;
     uint16_t keepAliveInterval;
     MQTT_CLIENT_OPTIONS mqttOptions;
+    bool clientConnected;
     bool socketConnected;
     bool logTrace;
+    bool rawBytesTrace;
 } MQTT_CLIENT;
 
 static uint16_t byteutil_read_uint16(uint8_t** buffer)
@@ -98,6 +100,7 @@ static void sendComplete(void* context, IO_SEND_RESULT send_result)
             // close the xio
             (void)xio_close(mqttData->xioHandle, NULL, mqttData->ctx);
             mqttData->socketConnected = false;
+            mqttData->clientConnected = false;
         }
     }
 }
@@ -143,7 +146,7 @@ static void logIncomingMsgTrace(MQTT_CLIENT* clientData, CONTROL_PACKET_TYPE pac
 {
     if (clientData != NULL && data != NULL && length > 0 && clientData->logTrace)
     {
-        LOG(clientData->logFunc, 0, "<- %s: 0x%02x ", retrievePacketType((unsigned char)packet), (unsigned char)(packet | flags) );
+        LOG(clientData->logFunc, 0, "<- %s: 0x%02x 0x%02x ", retrievePacketType((unsigned char)packet), (unsigned char)(packet | flags), length);
         for (size_t index = 0; index < length; index++)
         {
             LOG(clientData->logFunc, 0, (char*)FORMAT_HEX_CHAR, (unsigned char)data[index]);
@@ -305,6 +308,11 @@ static void recvCompleteCallback(void* context, CONTROL_PACKET_TYPE packet, int 
                     connack.returnCode = byteutil_readByte(&iterator);
 
                     mqttData->fnOperationCallback(mqttData, MQTT_CLIENT_ON_CONNACK, (void*)&connack, mqttData->ctx);
+
+                    if (connack.returnCode == CONNECTION_ACCEPTED)
+                    {
+                        mqttData->clientConnected = true;
+                    }
                 }
                 break;
             }
@@ -474,7 +482,9 @@ MQTT_CLIENT_HANDLE mqtt_client_init(ON_MQTT_MESSAGE_RECV_CALLBACK msgRecv, ON_MQ
             result->mqttOptions.username = NULL;
             result->mqttOptions.password = NULL;
             result->socketConnected = false;
+            result->clientConnected = false;
             result->logTrace = false;
+            result->rawBytesTrace = false;
             if (result->packetTickCntr == NULL)
             {
                 /*Codes_SRS_MQTT_CLIENT_07_002: [If any failure is encountered then mqttclient_init shall return NULL.]*/
@@ -743,7 +753,7 @@ void mqtt_client_dowork(MQTT_CLIENT_HANDLE handle)
         xio_dowork(mqttData->xioHandle);
 
         /*Codes_SRS_MQTT_CLIENT_07_025: [mqtt_client_dowork shall retrieve the the last packet send value and ...]*/
-        if (mqttData->socketConnected)
+        if (mqttData->socketConnected && mqttData->clientConnected)
         {
             uint64_t current_ms;
             (void)tickcounter_get_current_ms(mqttData->packetTickCntr, &current_ms);
@@ -761,11 +771,12 @@ void mqtt_client_dowork(MQTT_CLIENT_HANDLE handle)
     }
 }
 
-void mqtt_client_set_trace(MQTT_CLIENT_HANDLE handle, bool traceOn)
+void mqtt_client_set_trace(MQTT_CLIENT_HANDLE handle, bool traceOn, bool rawBytesOn)
 {
     MQTT_CLIENT* mqttData = (MQTT_CLIENT*)handle;
     if (mqttData != NULL)
     {
         mqttData->logTrace = traceOn;
+        mqttData->rawBytesTrace = rawBytesOn;
     }
 }

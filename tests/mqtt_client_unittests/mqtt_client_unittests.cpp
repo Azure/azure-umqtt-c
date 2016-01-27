@@ -1197,8 +1197,13 @@ TEST_FUNCTION(mqtt_client_dowork_ping_succeeds)
     MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
     SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, NULL, NULL, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
 
+    unsigned char CONNACK_RESP[] = { 0x1, 0x0 };
+    size_t length = sizeof(CONNACK_RESP) / sizeof(CONNACK_RESP[0]);
+    BUFFER_HANDLE connack_handle = BASEIMPLEMENTATION::BUFFER_create(CONNACK_RESP, length);
+
     int result = mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
     g_openComplete(g_callbackCtx, IO_OPEN_OK);
+    g_packetComplete(mqttHandle, CONNACK_TYPE, 0, connack_handle);
     mocks.ResetAllCalls();
 
     g_current_ms = TEST_KEEP_ALIVE_INTERVAL * 2 * 1000;
@@ -1236,8 +1241,13 @@ TEST_FUNCTION(mqtt_client_dowork_no_ping_succeeds)
     MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
     SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, NULL, NULL, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
 
+    unsigned char CONNACK_RESP[] = { 0x1, 0x0 };
+    size_t length = sizeof(CONNACK_RESP) / sizeof(CONNACK_RESP[0]);
+    BUFFER_HANDLE connack_handle = BASEIMPLEMENTATION::BUFFER_create(CONNACK_RESP, length);
+
     int result = mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
     g_openComplete(g_callbackCtx, IO_OPEN_OK);
+    g_packetComplete(mqttHandle, CONNACK_TYPE, 0, connack_handle);
     mocks.ResetAllCalls();
 
     //STRICT_EXPECTED_CALL(mocks, tickcounter_get_current_ms(TEST_COUNTER_HANDLE, IGNORED_PTR_ARG)).IgnoreArgument(2);
@@ -1746,7 +1756,7 @@ TEST_FUNCTION(mqtt_client_set_trace_succeeds)
     mocks.ResetAllCalls();
 
     // act
-    mqtt_client_set_trace(mqttHandle, true);
+    mqtt_client_set_trace(mqttHandle, true, true);
 
     // assert
     mocks.AssertActualAndExpectedCalls();
@@ -1763,7 +1773,7 @@ TEST_FUNCTION(mqtt_client_set_trace_traceOn_NULL_fail)
     mocks.ResetAllCalls();
 
     // act
-    mqtt_client_set_trace(NULL, true);
+    mqtt_client_set_trace(NULL, true, true);
 
     // assert
     mocks.AssertActualAndExpectedCalls();
