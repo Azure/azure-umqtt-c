@@ -1,13 +1,14 @@
-Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: azure-mqtt
-Source: https://github.com/Azure/azure-mqtt.git
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: azure-umqtt-c
+Source: <url://example.com>
 
 Files: *
-Copyright: 2016 AzureIoT User <aziotsdklinux@outlook.com>
+Copyright: <years> <put author's name and email here>
+           <years> <likewise for another author>
 License: MIT
 
 Files: debian/*
-Copyright: 2016 AzureIoT User <aziotsdklinux@outlook.com>
+Copyright: 2016 Azure User <aziotsdklinux@outlook.com>
 License: MIT
 
 License: MIT
@@ -29,3 +30,7 @@ License: MIT
  TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+# Please also look if there are files or directories which have a
+# different copyright/license attached and list them here.
+# Please avoid picking licenses with terms that are more restrictive than the
+# packaged work, as it may make Debian's contributions unacceptable upstream.
