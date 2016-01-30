@@ -9,7 +9,7 @@ function(add_sample_directory whatIsBuilding)
 
 	set_target_properties(${whatIsBuilding}
 			   PROPERTIES
-			   FOLDER "Samples")
+			   FOLDER "uMQTT_Samples")
 endfunction()
 
 add_sample_directory(mqtt_client_sample)
