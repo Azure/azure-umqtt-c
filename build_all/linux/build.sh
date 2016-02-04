@@ -12,8 +12,8 @@ usage ()
 {
     echo "build.sh [options]"
     echo "options"
-    echo " -cl, --compileoption <value>  specify a compile option to be passed to gcc"
-    echo "   Example: -cl -O1 -cl ..."
+    echo " -cl, --compileoption <value> specify a compile option to be passed to gcc"
+    echo " Example: -cl -O1 -cl ..."
     echo ""
     exit 1
 }
@@ -22,9 +22,8 @@ process_args ()
 {
     save_next_arg=0
     extracloptions=" "
-
     for arg in $*
-    do      
+    do
       if [ $save_next_arg == 1 ]
       then
         # save arg to pass to gcc
