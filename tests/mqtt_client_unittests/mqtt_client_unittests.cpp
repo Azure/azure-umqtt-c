@@ -1224,6 +1224,7 @@ TEST_FUNCTION(mqtt_client_dowork_ping_succeeds)
     mocks.AssertActualAndExpectedCalls();
 
     // cleanup
+    BASEIMPLEMENTATION::BUFFER_delete(connack_handle);
     mqtt_client_deinit(mqttHandle);
 }
 
@@ -1263,6 +1264,7 @@ TEST_FUNCTION(mqtt_client_dowork_no_ping_succeeds)
     mocks.AssertActualAndExpectedCalls();
 
     // cleanup
+    BASEIMPLEMENTATION::BUFFER_delete(connack_handle);
     mqtt_client_deinit(mqttHandle);
 }
 
@@ -1295,6 +1297,7 @@ TEST_FUNCTION(mqtt_client_recvCompleteCallback_context_NULL_fails)
 
     // cleanup
     BASEIMPLEMENTATION::BUFFER_delete(connack_handle);
+    mqtt_client_deinit(mqttHandle);
 }
 
 /*Test_SRS_MQTT_CLIENT_07_027: [The callbackCtx parameter shall be an unmodified pointer that was passed to the mqtt_client_init function.]*/
@@ -1715,6 +1718,7 @@ TEST_FUNCTION(mqtt_client_recvCompleteCallback_UNSUBACK_succeeds)
     mocks.AssertActualAndExpectedCalls();
 
     // cleanup
+    BASEIMPLEMENTATION::BUFFER_delete(packet_handle);
     mqtt_client_deinit(mqttHandle);
 }
 
