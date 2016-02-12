@@ -1,7 +1,7 @@
 Source: azure-umqtt-c
 Priority: optional
 Maintainer: Azure User <aziotsdklinux@outlook.com> 
-Build-Depends: debhelper (>= 9), cmake (>= 2.8), libssl-dev, libcurl4-openssl-dev, curl 
+Build-Depends: debhelper (>= 9), cmake (>= 2.8), azure-c-shared-util-dev, libssl-dev, curl, libcurl4-openssl-dev
 Standards-Version: 3.9.6 
 Section: libs 
 Homepage: https://github.com/Azure/azure-umqtt-c.git

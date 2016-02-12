@@ -27,6 +27,6 @@ override_dh_auto_install:
 	mkdir $$(pwd)/debian/tmp/usr
 	mkdir $$(pwd)/debian/tmp/usr/lib
 	mkdir $$(pwd)/debian/tmp/usr/include
-	mkdir $$(pwd)/debian/tmp/usr/include/azure-umqtt-c
+	mkdir $$(pwd)/debian/tmp/usr/include/azureiot
 	cp $$(pwd)/obj-*/*.a $$(pwd)/debian/tmp/usr/lib/
-	cp $$(pwd)/inc/* $$(pwd)/debian/tmp/usr/include/azure-umqtt-c
+	cp $$(pwd)/inc/* $$(pwd)/debian/tmp/usr/include/azureiot
