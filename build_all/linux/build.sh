@@ -7,6 +7,7 @@ set -e
 script_dir=$(cd "$(dirname "$0")" && pwd)
 build_root=$(cd "${script_dir}/../.." && pwd)
 run_unit_tests=ON
+run_valgrind=
 
 usage ()
 {
@@ -14,6 +15,7 @@ usage ()
     echo "options"
     echo " -cl, --compileoption <value> specify a compile option to be passed to gcc"
     echo " Example: -cl -O1 -cl ..."
+	echo "-rv, --run_valgrind will execute ctest with valgrind"
     echo ""
     exit 1
 }
@@ -46,4 +48,11 @@ pushd ~/azure-mqtt
 cmake -DcompileOption_C:STRING="$extracloptions" $build_root
 make --jobs=$(nproc)
 ctest -C "Debug" -V
+
+if [[ $run_valgrind == 1 ]] ;
+then
+	ctest -j $(nproc) -D ExperimentalMemCheck -VV
+
+fi
+
 popd

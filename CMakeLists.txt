@@ -9,6 +9,17 @@ endif()
 
 project(umqtt)
 
+#making a nice global variable to know if we are on linux or not.
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    set(LINUX TRUE)
+	#on Linux, enable valgrind
+	#these commands (MEMORYCHECK...) need to apear BEFORE include(CTest) or they will not have any effect
+	find_program(MEMORYCHECK_COMMAND valgrind)	
+	set(MEMORYCHECK_COMMAND_OPTIONS "--trace-children=yes --leak-check=full --error-exitcode=1 --track-origins=yes")
+endif()
+
+include (CTest)
+
 include(ExternalProject)
 
 #the following variables are project-wide and can be used with cmake-gui
