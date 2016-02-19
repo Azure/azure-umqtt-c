@@ -34,6 +34,7 @@ process_args ()
       else
           case "$arg" in
               "-cl" | "--compileoption" ) save_next_arg=1;;
+			  "-rv" | "--run_valgrind" ) run_valgrind=1;;
               * ) usage;;
           esac
       fi
