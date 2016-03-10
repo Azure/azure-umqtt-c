@@ -1186,7 +1186,7 @@ TEST_FUNCTION(mqtt_client_dowork_ping_handle_NULL_fails)
 
 /*Codes_SRS_MQTT_CLIENT_07_024: [mqtt_client_dowork shall call the xio_dowork function to complete operations.]*/
 /*Codes_SRS_MQTT_CLIENT_07_025: [mqtt_client_dowork shall retrieve the the last packet send value and ...]*/
-/*Codes_SRS_MQTT_CLIENT_07_026: [if this value is greater than the MQTT KeepAliveInterval then it shall construct an MQTT PINGREQ packet.]*/
+/*Codes_SRS_MQTT_CLIENT_07_026: [if keepAliveInternal is > 0 and the send time is greater than the MQTT KeepAliveInterval then it shall construct an MQTT PINGREQ packet.]*/
 TEST_FUNCTION(mqtt_client_dowork_ping_succeeds)
 {
     // arrange
@@ -1230,6 +1230,43 @@ TEST_FUNCTION(mqtt_client_dowork_ping_succeeds)
 
 /*Codes_SRS_MQTT_CLIENT_07_024: [mqtt_client_dowork shall call the xio_dowork function to complete operations.]*/
 /*Codes_SRS_MQTT_CLIENT_07_025: [mqtt_client_dowork shall retrieve the the last packet send value and ...]*/
+/*Codes_SRS_MQTT_CLIENT_07_026: [if keepAliveInternal is > 0 and the send time is greater than the MQTT KeepAliveInterval then it shall construct an MQTT PINGREQ packet.]*/
+TEST_FUNCTION(mqtt_client_dowork_no_keepalive_no_ping_succeeds)
+{
+    // arrange
+    mqtt_client_mocks mocks;
+
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, PrintLogFunction);
+
+    MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
+    SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, NULL, NULL, TEST_USERNAME, TEST_PASSWORD, 0, false, true, DELIVER_AT_MOST_ONCE);
+
+    unsigned char CONNACK_RESP[] = { 0x1, 0x0 };
+    size_t length = sizeof(CONNACK_RESP) / sizeof(CONNACK_RESP[0]);
+    BUFFER_HANDLE connack_handle = BASEIMPLEMENTATION::BUFFER_create(CONNACK_RESP, length);
+
+    int result = mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
+    g_openComplete(g_onCompleteCtx, IO_OPEN_OK);
+    g_packetComplete(mqttHandle, CONNACK_TYPE, 0, connack_handle);
+    mocks.ResetAllCalls();
+
+    g_current_ms = TEST_KEEP_ALIVE_INTERVAL * 2 * 1000;
+
+    EXPECTED_CALL(mocks, xio_dowork(IGNORED_PTR_ARG));
+
+    // act
+    mqtt_client_dowork(mqttHandle);
+
+    // assert
+    mocks.AssertActualAndExpectedCalls();
+
+    // cleanup
+    BASEIMPLEMENTATION::BUFFER_delete(connack_handle);
+    mqtt_client_deinit(mqttHandle);
+}
+
+/*Codes_SRS_MQTT_CLIENT_07_024: [mqtt_client_dowork shall call the xio_dowork function to complete operations.]*/
+/*Codes_SRS_MQTT_CLIENT_07_025: [mqtt_client_dowork shall retrieve the the last packet send value and ...]*/
 TEST_FUNCTION(mqtt_client_dowork_no_ping_succeeds)
 {
     // arrange
@@ -1251,11 +1288,8 @@ TEST_FUNCTION(mqtt_client_dowork_no_ping_succeeds)
     g_packetComplete(mqttHandle, CONNACK_TYPE, 0, connack_handle);
     mocks.ResetAllCalls();
 
-    //STRICT_EXPECTED_CALL(mocks, tickcounter_get_current_ms(TEST_COUNTER_HANDLE, IGNORED_PTR_ARG)).IgnoreArgument(2);
     STRICT_EXPECTED_CALL(mocks, tickcounter_get_current_ms(TEST_COUNTER_HANDLE, IGNORED_PTR_ARG)).IgnoreArgument(2);
-    //EXPECTED_CALL(mocks, xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
     EXPECTED_CALL(mocks, xio_dowork(IGNORED_PTR_ARG));
-    //STRICT_EXPECTED_CALL(mocks, mqtt_codec_ping());
 
     // act
     mqtt_client_dowork(mqttHandle);
@@ -1267,6 +1301,42 @@ TEST_FUNCTION(mqtt_client_dowork_no_ping_succeeds)
     BASEIMPLEMENTATION::BUFFER_delete(connack_handle);
     mqtt_client_deinit(mqttHandle);
 }
+
+TEST_FUNCTION(mqtt_client_dowork_tickcounter_fails_succeeds)
+{
+    // arrange
+    mqtt_client_mocks mocks;
+
+    g_current_ms = (TEST_KEEP_ALIVE_INTERVAL - 5) * 1000;
+
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, PrintLogFunction);
+
+    MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
+    SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, NULL, NULL, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
+
+    unsigned char CONNACK_RESP[] = { 0x1, 0x0 };
+    size_t length = sizeof(CONNACK_RESP) / sizeof(CONNACK_RESP[0]);
+    BUFFER_HANDLE connack_handle = BASEIMPLEMENTATION::BUFFER_create(CONNACK_RESP, length);
+
+    int result = mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
+    g_openComplete(g_onCompleteCtx, IO_OPEN_OK);
+    g_packetComplete(mqttHandle, CONNACK_TYPE, 0, connack_handle);
+    mocks.ResetAllCalls();
+
+    STRICT_EXPECTED_CALL(mocks, tickcounter_get_current_ms(TEST_COUNTER_HANDLE, IGNORED_PTR_ARG)).IgnoreArgument(2).SetReturn(__LINE__);
+    EXPECTED_CALL(mocks, xio_dowork(IGNORED_PTR_ARG));
+
+    // act
+    mqtt_client_dowork(mqttHandle);
+
+    // assert
+    mocks.AssertActualAndExpectedCalls();
+
+    // cleanup
+    BASEIMPLEMENTATION::BUFFER_delete(connack_handle);
+    mqtt_client_deinit(mqttHandle);
+}
+
 
 /*Test_SRS_MQTT_CLIENT_07_027: [The callbackCtx parameter shall be an unmodified pointer that was passed to the mqtt_client_init function.]*/
 TEST_FUNCTION(mqtt_client_recvCompleteCallback_context_NULL_fails)

@@ -157,14 +157,22 @@ static void logIncomingMsgTrace(MQTT_CLIENT* clientData, CONTROL_PACKET_TYPE pac
 
 static int sendPacketItem(MQTT_CLIENT* clientData, const int8_t* data, size_t length)
 {
+    int result;
     logOutgoingingMsgTrace(clientData, data, length);
 
-    (void)tickcounter_get_current_ms(clientData->packetTickCntr, &clientData->packetSendTimeMs);
-    int result = xio_send(clientData->xioHandle, data, length, sendComplete, clientData);
-    if (result != 0)
+    if (tickcounter_get_current_ms(clientData->packetTickCntr, &clientData->packetSendTimeMs) != 0)
     {
-        LOG(clientData->logFunc, LOG_LINE, "%d: Failure sending control packet data", result);
+        LOG(clientData->logFunc, LOG_LINE, "Failure getting current ms tickcounter");
         result = __LINE__;
+    }
+    else
+    {
+        result = xio_send(clientData->xioHandle, data, length, sendComplete, clientData);
+        if (result != 0)
+        {
+            LOG(clientData->logFunc, LOG_LINE, "%d: Failure sending control packet data", result);
+            result = __LINE__;
+        }
     }
     return result;
 }
@@ -645,7 +653,6 @@ int mqtt_client_subscribe(MQTT_CLIENT_HANDLE handle, uint16_t packetId, SUBSCRIB
             mqttData->packetState = SUBSCRIBE_TYPE;
 
             /*Codes_SRS_MQTT_CLIENT_07_015: [On success mqtt_client_subscribe shall send the MQTT SUBCRIBE packet to the endpoint.]*/
-            LOG(mqttData->logFunc, LOG_LINE, "MQTT Subscribe");
             if (sendPacketItem(mqttData, BUFFER_u_char(subPacket), BUFFER_length(subPacket)) != 0)
             {
                 /*Codes_SRS_MQTT_CLIENT_07_014: [If any failure is encountered then mqtt_client_subscribe shall return a non-zero value.]*/
@@ -752,18 +759,24 @@ void mqtt_client_dowork(MQTT_CLIENT_HANDLE handle)
         xio_dowork(mqttData->xioHandle);
 
         /*Codes_SRS_MQTT_CLIENT_07_025: [mqtt_client_dowork shall retrieve the the last packet send value and ...]*/
-        if (mqttData->socketConnected && mqttData->clientConnected)
+        if (mqttData->socketConnected && mqttData->clientConnected && mqttData->keepAliveInterval > 0)
         {
             uint64_t current_ms;
-            (void)tickcounter_get_current_ms(mqttData->packetTickCntr, &current_ms);
-            if ((((current_ms - mqttData->packetSendTimeMs) / 1000) + KEEP_ALIVE_BUFFER_SEC) > mqttData->keepAliveInterval)
+            if (tickcounter_get_current_ms(mqttData->packetTickCntr, &current_ms) != 0)
             {
-                /*Codes_SRS_MQTT_CLIENT_07_026: [if this value is greater than the MQTT KeepAliveInterval then it shall construct an MQTT PINGREQ packet.]*/
-                BUFFER_HANDLE pingPacket = mqtt_codec_ping();
-                if (pingPacket != NULL)
+                LOG(mqttData->logFunc, LOG_LINE, "Error: tickcounter_get_current_ms failed");
+            }
+            else
+            {
+                if ((((current_ms - mqttData->packetSendTimeMs) / 1000) + KEEP_ALIVE_BUFFER_SEC) > mqttData->keepAliveInterval)
                 {
-                    (void)sendPacketItem(mqttData, BUFFER_u_char(pingPacket), BUFFER_length(pingPacket));
-                    BUFFER_delete(pingPacket);
+                    /*Codes_SRS_MQTT_CLIENT_07_026: [if keepAliveInternal is > 0 and the send time is greater than the MQTT KeepAliveInterval then it shall construct an MQTT PINGREQ packet.]*/
+                    BUFFER_HANDLE pingPacket = mqtt_codec_ping();
+                    if (pingPacket != NULL)
+                    {
+                        (void)sendPacketItem(mqttData, BUFFER_u_char(pingPacket), BUFFER_length(pingPacket));
+                        BUFFER_delete(pingPacket);
+                    }
                 }
             }
         }
