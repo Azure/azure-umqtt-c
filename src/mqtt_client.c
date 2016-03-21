@@ -182,7 +182,7 @@ static void onOpenComplete(void* context, IO_OPEN_RESULT open_result)
     MQTT_CLIENT* mqttData = (MQTT_CLIENT*)context;
     if (mqttData != NULL)
     {
-        if (open_result == IO_OPEN_OK)
+        if (open_result == IO_OPEN_OK && !mqttData->socketConnected)
         {
             mqttData->packetState = CONNECT_TYPE;
             mqttData->socketConnected = true;
@@ -233,6 +233,7 @@ static void onIoError(void* context)
     {
         /*Codes_SRS_MQTT_CLIENT_07_032: [If the actionResult parameter is of type MQTT_CLIENT_ON_DISCONNECT or MQTT_CLIENT_ON_ERROR the the msgInfo value shall be NULL.]*/
         mqttData->fnOperationCallback(mqttData, MQTT_CLIENT_ON_ERROR, NULL, mqttData->ctx);
+        mqttData->socketConnected = false;
     }
 }
 
@@ -531,7 +532,7 @@ void mqtt_client_deinit(MQTT_CLIENT_HANDLE handle)
         free(mqttData->mqttOptions.willMessage);
         free(mqttData->mqttOptions.username);
         free(mqttData->mqttOptions.password);
-        free(handle);
+        free(mqttData);
     }
 }
 

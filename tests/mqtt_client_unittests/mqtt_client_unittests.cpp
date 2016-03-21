@@ -777,6 +777,51 @@ TEST_FUNCTION(mqtt_client_connect_succeeds)
     mqtt_client_deinit(mqttHandle);
 }
 
+TEST_FUNCTION(mqtt_client_connect_multiple_completes_one_connect_succeeds)
+{
+    // arrange
+    mqtt_client_mocks mocks;
+
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, PrintLogFunction);
+    mocks.ResetAllCalls();
+
+    // Arrange
+    MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
+    SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, NULL, NULL, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
+
+    STRICT_EXPECTED_CALL(mocks, mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_CLIENT_ID))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(mocks, mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_USERNAME))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(mocks, mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_PASSWORD))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(mocks, xio_open(TEST_IO_HANDLE, IGNORED_PTR_ARG, mqttHandle, IGNORED_PTR_ARG, mqttHandle, IGNORED_PTR_ARG, mqttHandle))
+        .IgnoreArgument(2)
+        .IgnoreArgument(4)
+        .IgnoreArgument(6);
+    EXPECTED_CALL(mocks, xio_send(TEST_IO_HANDLE, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(mocks, tickcounter_get_current_ms(TEST_COUNTER_HANDLE, IGNORED_PTR_ARG)).IgnoreArgument(2);
+    EXPECTED_CALL(mocks, mqtt_codec_connect(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(mocks, BUFFER_u_char(TEST_BUFFER_HANDLE));
+    STRICT_EXPECTED_CALL(mocks, BUFFER_length(TEST_BUFFER_HANDLE));
+    STRICT_EXPECTED_CALL(mocks, BUFFER_delete(TEST_BUFFER_HANDLE));
+
+    // act
+    int result = mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
+
+    ASSERT_IS_NOT_NULL(g_openComplete);
+    g_openComplete(g_onCompleteCtx, IO_OPEN_OK);
+    g_openComplete(g_onCompleteCtx, IO_OPEN_OK);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+    mocks.AssertActualAndExpectedCalls();
+
+    // cleanup
+    mqtt_client_deinit(mqttHandle);
+}
+
+
 /*Codes_SRS_MQTT_CLIENT_07_013: [If any of the parameters handle, subscribeList is NULL or count is 0 then mqtt_client_subscribe shall return a non-zero value.]*/
 TEST_FUNCTION(mqtt_client_subscribe_handle_NULL_fail)
 {
