@@ -63,7 +63,8 @@ extern BUFFER_HANDLE mqtt_codec_publish(QOS_VALUE qosValue, bool duplicateMsg, b
 ```
 **SRS_MQTT_CODEC_07_005: [**If the parameters topicName, or msgBuffer is NULL or if buffLen is 0 then mqtt_codec_publish shall return NULL.**]**  
 **SRS_MQTT_CODEC_07_006: [**If any error is encountered then mqtt_codec_publish shall return NULL.**]**    
-**SRS_MQTT_CODEC_07_007: [**mqtt_codec_publish shall return a BUFFER_HANDLE that represents a MQTT PUBLISH message.**]**
+**SRS_MQTT_CODEC_07_007: [**mqtt_codec_publish shall return a BUFFER_HANDLE that represents a MQTT PUBLISH message.**]**  
+**SRS_MQTT_CODEC_07_036: [**mqtt_codec_publish shall return NULL if the buffLen variable is greater than the MAX_SEND_SIZE (0xFFFFFF7F).**]**
 
 ##mqtt_codec_publishAck
 ```
