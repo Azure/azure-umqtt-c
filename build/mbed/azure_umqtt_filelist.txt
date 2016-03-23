@@ -1,5 +1,4 @@
 set(mbed_project_files
-		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/amqp_definitions.h
 		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/mqtt_client.h
 		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/mqtt_codec.h
 		${CMAKE_CURRENT_SOURCE_DIR}/../../inc/mqtt_message.h
