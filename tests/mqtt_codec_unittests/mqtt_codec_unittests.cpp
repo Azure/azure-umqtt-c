@@ -60,6 +60,7 @@ static size_t APP_NAME_A_LEN = 22;
 #define TEST_CALL_CONTEXT       0x1235
 #define TEST_LIST_ITEM_HANDLE   0x1236
 #define FIXED_HEADER_SIZE       2
+#define OVER_MAX_SEND_SIZE      0xFFFFFF8F
 
 typedef struct TEST_COMPLETE_DATA_INSTANCE_TAG
 {
@@ -730,6 +731,23 @@ TEST_FUNCTION(mqtt_codec_publish_ack_pre_build_fail)
 
     // assert
     ASSERT_IS_NULL(handle);
+}
+
+/* Codes_SRS_MQTT_CODEC_07_036: [mqtt_codec_publish shall return NULL if the buffLen variable is greater than the MAX_SEND_SIZE (0xFFFFFF7F).] */
+TEST_FUNCTION(mqtt_codec_publish_over_max_size_fail)
+{
+    // arrange
+    mqtt_codec_mocks mocks;
+
+    // act
+    BUFFER_HANDLE handle = mqtt_codec_publish(DELIVER_AT_LEAST_ONCE, true, false, TEST_PACKET_ID, TEST_TOPIC_NAME, TEST_MESSAGE, OVER_MAX_SEND_SIZE);
+
+    // assert
+    ASSERT_IS_NULL(handle);
+
+    // cleanup
+    mocks.AssertActualAndExpectedCalls();
+    BASEIMPLEMENTATION::BUFFER_delete(handle);
 }
 
 /* Tests_SRS_MQTT_CODEC_07_014 : [If any error is encountered then mqtt_codec_publishAck shall return NULL.] */

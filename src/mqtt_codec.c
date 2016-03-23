@@ -34,6 +34,8 @@
 #define SUBSCRIBE_FIXED_HEADER_FLAG         0x2
 #define UNSUBSCRIBE_FIXED_HEADER_FLAG       0x2
 
+#define MAX_SEND_SIZE                       0xFFFFFF7F
+
 #define CODEC_STATE_VALUES      \
     CODEC_STATE_FIXED_HEADER,   \
     CODEC_STATE_VAR_HEADER,     \
@@ -634,6 +636,12 @@ BUFFER_HANDLE mqtt_codec_publish(QOS_VALUE qosValue, bool duplicateMsg, bool ser
     {
         result = NULL;
     }
+    /* Codes_SRS_MQTT_CODEC_07_036: [mqtt_codec_publish shall return NULL if the buffLen variable is greater than the MAX_SEND_SIZE (0xFFFFFF7F).] */
+    else if (buffLen > MAX_SEND_SIZE)
+    {
+        /* Codes_SRS_MQTT_CODEC_07_006: [If any error is encountered then mqtt_codec_publish shall return NULL.] */
+        result = NULL;
+    }
     else
     {
         PUBLISH_HEADER_INFO publishInfo = { 0 };
@@ -669,13 +677,7 @@ BUFFER_HANDLE mqtt_codec_publish(QOS_VALUE qosValue, bool duplicateMsg, bool ser
             else
             {
                 size_t payloadOffset = BUFFER_length(result);
-                if (buffLen > USHRT_MAX)
-                {
-                    /* Codes_SRS_MQTT_CODEC_07_006: [If any error is encountered then mqtt_codec_publish shall return NULL.] */
-                    BUFFER_delete(result);
-                    result = NULL;
-                }
-                else if (buffLen > 0)
+                if (buffLen > 0)
                 {
                     if (BUFFER_enlarge(result, buffLen) != 0)
                     {
