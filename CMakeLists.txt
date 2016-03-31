@@ -90,10 +90,10 @@ set(source_c_files
 
 #these are the C headers
 set(source_h_files
-./inc/mqtt_client.h
-./inc/mqtt_codec.h
-./inc/mqttconst.h
-./inc/mqtt_message.h
+./inc/azure_umqtt_c/mqtt_client.h
+./inc/azure_umqtt_c/mqtt_codec.h
+./inc/azure_umqtt_c/mqttconst.h
+./inc/azure_umqtt_c/mqtt_message.h
 )
 
 #the following "set" statetement exports across the project a global variable called COMMON_INC_FOLDER that expands to whatever needs to included when using COMMON library
