@@ -11,12 +11,12 @@ extern "C" {
 #include <stdint.h>
 #endif // __cplusplus
 
-#include "xio.h"
+#include "azure_c_shared_utility/xio.h"
+#include "azure_c_shared_utility/xlogging.h"
+#include "azure_c_shared_utility/macro_utils.h"
+#include "azure_c_shared_utility/list.h"
 #include "mqttconst.h"
-#include "xlogging.h"
-#include "macro_utils.h"
 #include "mqtt_message.h"
-#include "list.h"
 
 typedef struct MQTT_CLIENT_TAG* MQTT_CLIENT_HANDLE;
 

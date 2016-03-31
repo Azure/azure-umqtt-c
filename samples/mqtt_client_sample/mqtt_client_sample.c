@@ -1,17 +1,17 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#include "mqtt_client_sample.h"
-#include "mqtt_client.h"
-#include "socketio.h"
-#include "platform.h"
-
-#include <stdarg.h>
-#include <stdio.h>
-
+#include <stdlib.h>
 #ifdef _CRT_DBG_MAP_ALLOC
 #include <crtdbg.h>
 #endif // _CRT_DBG_MAP_ALLOC
+#include <stdarg.h>
+#include <stdio.h>
+
+#include "mqtt_client_sample.h"
+#include "mqtt_client.h"
+#include "azure_c_shared_utility/socketio.h"
+#include "azure_c_shared_utility/platform.h"
 
 static const char* TOPIC_NAME_A = "msgA";
 static const char* TOPIC_NAME_B = "msgB";

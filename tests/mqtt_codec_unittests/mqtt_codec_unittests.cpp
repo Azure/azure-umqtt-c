@@ -9,8 +9,8 @@
 #include "testrunnerswitcher.h"
 #include "micromock.h"
 #include "mqtt_codec.h"
-#include "buffer_.h"
-#include "lock.h"
+#include "azure_c_shared_utility/buffer_.h"
+#include "azure_c_shared_utility/lock.h"
 
 #define GBALLOC_H
 extern "C" int gballoc_init(void);

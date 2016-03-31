@@ -9,8 +9,8 @@
 #include "testrunnerswitcher.h"
 #include "micromock.h"
 #include "mqtt_message.h"
-#include "lock.h"
-#include "crt_abstractions.h"
+#include "azure_c_shared_utility/lock.h"
+#include "azure_c_shared_utility/crt_abstractions.h"
 
 #define GBALLOC_H
 extern "C" int gballoc_init(void);

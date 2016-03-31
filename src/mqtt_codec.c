@@ -2,12 +2,12 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include <stdlib.h>
-#include "gballoc.h"
-#include "mqtt_codec.h"
-#include "buffer_.h"
-#include "macro_utils.h"
 #include <limits.h>
-#include "xlogging.h"
+#include "azure_c_shared_utility/gballoc.h"
+#include "azure_c_shared_utility/buffer_.h"
+#include "azure_c_shared_utility/macro_utils.h"
+#include "azure_c_shared_utility/xlogging.h"
+#include "mqtt_codec.h"
 
 #define PAYLOAD_OFFSET                      5
 #define PACKET_TYPE_BYTE(p)                 ((uint8_t)(((uint8_t)(p)) & 0xf0))

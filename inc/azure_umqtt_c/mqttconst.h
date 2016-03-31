@@ -13,7 +13,7 @@ extern "C" {
 #include <stdint.h>
 #endif /* __cplusplus */
 
-#include "crt_abstractions.h"
+#include "azure_c_shared_utility/crt_abstractions.h"
 
 typedef enum CONTROL_PACKET_TYPE_TAG
 {

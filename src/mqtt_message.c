@@ -3,7 +3,7 @@
 
 #include <stdlib.h>
 #include "mqtt_message.h"
-#include "gballoc.h"
+#include "azure_c_shared_utility/gballoc.h"
 
 typedef struct MQTT_MESSAGE_TAG
 {

@@ -2,13 +2,13 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include <stdlib.h>
-#include "gballoc.h"
+#include "azure_c_shared_utility/gballoc.h"
+#include "azure_c_shared_utility/platform.h"
+#include "azure_c_shared_utility/tickcounter.h"
+#include "azure_c_shared_utility/crt_abstractions.h"
 
 #include "mqtt_client.h"
 #include "mqtt_codec.h"
-#include "platform.h"
-#include "tickcounter.h"
-#include "crt_abstractions.h"
 
 #define KEEP_ALIVE_BUFFER_SEC           2
 #define VARIABLE_HEADER_OFFSET          2
