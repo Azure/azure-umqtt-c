@@ -33,7 +33,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 # Start of variables used during install
 #set (INCLUDE_INSTALL_DIR include CACHE PATH "Include file directory")
 
-add_subdirectory(azure-c-shared-utility/c)
+add_subdirectory(azure-c-shared-utility)
 
 enable_testing()
 
