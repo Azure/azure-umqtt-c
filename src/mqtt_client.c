@@ -10,7 +10,7 @@
 #include "mqtt_client.h"
 #include "mqtt_codec.h"
 
-#define KEEP_ALIVE_BUFFER_SEC           2
+#define KEEP_ALIVE_BUFFER_SEC           10
 #define VARIABLE_HEADER_OFFSET          2
 #define RETAIN_FLAG_MASK                0x1
 #define QOS_LEAST_ONCE_FLAG_MASK        0x2
