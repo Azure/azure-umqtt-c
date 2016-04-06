@@ -7,8 +7,8 @@
 #include "azure_c_shared_utility/tickcounter.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
 
-#include "mqtt_client.h"
-#include "mqtt_codec.h"
+#include "azure_umqtt_c/mqtt_client.h"
+#include "azure_umqtt_c/mqtt_codec.h"
 
 #define KEEP_ALIVE_BUFFER_SEC           10
 #define VARIABLE_HEADER_OFFSET          2

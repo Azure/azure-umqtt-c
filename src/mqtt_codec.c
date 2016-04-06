@@ -7,7 +7,7 @@
 #include "azure_c_shared_utility/buffer_.h"
 #include "azure_c_shared_utility/macro_utils.h"
 #include "azure_c_shared_utility/xlogging.h"
-#include "mqtt_codec.h"
+#include "azure_umqtt_c/mqtt_codec.h"
 
 #define PAYLOAD_OFFSET                      5
 #define PACKET_TYPE_BYTE(p)                 ((uint8_t)(((uint8_t)(p)) & 0xf0))

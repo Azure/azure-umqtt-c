@@ -15,8 +15,8 @@ extern "C" {
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/macro_utils.h"
 #include "azure_c_shared_utility/list.h"
-#include "mqttconst.h"
-#include "mqtt_message.h"
+#include "azure_umqtt_c/mqttconst.h"
+#include "azure_umqtt_c/mqtt_message.h"
 
 typedef struct MQTT_CLIENT_TAG* MQTT_CLIENT_HANDLE;
 

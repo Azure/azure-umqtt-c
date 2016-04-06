@@ -2,7 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include <stdlib.h>
-#include "mqtt_message.h"
+#include "azure_umqtt_c/mqtt_message.h"
 #include "azure_c_shared_utility/gballoc.h"
 
 typedef struct MQTT_MESSAGE_TAG

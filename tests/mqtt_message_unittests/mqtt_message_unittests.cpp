@@ -8,7 +8,7 @@
 
 #include "testrunnerswitcher.h"
 #include "micromock.h"
-#include "mqtt_message.h"
+#include "azure_umqtt_c/mqtt_message.h"
 #include "azure_c_shared_utility/lock.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
 

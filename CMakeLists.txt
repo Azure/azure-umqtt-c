@@ -99,7 +99,7 @@ set(source_h_files
 #the following "set" statetement exports across the project a global variable called COMMON_INC_FOLDER that expands to whatever needs to included when using COMMON library
 set(MQTT_INC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/inc CACHE INTERNAL "this is what needs to be included if using sharedLib lib" FORCE)
 set(MQTT_SRC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/src CACHE INTERNAL "this is what needs to be included when doing include sources" FORCE)
-include_directories(${MQTT_INC_FOLDER} ${MQTT_INC_FOLDER}/azure_umqtt_c ${SHARED_UTIL_INC_FOLDER})
+include_directories(${MQTT_INC_FOLDER} ${SHARED_UTIL_INC_FOLDER})
 
 get_directory_property(hasParent PARENT_DIRECTORY)
 if(hasParent)

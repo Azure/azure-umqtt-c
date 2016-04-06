@@ -16,10 +16,10 @@
 #include "azure_c_shared_utility/agenttime.h"
 #include "azure_c_shared_utility/buffer_.h"
 
-#include "mqtt_client.h"
-#include "mqtt_codec.h"
-#include "mqtt_message.h"
-#include "mqttconst.h"
+#include "azure_umqtt_c/mqtt_client.h"
+#include "azure_umqtt_c/mqtt_codec.h"
+#include "azure_umqtt_c/mqtt_message.h"
+#include "azure_umqtt_c/mqttconst.h"
 
 #define GBALLOC_H
 extern "C" int gballoc_init(void);

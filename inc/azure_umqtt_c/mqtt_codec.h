@@ -15,7 +15,7 @@ extern "C" {
 
 #include "azure_c_shared_utility/xio.h"
 #include "azure_c_shared_utility/buffer_.h"
-#include "mqttconst.h"
+#include "azure_umqtt_c/mqttconst.h"
 
 typedef struct MQTTCODEC_INSTANCE_TAG* MQTTCODEC_HANDLE;
 
