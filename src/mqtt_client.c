@@ -9,6 +9,7 @@
 
 #include "azure_umqtt_c/mqtt_client.h"
 #include "azure_umqtt_c/mqtt_codec.h"
+#include <time.h>
 
 #define KEEP_ALIVE_BUFFER_SEC           10
 #define VARIABLE_HEADER_OFFSET          2
@@ -17,6 +18,7 @@
 #define QOS_EXACTLY_ONCE_FLAG_MASK      0x4
 #define DUPLICATE_FLAG_MASK             0x8
 #define CONNECT_PACKET_MASK             0xf0
+#define TIME_MAX_BUFFER                 16
 
 static const char* FORMAT_HEX_CHAR = "0x%02x ";
 
@@ -129,14 +131,30 @@ static const char* retrievePacketType(CONTROL_PACKET_TYPE packet)
     }
 }
 
+static void getLogTime(char* timeResult, size_t len)
+{
+    if (timeResult != NULL)
+    {
+        time_t localTime = time(NULL);
+        struct tm* tmInfo = localtime(&localTime);
+        if (strftime(timeResult, len, "%H:%M:%S", tmInfo) == 0)
+        {
+            timeResult[0] = '\0';
+        }
+    }
+}
+
 static void logOutgoingingMsgTrace(MQTT_CLIENT* clientData, const uint8_t* data, size_t length)
 {
     if (clientData != NULL && data != NULL && length > 0 && clientData->logTrace)
     {
-        LOG(clientData->logFunc, 0, "-> %s: ", retrievePacketType((unsigned char)data[0]));
+        char tmBuffer[TIME_MAX_BUFFER];
+        getLogTime(tmBuffer, TIME_MAX_BUFFER);
+
+        LOG(clientData->logFunc, 0, "-> %s %s: ", tmBuffer, retrievePacketType((unsigned char)data[0]));
         for (size_t index = 0; index < length; index++)
         {
-            LOG(clientData->logFunc, 0, (char*)FORMAT_HEX_CHAR, (unsigned char)data[index]);
+            LOG(clientData->logFunc, 0, (char*)FORMAT_HEX_CHAR, data[index]);
         }
         LOG(clientData->logFunc, LOG_LINE, "");
     }
@@ -146,10 +164,13 @@ static void logIncomingMsgTrace(MQTT_CLIENT* clientData, CONTROL_PACKET_TYPE pac
 {
     if (clientData != NULL && data != NULL && length > 0 && clientData->logTrace)
     {
-        LOG(clientData->logFunc, 0, "<- %s: 0x%02x 0x%02x ", retrievePacketType((unsigned char)packet), (unsigned char)(packet | flags), length);
+        char tmBuffer[TIME_MAX_BUFFER];
+        getLogTime(tmBuffer, TIME_MAX_BUFFER);
+
+        LOG(clientData->logFunc, 0, "<- %s %s: 0x%02x 0x%02x ", tmBuffer, retrievePacketType((unsigned char)packet), (unsigned char)(packet | flags), length);
         for (size_t index = 0; index < length; index++)
         {
-            LOG(clientData->logFunc, 0, (char*)FORMAT_HEX_CHAR, (unsigned char)data[index]);
+            LOG(clientData->logFunc, 0, (char*)FORMAT_HEX_CHAR, data[index]);
         }
         LOG(clientData->logFunc, LOG_LINE, "");
     }
