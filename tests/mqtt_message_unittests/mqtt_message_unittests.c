@@ -26,7 +26,7 @@ extern "C" {
     int my_mallocAndStrcpy_s(char** destination, const char* source)
     {
         size_t len = strlen(source);
-        *destination = malloc(len + 1);
+        *destination = (char*)malloc(len + 1);
         strcpy(*destination, source);
         return 0;
     }
