@@ -1,4 +1,4 @@
-azure-umqtt-c (0.1.0-9) vivid; urgency=low
+azure-umqtt-c (0.1.0-10) vivid; urgency=low
 
   * Initial release (Closes: #5479749)
 
@@ -14,5 +14,7 @@ azure-umqtt-c (0.1.0-9) vivid; urgency=low
 
   * Added times to the logging (#5e37608)
 
- -- AzureIoT User <aziotsdklinux@outlook.com>  Fri, 22 Apr 2016 00:23:02 +0000
+  * Make mqtt codec and mqtt message headers have mockable functions
+
+ -- AzureIoT User <aziotsdklinux@outlook.com>  Fri, 6 May 2016 00:23:02 +0000
 
