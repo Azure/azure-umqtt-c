@@ -35,6 +35,8 @@ set build-clean=0
 set build-config=Debug
 set build-platform=Win32
 set CMAKE_skip_unittests=OFF
+set CMAKE_DIR=umqtt_win32
+set MAKE_NUGET_PKG=no
 
 :args-loop
 if "%1" equ "" goto args-done
@@ -43,6 +45,7 @@ if "%1" equ "--clean" goto arg-build-clean
 if "%1" equ "--config" goto arg-build-config
 if "%1" equ "--platform" goto arg-build-platform
 if "%1" equ "--skip-unittests" goto arg-skip-unittests
+if "%1" equ "--make_nuget" goto arg-build-nuget
 call :usage && exit /b 1
 
 :arg-build-clean
@@ -59,9 +62,21 @@ goto args-continue
 shift
 if "%1" equ "" call :usage && exit /b 1
 set build-platform=%1
+if %build-platform% == x64 (
+    set CMAKE_DIR=umqtt_x64
+) else if %build-platform% == arm (
+    set CMAKE_DIR=umqtt_arm
+)
 goto args-continue
 
 :arg-skip-unittests
+set CMAKE_skip_unittests=ON
+goto args-continue
+
+:arg-build-nuget
+shift
+if "%1" equ "" call :usage && exit /b 1
+set MAKE_NUGET_PKG=%1
 set CMAKE_skip_unittests=ON
 goto args-continue
 
@@ -72,40 +87,90 @@ goto args-loop
 :args-done
 
 rem -----------------------------------------------------------------------------
-rem -- clean solutions
-rem -----------------------------------------------------------------------------
-
-if %build-clean%==1 (
-    rem -- call nuget restore "%build-root%\samples\mqtt_client_sample\windows\mqtt_client_sample.sln"
-    rem -- call :clean-a-solution "%build-root%\samples\mqtt_client_sample\windows\mqtt_client_sample.sln"
-    rem -- if not %errorlevel%==0 exit /b %errorlevel%
-)
-
-rem -----------------------------------------------------------------------------
 rem -- build with CMAKE and run tests
 rem -----------------------------------------------------------------------------
 
-rmdir /s/q %USERPROFILE%\azure_mqtt
-rem no error checking
+echo CMAKE Output Path: %build-root%\cmake\%CMAKE_DIR%
 
-mkdir %USERPROFILE%\azure_mqtt
-rem no error checking
+if EXIST %build-root%\cmake\%CMAKE_DIR% (
+    rmdir /s/q %build-root%\cmake\%CMAKE_DIR%
+    rem no error checking
+)
 
-pushd %USERPROFILE%\azure_mqtt
-cmake %build-root% -Dskip_unittests:BOOL=%CMAKE_skip_unittests%
-if not %errorlevel%==0 exit /b %errorlevel%
+echo %build-root%\cmake\%CMAKE_DIR%
+mkdir %build-root%\cmake\%CMAKE_DIR%
+pushd %build-root%\cmake\%CMAKE_DIR%    
 
-rem msbuild /m umqtt.sln
-call :_run-msbuild "Build" umqtt.sln %2 %3
-if not %errorlevel%==0 exit /b %errorlevel%
+if %MAKE_NUGET_PKG% == yes (
+    echo ***Running CMAKE for Win32***
+    cmake %build-root% -Dskip_unittests:BOOL=%CMAKE_skip_unittests%
+    if not %errorlevel%==0 exit /b %errorlevel%
+    popd
 
-echo Build Config: %build-config%
+    echo ***Running CMAKE for Win64***
+    if EXIST %build-root%\cmake\umqtt_x64 (
+        rmdir /s/q %build-root%\cmake\umqtt_x64
+    )
+    mkdir %build-root%\cmake\umqtt_x64
+    pushd %build-root%\cmake\umqtt_x64
+    cmake -Dskip_unittests:BOOL=%CMAKE_skip_unittests% %build-root% -G "Visual Studio 14 Win64"
+    if not %errorlevel%==0 exit /b %errorlevel%
+    popd
 
-if "%build-config%" == "Debug" (
-    ctest -C "debug" -V
+    echo ***Running CMAKE for ARM***
+    if EXIST %build-root%\cmake\umqtt_arm (
+        rmdir /s/q %build-root%\cmake\umqtt_arm
+    )
+    mkdir %build-root%\cmake\umqtt_arm
+    pushd %build-root%\cmake\umqtt_arm
+    echo ***Running CMAKE for ARM***
+    cmake -Dskip_unittests:BOOL=%CMAKE_skip_unittests% %build-root% -G "Visual Studio 14 ARM" 
+    if not %errorlevel%==0 exit /b %errorlevel%
+    
+) else if %build-platform% == Win32 (
+    echo ***Running CMAKE for Win32***
+    cmake %build-root% -Dskip_unittests:BOOL=%CMAKE_skip_unittests%
+    if not %errorlevel%==0 exit /b %errorlevel%
+) else if %build-platform% == arm (
+    echo ***Running CMAKE for ARM***
+    cmake -Dskip_unittests:BOOL=%CMAKE_skip_unittests% %build-root% -G "Visual Studio 14 ARM" 
+    if not %errorlevel%==0 exit /b %errorlevel%
+) else (
+    echo ***Running CMAKE for Win64***
+    cmake -Dskip_unittests:BOOL=%CMAKE_skip_unittests% %build-root% -G "Visual Studio 14 Win64"
     if not %errorlevel%==0 exit /b %errorlevel%
 )
 
+if %MAKE_NUGET_PKG% == yes (
+        echo ***Building all configurations***
+        msbuild /m %build-root%\cmake\umqtt_win32\umqtt.sln /p:Configuration=Release
+        msbuild /m %build-root%\cmake\umqtt_win32\umqtt.sln /p:Configuration=Debug
+        if not %errorlevel%==0 exit /b %errorlevel%
+
+        msbuild /m %build-root%\cmake\umqtt_x64\umqtt.sln /p:Configuration=Release
+        msbuild /m %build-root%\cmake\umqtt_x64\umqtt.sln /p:Configuration=Debug
+        if not %errorlevel%==0 exit /b %errorlevel%
+
+        msbuild /m %build-root%\cmake\umqtt_arm\umqtt.sln /p:Configuration=Release
+        msbuild /m %build-root%\cmake\umqtt_arm\umqtt.sln /p:Configuration=Debug
+        if not %errorlevel%==0 exit /b %errorlevel%
+) else (
+    rem msbuild /m umqtt.sln
+    call :_run-msbuild "Build" umqtt.sln %2 %3
+    if not %errorlevel%==0 exit /b %errorlevel%
+
+    echo Build Config: %build-config%
+    echo Build Platform: %build-platform%
+
+    if %build-platform% neq arm (
+        echo Build Platform: %build-platform%
+        
+        if "%build-config%" == "Debug" (
+            ctest -C "debug" -V
+            if not %errorlevel%==0 exit /b %errorlevel%
+        )
+    )
+)
 popd
 goto :eof
 
@@ -130,8 +195,9 @@ echo build.cmd [options]
 echo options:
 echo  -c, --clean             delete artifacts from previous build before building
 echo  --config ^<value^>      [Debug] build configuration (e.g. Debug, Release)
-echo  --platform ^<value^>    [Win32] build platform (e.g. Win32, x64, ...)
+echo  --platform ^<value^>    [Win32] build platform (e.g. Win32, x64, arm, ...)
 echo  --skip-unittests        skip the unit tests
+echo  --make_nuget ^<value^>  [no] generates the binaries to be used for nuget packaging (e.g. yes, no)
 goto :eof
 
 rem -----------------------------------------------------------------------------
@@ -168,7 +234,6 @@ rem // run tests
 echo Test DLLs: %test-dlls-list%
 echo.
 vstest.console.exe %test-dlls-list%
-
 if not %errorlevel%==0 exit /b %errorlevel%
 goto :eof
 

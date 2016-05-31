@@ -22,16 +22,21 @@
         <file src="Microsoft.Azure.umqtt_thirdpartynotice.txt" target="thirdpartynotice.txt"/>
 
         <!-- these are files for x86 plaform -->
-        <file src="..\..\..\azure_mqtt_output\win32\debug\umqtt.lib" target="build\native\Win32\Debug"/>
-        <file src="..\..\..\azure_mqtt_output\win32\debug\umqtt.pdb" target="build\native\Win32\Debug"/>
-        <file src="..\..\..\azure_mqtt_output\win32\release\umqtt.lib" target="build\native\Win32\Release"/>
+        <file src="..\..\..\cmake\azure_mqtt_output\win32\debug\umqtt.lib" target="build\native\Win32\Debug"/>
+        <file src="..\..\..\cmake\azure_mqtt_output\win32\debug\umqtt.pdb" target="build\native\Win32\Debug"/>
+        <file src="..\..\..\cmake\azure_mqtt_output\win32\release\umqtt.lib" target="build\native\Win32\Release"/>
 
         <!-- these are files for x64 plaform -->
-        <file src="..\..\..\azure_mqtt_output\x64\debug\umqtt.lib" target="build\native\x64\Debug"/>
-        <file src="..\..\..\azure_mqtt_output\x64\debug\umqtt.pdb" target="build\native\x64\Debug"/>
-        <file src="..\..\..\azure_mqtt_output\x64\release\umqtt.lib" target="build\native\x64\Release"/>
+        <file src="..\..\..\cmake\azure_mqtt_output\x64\debug\umqtt.lib" target="build\native\x64\Debug"/>
+        <file src="..\..\..\cmake\azure_mqtt_output\x64\debug\umqtt.pdb" target="build\native\x64\Debug"/>
+        <file src="..\..\..\cmake\azure_mqtt_output\x64\release\umqtt.lib" target="build\native\x64\Release"/>
 
-        <file src="Microsoft.Azure.umqtt.targets" target="build\native"/>
+      <!-- these are files for arm plaform -->
+      <file src="..\..\..\cmake\azure_mqtt_output\arm\debug\umqtt.lib" target="build\native\arm\Debug"/>
+      <file src="..\..\..\cmake\azure_mqtt_output\arm\debug\umqtt.pdb" target="build\native\arm\Debug"/>
+      <file src="..\..\..\cmake\azure_mqtt_output\arm\release\umqtt.lib" target="build\native\arm\Release"/>
+
+      <file src="Microsoft.Azure.umqtt.targets" target="build\native"/>
 
         <file src="..\..\..\inc\azure_umqtt_c\*.h" target="build\native\include\azure_umqtt_c"/>
     </files>

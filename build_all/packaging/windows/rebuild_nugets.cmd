@@ -39,13 +39,19 @@ Powershell.exe wget -outf nuget.exe https://nuget.org/nuget.exe
 	)
 )
 
-if exist %USERPROFILE%\azure_mqtt_nuget (
+set build-path=%build-root%\cmake
+
+echo Build root is %build-root%
+echo Build path is %build-path%
+echo Client root is %client-root%
+
+if exist %build-path%\azure_mqtt_nuget (
 	rmdir /s/q %USERPROFILE%\azure_mqtt_nuget
 	rem no error checking
 )
 
-if exist %client-root%\azure_mqtt_output (
-	rmdir /s/q %client-root%\azure_mqtt_output
+if exist %build-path%\azure_mqtt_output (
+	rmdir /s/q %build-path%\azure_mqtt_output
 	rem no error checking
 )
 
@@ -53,86 +59,61 @@ rem ----------------------------------------------------------------------------
 rem -- build with CMAKE
 rem -----------------------------------------------------------------------------
 
-echo Build root is %build-root%
-echo Client root is %client-root%
-
-mkdir %USERPROFILE%\azure_mqtt_nuget
+REM mkdir %build-path%\azure_mqtt_output
 rem no error checking
 
-pushd %USERPROFILE%\azure_mqtt_nuget
+call %build-root%\build_all\windows\build.cmd --make_nuget yes
 
-rem Build Win32
-cmake %build-root%
-if not %errorlevel%==0 exit /b %errorlevel%
-
-call :_run-msbuild "Build" umqtt.sln Debug Win32
-if not %errorlevel%==0 exit /b %errorlevel%
+rem -----------------------------------------------------------------------------
+rem -- Copy Win32 binaries
+rem -----------------------------------------------------------------------------
 
 rem -- Copy all Win32 files from cmake build directory to the repo directory
-xcopy /q /y /R %USERPROFILE%\azure_mqtt_nuget\Debug\*.* %client-root%\azure_mqtt_output\win32\debug\*.*
-if %errorlevel% neq 0 exit /b %errorlevel%
+echo copying %build-path%\umqtt_win32\win32\debug
 
-call :_run-msbuild "Build" umqtt.sln Release Win32
-if not %errorlevel%==0 exit /b %errorlevel%
+xcopy /q /y /R %build-path%\umqtt_win32\Debug\*.* %build-path%\azure_mqtt_output\win32\debug\*.*
+if %errorlevel% neq 0 exit /b %errorlevel%
 
 rem -- Copy all Win32 Release files from cmake build directory to the repo directory
-xcopy /q /y /R %USERPROFILE%\azure_mqtt_nuget\Release\*.* %client-root%\azure_mqtt_output\win32\Release\*.*
+xcopy /q /y /R %build-path%\umqtt_win32\Release\*.* %build-path%\azure_mqtt_output\win32\Release\*.*
 if %errorlevel% neq 0 exit /b %errorlevel%
-
-rem -- Remove the x86 cmake files
-rmdir /s/q %USERPROFILE%\azure_mqtt_nuget
-rem no error checking
 
 rem -----------------------------------------------------------------------------
 rem -- build with CMAKE x64
 rem -----------------------------------------------------------------------------
 
-cmake %build-root% -G "Visual Studio 14 Win64"
-if not %errorlevel%==0 exit /b %errorlevel%
-
-call :_run-msbuild "Build" umqtt.sln Debug x64
-if not %errorlevel%==0 exit /b %errorlevel%
-
 rem -- Copy all x64 files from cmake build directory to the repo directory
-xcopy /q /y /R %USERPROFILE%\azure_mqtt_nuget\Debug\*.* %client-root%\azure_mqtt_output\x64\debug\*.*
+xcopy /q /y /R %build-path%\umqtt_x64\Debug\*.* %build-path%\azure_mqtt_output\x64\debug\*.*
 if %errorlevel% neq 0 exit /b %errorlevel%
 
-call :_run-msbuild "Build" umqtt.sln Release x64
-if not %errorlevel%==0 exit /b %errorlevel%
-
 rem -- Copy all x64 Release files from cmake build directory to the repo directory
-xcopy /q /y /R %USERPROFILE%\azure_mqtt_nuget\Release\*.* %client-root%\azure_mqtt_output\x64\Release\*.*
+xcopy /q /y /R %build-path%\umqtt_x64\Release\*.* %build-path%\azure_mqtt_output\x64\Release\*.*
 if %errorlevel% neq 0 exit /b %errorlevel%
 
 if exist *.nupkg (
 	del *.nupkg
 )
 
-popd
+rem -----------------------------------------------------------------------------
+rem -- build with CMAKE ARM
+rem -----------------------------------------------------------------------------
+
+rem -- Copy all ARM files from cmake build directory to the repo directory
+xcopy /q /y /R %build-path%\umqtt_arm\Debug\*.* %build-path%\azure_mqtt_output\arm\debug\*.*
+if %errorlevel% neq 0 exit /b %errorlevel%
+
+rem -- Copy all x64 Release files from cmake build directory to the repo directory
+xcopy /q /y /R %build-path%\umqtt_arm\Release\*.* %build-path%\azure_mqtt_output\arm\Release\*.*
+if %errorlevel% neq 0 exit /b %errorlevel%
+
+if exist *.nupkg (
+	del *.nupkg
+)
 
 rem -- Package Nuget
 nuget pack %build-root%\build_all\packaging\windows\Microsoft.Azure.umqtt.nuspec -OutputDirectory %build-root%\build_all\packaging\windows
 
-rmdir /s/q %client-root%\azure_mqtt_output
-rmdir /s/q %USERPROFILE%\azure_mqtt_nuget
+rmdir /s/q %build-path%\azure_mqtt_output
 
-popd
 goto :eof
-
-rem -----------------------------------------------------------------------------
-rem -- helper subroutines
-rem -----------------------------------------------------------------------------
-
-:_run-msbuild
-rem // optionally override configuration|platform
-setlocal EnableExtensions
-set build-target=
-if "%~1" neq "Build" set "build-target=/t:%~1"
-if "%~3" neq "" set build-config=%~3
-if "%~4" neq "" set build-platform=%~4
-
-msbuild /m %build-target% "/p:Configuration=%build-config%;Platform=%build-platform%" %2
-if not %errorlevel%==0 exit /b %errorlevel%
-goto :eof
-
 echo done
