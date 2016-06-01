@@ -8,6 +8,7 @@ script_dir=$(cd "$(dirname "$0")" && pwd)
 build_root=$(cd "${script_dir}/../.." && pwd)
 run_unit_tests=ON
 run_valgrind=0
+build_folder=$build_root"/cmake/umqtt_linux"
 
 usage ()
 {
@@ -43,9 +44,9 @@ process_args ()
 
 process_args $*
 
-rm -r -f ~/azure-mqtt
-mkdir ~/azure-mqtt
-pushd ~/azure-mqtt
+rm -r -f $build_folder
+mkdir -p $build_folder
+pushd $build_folder
 cmake -DcompileOption_C:STRING="$extracloptions" -Drun_valgrind:BOOL=$run_valgrind $build_root
 make --jobs=$(nproc)
 
