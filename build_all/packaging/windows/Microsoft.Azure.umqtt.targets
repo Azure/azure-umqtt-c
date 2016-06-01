@@ -32,12 +32,12 @@
       <AdditionalDependencies>$(MSBuildThisFileDirectory)../../build/native/x64/Release/umqtt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Label="Win64Debug" Condition="(( $(Configuration.ToLower().IndexOf('debug')) &gt; -1 ) And ('$(Platform)' == 'arm' ) )">
+  <ItemDefinitionGroup Label="ArmDebug" Condition="(( $(Configuration.ToLower().IndexOf('debug')) &gt; -1 ) And ('$(Platform)' == 'arm' ) )">
     <Link>
       <AdditionalDependencies>$(MSBuildThisFileDirectory)../../build/native/arm/Debug/umqtt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Label="Win64Release" Condition="(( $(Configuration.ToLower().IndexOf('debug')) == -1 ) And ('$(Platform)' == 'arm' ) )">
+  <ItemDefinitionGroup Label="ArmRelease" Condition="(( $(Configuration.ToLower().IndexOf('debug')) == -1 ) And ('$(Platform)' == 'arm' ) )">
     <Link>
       <AdditionalDependencies>$(MSBuildThisFileDirectory)../../build/native/arm/Release/umqtt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
