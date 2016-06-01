@@ -45,11 +45,6 @@ echo Build root is %build-root%
 echo Build path is %build-path%
 echo Client root is %client-root%
 
-if exist %build-path%\azure_mqtt_nuget (
-	rmdir /s/q %USERPROFILE%\azure_mqtt_nuget
-	rem no error checking
-)
-
 if exist %build-path%\azure_mqtt_output (
 	rmdir /s/q %build-path%\azure_mqtt_output
 	rem no error checking
@@ -90,9 +85,6 @@ rem -- Copy all x64 Release files from cmake build directory to the repo directo
 xcopy /q /y /R %build-path%\umqtt_x64\Release\*.* %build-path%\azure_mqtt_output\x64\Release\*.*
 if %errorlevel% neq 0 exit /b %errorlevel%
 
-if exist *.nupkg (
-	del *.nupkg
-)
 
 rem -----------------------------------------------------------------------------
 rem -- build with CMAKE ARM
