@@ -1,4 +1,4 @@
-azure-umqtt-c (0.1.0-10) vivid; urgency=low
+azure-umqtt-c (0.1.0-11) vivid; urgency=low
 
   * Initial release (Closes: #5479749)
 
@@ -16,5 +16,7 @@ azure-umqtt-c (0.1.0-10) vivid; urgency=low
 
   * Make mqtt codec and mqtt message headers have mockable functions
 
- -- AzureIoT User <aziotsdklinux@outlook.com>  Fri, 6 May 2016 00:23:02 +0000
+  * Fix tlsio_schannel bug (not all input bytes were being read) (#451ab97)
+
+ -- AzureIoT User <aziotsdklinux@outlook.com>  Fri, 20 May 2016 00:23:02 +0000
 
