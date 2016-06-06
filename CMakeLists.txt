@@ -146,13 +146,6 @@ ENDIF(WIN32)
 add_library(umqtt ${source_c_files} ${source_h_files})
 
 set(SHARED_UTIL_ADAPTER_FOLDER "${CMAKE_CURRENT_LIST_DIR}/azure-c-shared-utility/c/adapters")
-if(WIN32)
-    set(LOCK_C_FILE ${SHARED_UTIL_ADAPTER_FOLDER}/lock_c11.c)
-    set(THREAD_C_FILE ${SHARED_UTIL_ADAPTER_FOLDER}/threadapi_c11.c)
-else()
-    set(LOCK_C_FILE ${SHARED_UTIL_ADAPTER_FOLDER}/lock_pthreads.c)
-    set(THREAD_C_FILE ${SHARED_UTIL_ADAPTER_FOLDER}/threadapi_pthreads.c)
-endif()
 
 target_link_libraries(umqtt aziotsharedutil)
 
