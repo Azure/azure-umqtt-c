@@ -217,11 +217,11 @@ static void TestRecvCallback(MQTT_MESSAGE_HANDLE msgHandle, void* context)
 
 static void TestOpCallback(MQTT_CLIENT_HANDLE handle, MQTT_CLIENT_EVENT_RESULT actionResult, const void* msgInfo, void* context)
 {
-    if (context != NULL && msgInfo != NULL)
+    switch (actionResult)
     {
-        switch (actionResult)
+        case MQTT_CLIENT_ON_CONNACK:
         {
-            case MQTT_CLIENT_ON_CONNACK:
+            if (context != NULL && msgInfo != NULL)
             {
                 const CONNECT_ACK* connack = (CONNECT_ACK*)msgInfo;
                 TEST_COMPLETE_DATA_INSTANCE* testData = (TEST_COMPLETE_DATA_INSTANCE*)context;
@@ -231,12 +231,15 @@ static void TestOpCallback(MQTT_CLIENT_HANDLE handle, MQTT_CLIENT_EVENT_RESULT a
                 {
                     g_operationCallbackInvoked = true;
                 }
-                break;
             }
-            case MQTT_CLIENT_ON_PUBLISH_ACK:
-            case MQTT_CLIENT_ON_PUBLISH_RECV:
-            case MQTT_CLIENT_ON_PUBLISH_REL:
-            case MQTT_CLIENT_ON_PUBLISH_COMP:
+            break;
+        }
+        case MQTT_CLIENT_ON_PUBLISH_ACK:
+        case MQTT_CLIENT_ON_PUBLISH_RECV:
+        case MQTT_CLIENT_ON_PUBLISH_REL:
+        case MQTT_CLIENT_ON_PUBLISH_COMP:
+        {
+            if (context != NULL && msgInfo != NULL)
             {
                 const PUBLISH_ACK* puback = (PUBLISH_ACK*)msgInfo;
                 TEST_COMPLETE_DATA_INSTANCE* testData = (TEST_COMPLETE_DATA_INSTANCE*)context;
@@ -245,9 +248,12 @@ static void TestOpCallback(MQTT_CLIENT_HANDLE handle, MQTT_CLIENT_EVENT_RESULT a
                 {
                     g_operationCallbackInvoked = true;
                 }
-                break;
             }
-            case MQTT_CLIENT_ON_SUBSCRIBE_ACK:
+            break;
+        }
+        case MQTT_CLIENT_ON_SUBSCRIBE_ACK:
+        {
+            if (context != NULL && msgInfo != NULL)
             {
                 const SUBSCRIBE_ACK* suback = (SUBSCRIBE_ACK*)msgInfo;
                 TEST_COMPLETE_DATA_INSTANCE* testData = (TEST_COMPLETE_DATA_INSTANCE*)context;
@@ -267,9 +273,12 @@ static void TestOpCallback(MQTT_CLIENT_HANDLE handle, MQTT_CLIENT_EVENT_RESULT a
                         }
                     }
                 }
-                break;
             }
-            case MQTT_CLIENT_ON_UNSUBSCRIBE_ACK:
+            break;
+        }
+        case MQTT_CLIENT_ON_UNSUBSCRIBE_ACK:
+        {
+            if (context != NULL && msgInfo != NULL)
             {
                 const UNSUBSCRIBE_ACK* suback = (UNSUBSCRIBE_ACK*)msgInfo;
                 TEST_COMPLETE_DATA_INSTANCE* testData = (TEST_COMPLETE_DATA_INSTANCE*)context;
@@ -278,17 +287,26 @@ static void TestOpCallback(MQTT_CLIENT_HANDLE handle, MQTT_CLIENT_EVENT_RESULT a
                 {
                     g_operationCallbackInvoked = true;
                 }
-                break;
             }
-            case MQTT_CLIENT_ON_DISCONNECT:
-            case MQTT_CLIENT_ON_ERROR:
+            break;
+        }
+        case MQTT_CLIENT_ON_DISCONNECT:
+        case MQTT_CLIENT_ON_ERROR:
+        {
+            if (msgInfo != NULL)
             {
                 if (msgInfo == NULL)
                 {
                     g_operationCallbackInvoked = true;
                 }
             }
+            break;
         }
+        case MQTT_CLIENT_NO_PING_RESPONSE:
+        {
+            g_operationCallbackInvoked = true;
+        }
+        break;
     }
 }
 
@@ -1072,11 +1090,52 @@ TEST_FUNCTION(mqtt_client_dowork_ping_succeeds)
     STRICT_EXPECTED_CALL(tickcounter_get_current_ms(TEST_COUNTER_HANDLE, IGNORED_PTR_ARG)).IgnoreArgument(2);
     EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(BUFFER_delete(TEST_BUFFER_HANDLE));
+    STRICT_EXPECTED_CALL(tickcounter_get_current_ms(TEST_COUNTER_HANDLE, IGNORED_PTR_ARG)).IgnoreArgument(2);
 
     // act
     mqtt_client_dowork(mqttHandle);
 
     // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    mqtt_client_deinit(mqttHandle);
+}
+
+/* Tests_SRS_MQTT_CLIENT_07_035: [If the timeSincePing has expired past the maxPingRespTime then mqtt_client_dowork shall call the Operation Callback function with the message MQTT_CLIENT_NO_PING_RESPONSE] */
+TEST_FUNCTION(mqtt_client_dowork_ping_No_ping_response_succeeds)
+{
+    // arrange
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, PrintLogFunction);
+
+    MQTT_CLIENT_OPTIONS mqttOptions ={ 0 };
+    SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, NULL, NULL, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
+
+    unsigned char CONNACK_RESP[] ={ 0x1, 0x0 };
+    size_t length = sizeof(CONNACK_RESP) / sizeof(CONNACK_RESP[0]);
+    BUFFER_HANDLE connack_handle = TEST_BUFFER_HANDLE;
+    STRICT_EXPECTED_CALL(BUFFER_u_char(TEST_BUFFER_HANDLE)).SetReturn(CONNACK_RESP);
+    STRICT_EXPECTED_CALL(BUFFER_length(TEST_BUFFER_HANDLE)).SetReturn(length);
+
+    int result = mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
+    g_openComplete(g_onCompleteCtx, IO_OPEN_OK);
+    g_packetComplete(mqttHandle, CONNACK_TYPE, 0, connack_handle);
+
+    g_current_ms = TEST_KEEP_ALIVE_INTERVAL * 2 * 1000;
+    mqtt_client_dowork(mqttHandle);
+
+    umock_c_reset_all_calls();
+
+    EXPECTED_CALL(xio_dowork(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(tickcounter_get_current_ms(TEST_COUNTER_HANDLE, IGNORED_PTR_ARG)).IgnoreArgument(2);
+
+    // act
+    g_current_ms = TEST_KEEP_ALIVE_INTERVAL * 8 * 1000;
+
+    mqtt_client_dowork(mqttHandle);
+
+    // assert
+    ASSERT_IS_TRUE(g_operationCallbackInvoked);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup

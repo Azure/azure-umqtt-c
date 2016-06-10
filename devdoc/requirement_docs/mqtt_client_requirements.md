@@ -101,9 +101,10 @@ extern int mqtt_client_publish(MQTT_CLIENT_HANDLE handle, MQTT_MESSAGE_HANDLE ms
 extern void mqtt_client_dowork(MQTT_CLIENT_HANDLE handle);
 ```
 **SRS_MQTT_CLIENT_07_023: [**If the parameter handle is NULL then mqtt_client_dowork shall do nothing.**]**  
-**SRS_MQTT_CLIENT_07_024: [**mqtt_client_dowork shall call the xio_dowork function to complete operations.**]**
-**SRS_MQTT_CLIENT_07_025: [**mqtt_client_dowork shall retrieve the  the last packet send value and ...**]** 
-**SRS_MQTT_CLIENT_07_026: [**if keepAliveInternal is > 0 and the send time is greater than the MQTT KeepAliveInterval then it shall construct an MQTT PINGREQ packet.**]** 
+**SRS_MQTT_CLIENT_07_024: [**mqtt_client_dowork shall call the xio_dowork function to complete operations.**]**  
+**SRS_MQTT_CLIENT_07_025: [**mqtt_client_dowork shall retrieve the  the last packet send value and ...**]**  
+**SRS_MQTT_CLIENT_07_026: [**If keepAliveInternal is > 0 and the send time is greater than the MQTT KeepAliveInterval then it shall construct an MQTT PINGREQ packet.**]**  
+**SRS_MQTT_CLIENT_07_035: [**If the timeSincePing has expired past the maxPingRespTime then mqtt_client_dowork shall call the Operation Callback function with the message MQTT_CLIENT_NO_PING_RESPONSE**]**  
 
 ##ON_MQTT_OPERATION_CALLBACK
 ```
