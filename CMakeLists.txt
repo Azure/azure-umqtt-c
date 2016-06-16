@@ -18,9 +18,21 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     set(MEMORYCHECK_COMMAND_OPTIONS "--trace-children=yes --leak-check=full --error-exitcode=1 --track-origins=yes")
 endif()
 
+include (CTest)
+
+include(ExternalProject)
+
+#the following variables are project-wide and can be used with cmake-gui
+option(skip_unittests "set skip_unittests to ON to skip unittests (default is OFF)[if possible, they are always build]" OFF)
+option(compileOption_C "passes a string to the command line of the C compiler" OFF)
+option(compileOption_CXX "passes a string to the command line of the C++ compiler" OFF)
+
+#Use solution folders. 
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
 include(CheckSymbolExists)
 function(detect_architecture symbol arch) 
-    if (NOT DEFINED ARCHITECTURE) 
+    if (NOT DEFINED ARCHITECTURE OR ARCHITECTURE STREQUAL "")
         set(CMAKE_REQUIRED_QUIET 1)
         check_symbol_exists("${symbol}" "" ARCHITECTURE_${arch}) 
         unset(CMAKE_REQUIRED_QUIET) 
@@ -34,7 +46,6 @@ function(detect_architecture symbol arch)
         endif() 
     endif() 
 endfunction() 
-
 if (MSVC) 
     detect_architecture("_M_AMD64" x86_64) 
     detect_architecture("_M_IX86" x86) 
@@ -47,19 +58,8 @@ endif()
 if (NOT DEFINED ARCHITECTURE) 
     set(ARCHITECTURE "GENERIC") 
 endif() 
-message(STATUS "Target architecture: ${ARCHITECTURE}") 
 
-include (CTest)
-
-include(ExternalProject)
-
-#the following variables are project-wide and can be used with cmake-gui
-option(skip_unittests "set skip_unittests to ON to skip unittests (default is OFF)[if possible, they are always build]" OFF)
-option(compileOption_C "passes a string to the command line of the C compiler" OFF)
-option(compileOption_CXX "passes a string to the command line of the C++ compiler" OFF)
-
-#Use solution folders. 
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+message(STATUS "MQTT Target architecture: ${ARCHITECTURE}") 
 
 # Start of variables used during install
 #set (INCLUDE_INSTALL_DIR include CACHE PATH "Include file directory")
@@ -150,7 +150,7 @@ set(SHARED_UTIL_ADAPTER_FOLDER "${CMAKE_CURRENT_LIST_DIR}/azure-c-shared-utility
 target_link_libraries(umqtt aziotsharedutil)
 
 if (NOT ${ARCHITECTURE} STREQUAL "ARM")
-	add_subdirectory(samples)
+    add_subdirectory(samples)
 endif()
 
 if (NOT ${skip_unittests})
