@@ -12,6 +12,8 @@
 #include "azure_umqtt_c/mqtt_client.h"
 #include "azure_c_shared_utility/socketio.h"
 #include "azure_c_shared_utility/platform.h"
+#include "azure_c_shared_utility/xlogging.h"
+#include "azure_c_shared_utility/consolelogger.h"
 
 static const char* TOPIC_NAME_A = "msgA";
 static const char* TOPIC_NAME_B = "msgB";
@@ -29,19 +31,6 @@ static bool g_continue = true;
 
 #define DEFAULT_MSG_TO_SEND         1
 
-static void PrintLogFunction(unsigned int options, char* format, ...)
-{
-    va_list args;
-    va_start(args, format);
-    (void)vprintf(format, args);
-    va_end(args);
-
-    if (options & LOG_LINE)
-    {
-        (void)printf("\r\n");
-    }
-}
-
 static const char* QosToString(QOS_VALUE qosValue)
 {
     switch (qosValue)
@@ -58,7 +47,7 @@ static void OnRecvCallback(MQTT_MESSAGE_HANDLE msgHandle, void* context)
 {
     const APP_PAYLOAD* appMsg = mqttmessage_getApplicationMsg(msgHandle);
 
-    PrintLogFunction(0, "Incoming Msg: Packet Id: %d\r\nQOS: %s\r\nTopic Name: %s\r\nIs Retained: %s\r\nIs Duplicate: %s\r\nApp Msg: ", mqttmessage_getPacketId(msgHandle),
+    (void)printf("Incoming Msg: Packet Id: %d\r\nQOS: %s\r\nTopic Name: %s\r\nIs Retained: %s\r\nIs Duplicate: %s\r\nApp Msg: ", mqttmessage_getPacketId(msgHandle),
         QosToString(mqttmessage_getQosType(msgHandle) ),
         mqttmessage_getTopicName(msgHandle),
         mqttmessage_getIsRetained(msgHandle) ? "true" : "fale",
@@ -66,14 +55,15 @@ static void OnRecvCallback(MQTT_MESSAGE_HANDLE msgHandle, void* context)
         );
     for (size_t index = 0; index < appMsg->length; index++)
     {
-        PrintLogFunction(0, "0x%x", appMsg->message[index]);
+        (void)printf("0x%x", appMsg->message[index]);
     }
-    PrintLogFunction(0, "\r\n");
+
+    (void)printf("\r\n");
 }
 
 static void OnCloseComplete(void* context)
 {
-    PrintLogFunction(LOG_LINE, "%d: On Close Connection failed", __LINE__);
+    (void)printf("%d: On Close Connection failed\r\n", __LINE__);
 }
 
 static void OnOperationComplete(MQTT_CLIENT_HANDLE handle, MQTT_CLIENT_EVENT_RESULT actionResult, const void* msgInfo, void* callbackCtx)
@@ -83,7 +73,7 @@ static void OnOperationComplete(MQTT_CLIENT_HANDLE handle, MQTT_CLIENT_EVENT_RES
     {
         case MQTT_CLIENT_ON_CONNACK:
         {
-            PrintLogFunction(LOG_LINE, "ConnAck function called");
+            (void)printf("ConnAck function called\r\n");
             const CONNECT_ACK* connack = (CONNECT_ACK*)msgInfo;
             SUBSCRIBE_PAYLOAD subscribe[] = {
                 { TOPIC_NAME_A, DELIVER_AT_MOST_ONCE },
@@ -91,7 +81,7 @@ static void OnOperationComplete(MQTT_CLIENT_HANDLE handle, MQTT_CLIENT_EVENT_RES
             };
             if (mqtt_client_subscribe(handle, PACKET_ID_VALUE++, subscribe, sizeof(subscribe) / sizeof(subscribe[0])) != 0)
             {
-                PrintLogFunction(LOG_LINE, "%d: mqtt_client_subscribe failed", __LINE__);
+                (void)printf("%d: mqtt_client_subscribe failed\r\n", __LINE__);
                 g_continue = false;
             }
             break;
@@ -102,14 +92,14 @@ static void OnOperationComplete(MQTT_CLIENT_HANDLE handle, MQTT_CLIENT_EVENT_RES
             MQTT_MESSAGE_HANDLE msg = mqttmessage_create(PACKET_ID_VALUE++, TOPIC_NAME_A, DELIVER_EXACTLY_ONCE, APP_NAME_A, strlen(APP_NAME_A));
             if (msg == NULL)
             {
-                PrintLogFunction(LOG_LINE, "%d: mqttmessage_create failed", __LINE__);
+                (void)printf("%d: mqttmessage_create failed\r\n", __LINE__);
                 g_continue = false;
             }
             else
             {
                 if (mqtt_client_publish(handle, msg))
                 {
-                    PrintLogFunction(LOG_LINE, "%d: mqtt_client_publish failed", __LINE__);
+                    (void)printf("%d: mqtt_client_publish failed\r\n", __LINE__);
                     g_continue = false;
                 }
                 mqttmessage_destroy(msg);
@@ -148,16 +138,18 @@ static void OnOperationComplete(MQTT_CLIENT_HANDLE handle, MQTT_CLIENT_EVENT_RES
 
 void mqtt_client_sample_run()
 {
+    xlogging_set_log_function(consolelogger_log);
+
     if (platform_init() != 0)
     {
-        PrintLogFunction(LOG_LINE, "platform_init failed");
+        (void)printf("platform_init failed\r\n");
     }
     else
     {
-        MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(OnRecvCallback, OnOperationComplete, NULL, PrintLogFunction);
+        MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(OnRecvCallback, OnOperationComplete, NULL);
         if (mqttHandle == NULL)
         {
-            PrintLogFunction(LOG_LINE, "mqtt_client_init failed");
+            (void)printf("mqtt_client_init failed\r\n");
         }
         else
         {
@@ -172,16 +164,16 @@ void mqtt_client_sample_run()
 
             SOCKETIO_CONFIG config = {"test.mosquitto.org", PORT_NUM_UNENCRYPTED, NULL};
 
-            XIO_HANDLE xio = xio_create(socketio_get_interface_description(), &config, PrintLogFunction);
+            XIO_HANDLE xio = xio_create(socketio_get_interface_description(), &config);
             if (xio == NULL)
             {
-                PrintLogFunction(LOG_LINE, "xio_create failed");
+                (void)printf("xio_create failed\r\n");
             }
             else
             {
                 if (mqtt_client_connect(mqttHandle, xio, &options) != 0)
                 {
-                    PrintLogFunction(LOG_LINE, "mqtt_client_connect failed");
+                    (void)printf("mqtt_client_connect failed\r\n");
                 }
                 else
                 {

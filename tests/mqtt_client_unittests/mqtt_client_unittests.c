@@ -202,12 +202,6 @@ TEST_FUNCTION_CLEANUP(method_cleanup)
     TEST_MUTEX_RELEASE(test_serialize_mutex);
 }
 
-static void PrintLogFunction(unsigned int options, char* format, ...)
-{
-    (void)options;
-    (void)format;
-}
-
 static void TestRecvCallback(MQTT_MESSAGE_HANDLE msgHandle, void* context)
 {
     (void)msgHandle;
@@ -340,7 +334,7 @@ TEST_FUNCTION(mqtt_client_init_succeeds)
     EXPECTED_CALL(mqtt_codec_create(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
 
     // act
-    MQTT_CLIENT_HANDLE result = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, PrintLogFunction);
+    MQTT_CLIENT_HANDLE result = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL);
 
     // assert
     ASSERT_IS_NOT_NULL(result);
@@ -359,7 +353,7 @@ TEST_FUNCTION(mqtt_client_init_mqtt_tickcounter_create_NULL_fail)
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
-    MQTT_CLIENT_HANDLE result = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, PrintLogFunction);
+    MQTT_CLIENT_HANDLE result = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL);
 
     // assert
     ASSERT_IS_NULL(result);
@@ -379,7 +373,7 @@ TEST_FUNCTION(mqtt_client_init_mqtt_codec_create_NULL_fail)
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
-    MQTT_CLIENT_HANDLE result = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, PrintLogFunction);
+    MQTT_CLIENT_HANDLE result = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL);
 
     // assert
     ASSERT_IS_NULL(result);
@@ -394,7 +388,7 @@ TEST_FUNCTION(mqtt_client_init_ON_MQTT_MESSAGE_RECV_CALLBACK_NULL_fails)
     // arrange
 
     // act
-    MQTT_CLIENT_HANDLE result = mqtt_client_init(NULL, TestOpCallback, NULL, PrintLogFunction);
+    MQTT_CLIENT_HANDLE result = mqtt_client_init(NULL, TestOpCallback, NULL);
 
     // assert
     ASSERT_IS_NULL(result);
@@ -417,7 +411,7 @@ TEST_FUNCTION(mqtt_client_deinit_succeeds)
     // arrange
     MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
     SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, NULL, NULL, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
-    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, PrintLogFunction);
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL);
 
     umock_c_reset_all_calls();
 
@@ -456,7 +450,7 @@ TEST_FUNCTION(mqtt_client_connect_MQTT_CLIENT_HANDLE_NULL_fails)
 TEST_FUNCTION(mqtt_client_connect_XIO_HANDLE_NULL_fails)
 {
     // arrange
-    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, PrintLogFunction);
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL);
     umock_c_reset_all_calls();
 
     // Arrange
@@ -478,7 +472,7 @@ TEST_FUNCTION(mqtt_client_connect_XIO_HANDLE_NULL_fails)
 TEST_FUNCTION(mqtt_client_connect_MQTT_CLIENT_OPTIONS_NULL_fails)
 {
     // arrange
-    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, PrintLogFunction);
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL);
     umock_c_reset_all_calls();
 
     // Arrange
@@ -498,7 +492,7 @@ TEST_FUNCTION(mqtt_client_connect_MQTT_CLIENT_OPTIONS_NULL_fails)
 TEST_FUNCTION(mqtt_client_connect_xio_open_fails)
 {
     // arrange
-    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, PrintLogFunction);
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL);
     umock_c_reset_all_calls();
 
     // Arrange
@@ -532,7 +526,7 @@ TEST_FUNCTION(mqtt_client_connect_xio_open_fails)
 TEST_FUNCTION(mqtt_client_connect_mqtt_codec_connect_fails)
 {
     // arrange
-    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, PrintLogFunction);
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL);
     umock_c_reset_all_calls();
 
     // Arrange
@@ -568,7 +562,7 @@ TEST_FUNCTION(mqtt_client_connect_mqtt_codec_connect_fails)
 TEST_FUNCTION(mqtt_client_connect_xio_send_fails)
 {
     // arrange
-    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, PrintLogFunction);
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL);
     umock_c_reset_all_calls();
 
     // Arrange
@@ -610,7 +604,7 @@ TEST_FUNCTION(mqtt_client_connect_xio_send_fails)
 TEST_FUNCTION(mqtt_client_connect_succeeds)
 {
     // arrange
-    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, PrintLogFunction);
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL);
     umock_c_reset_all_calls();
 
     // Arrange
@@ -651,7 +645,7 @@ TEST_FUNCTION(mqtt_client_connect_succeeds)
 TEST_FUNCTION(mqtt_client_connect_multiple_completes_one_connect_succeeds)
 {
     // arrange
-    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, PrintLogFunction);
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL);
     umock_c_reset_all_calls();
 
     // Arrange
@@ -709,7 +703,7 @@ TEST_FUNCTION(mqtt_client_subscribe_handle_NULL_fail)
 TEST_FUNCTION(mqtt_client_subscribe_subscribeList_NULL_fail)
 {
     // arrange
-    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, PrintLogFunction);
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL);
     umock_c_reset_all_calls();
 
     // Arrange
@@ -731,7 +725,7 @@ TEST_FUNCTION(mqtt_client_subscribe_subscribeList_NULL_fail)
 TEST_FUNCTION(mqtt_client_subscribe_count_0_fail)
 {
     // arrange
-    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, PrintLogFunction);
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL);
     umock_c_reset_all_calls();
 
     // Arrange
@@ -753,7 +747,7 @@ TEST_FUNCTION(mqtt_client_subscribe_count_0_fail)
 TEST_FUNCTION(mqtt_client_subscribe_succeeds)
 {
     // arrange
-    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, PrintLogFunction);
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL);
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(mqtt_codec_subscribe(TEST_PACKET_ID, TEST_SUBSCRIBE_PAYLOAD, 2));
@@ -793,7 +787,7 @@ TEST_FUNCTION(mqtt_client_unsubscribe_handle_NULL_fails)
 TEST_FUNCTION(mqtt_client_unsubscribe_unsubscribeList_NULL_succeeds)
 {
     // arrange
-    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, PrintLogFunction);
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL);
     umock_c_reset_all_calls();
 
     // act
@@ -811,7 +805,7 @@ TEST_FUNCTION(mqtt_client_unsubscribe_unsubscribeList_NULL_succeeds)
 TEST_FUNCTION(mqtt_client_unsubscribe_count_0_succeeds)
 {
     // arrange
-    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, PrintLogFunction);
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL);
     umock_c_reset_all_calls();
 
     // act
@@ -829,7 +823,7 @@ TEST_FUNCTION(mqtt_client_unsubscribe_count_0_succeeds)
 TEST_FUNCTION(mqtt_client_unsubscribe_succeeds)
 {
     // arrange
-    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, PrintLogFunction);
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL);
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(mqtt_codec_unsubscribe(TEST_PACKET_ID, TEST_UNSUBSCRIPTION_TOPIC, 2));
@@ -867,7 +861,7 @@ TEST_FUNCTION(mqtt_client_publish_handle_NULL_fail)
 TEST_FUNCTION(mqtt_client_publish_MQTT_MESSAGE_HANDLE_NULL_fail)
 {
     // arrange
-    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, PrintLogFunction);
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL);
     umock_c_reset_all_calls();
 
     // act
@@ -884,7 +878,7 @@ TEST_FUNCTION(mqtt_client_publish_MQTT_MESSAGE_HANDLE_NULL_fail)
 TEST_FUNCTION(mqtt_client_publish_getApplicationMsg_fail)
 {
     // arrange
-    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, PrintLogFunction);
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL);
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(mqttmessage_getApplicationMsg(TEST_MESSAGE_HANDLE)).SetReturn((const APP_PAYLOAD*)NULL);
@@ -903,7 +897,7 @@ TEST_FUNCTION(mqtt_client_publish_getApplicationMsg_fail)
 TEST_FUNCTION(mqtt_client_publish_mqtt_codec_publish_fail)
 {
     // arrange
-    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, PrintLogFunction);
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL);
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(mqttmessage_getApplicationMsg(TEST_MESSAGE_HANDLE));
@@ -930,7 +924,7 @@ TEST_FUNCTION(mqtt_client_publish_mqtt_codec_publish_fail)
 TEST_FUNCTION(mqtt_client_publish_xio_send_fails)
 {
     // arrange
-    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, PrintLogFunction);
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL);
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(mqttmessage_getApplicationMsg(TEST_MESSAGE_HANDLE));
@@ -960,7 +954,7 @@ TEST_FUNCTION(mqtt_client_publish_xio_send_fails)
 TEST_FUNCTION(mqtt_client_publish_succeeds)
 {
     // arrange
-    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, PrintLogFunction);
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL);
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(mqttmessage_getApplicationMsg(TEST_MESSAGE_HANDLE));
@@ -1004,7 +998,7 @@ TEST_FUNCTION(mqtt_client_disconnect_handle_NULL_fail)
 TEST_FUNCTION(mqtt_client_disconnect_mqtt_codec_NULL_fail)
 {
     // arrange
-    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, PrintLogFunction);
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL);
     umock_c_reset_all_calls();
 
     EXPECTED_CALL(mqtt_codec_disconnect()).SetReturn((BUFFER_HANDLE)NULL);
@@ -1023,7 +1017,7 @@ TEST_FUNCTION(mqtt_client_disconnect_mqtt_codec_NULL_fail)
 TEST_FUNCTION(mqtt_client_disconnect_succeeds)
 {
     // arrange
-    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, PrintLogFunction);
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL);
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(mqtt_codec_disconnect());
@@ -1064,7 +1058,7 @@ TEST_FUNCTION(mqtt_client_dowork_ping_handle_NULL_fails)
 TEST_FUNCTION(mqtt_client_dowork_ping_succeeds)
 {
     // arrange
-    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, PrintLogFunction);
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL);
 
     MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
     SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, NULL, NULL, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
@@ -1106,7 +1100,7 @@ TEST_FUNCTION(mqtt_client_dowork_ping_succeeds)
 TEST_FUNCTION(mqtt_client_dowork_ping_No_ping_response_succeeds)
 {
     // arrange
-    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, PrintLogFunction);
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL);
 
     MQTT_CLIENT_OPTIONS mqttOptions ={ 0 };
     SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, NULL, NULL, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
@@ -1148,7 +1142,7 @@ TEST_FUNCTION(mqtt_client_dowork_ping_No_ping_response_succeeds)
 TEST_FUNCTION(mqtt_client_dowork_no_keepalive_no_ping_succeeds)
 {
     // arrange
-    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, PrintLogFunction);
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL);
 
     MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
     SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, NULL, NULL, TEST_USERNAME, TEST_PASSWORD, 0, false, true, DELIVER_AT_MOST_ONCE);
@@ -1185,7 +1179,7 @@ TEST_FUNCTION(mqtt_client_dowork_no_ping_succeeds)
     // arrange
     g_current_ms = (TEST_KEEP_ALIVE_INTERVAL-5)*1000;
 
-    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, PrintLogFunction);
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL);
 
     MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
     SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, NULL, NULL, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
@@ -1219,7 +1213,7 @@ TEST_FUNCTION(mqtt_client_dowork_tickcounter_fails_succeeds)
     // arrange
     g_current_ms = (TEST_KEEP_ALIVE_INTERVAL - 5) * 1000;
 
-    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, PrintLogFunction);
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL);
 
     MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
     SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, NULL, NULL, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
@@ -1266,7 +1260,7 @@ TEST_FUNCTION(mqtt_client_recvCompleteCallback_context_NULL_fails)
     BUFFER_HANDLE connack_handle = TEST_BUFFER_HANDLE;
     STRICT_EXPECTED_CALL(BUFFER_u_char(TEST_BUFFER_HANDLE)).SetReturn(CONNACK_RESP);
     STRICT_EXPECTED_CALL(BUFFER_length(TEST_BUFFER_HANDLE)).SetReturn(length);
-    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, (void*)&testData, PrintLogFunction);
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, (void*)&testData);
     umock_c_reset_all_calls();
 
     // act
@@ -1294,7 +1288,7 @@ TEST_FUNCTION(mqtt_client_recvCompleteCallback_BUFFER_HANDLE_NULL_fails)
     testData.actionResult = MQTT_CLIENT_ON_CONNACK;
     testData.msgInfo = &connack;
 
-    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, (void*)&testData, PrintLogFunction);
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, (void*)&testData);
     umock_c_reset_all_calls();
 
     // act
@@ -1322,7 +1316,7 @@ TEST_FUNCTION(mqtt_client_recvCompleteCallback_CONNACK_succeeds)
     testData.actionResult = MQTT_CLIENT_ON_CONNACK;
     testData.msgInfo = &connack;
         
-    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, (void*)&testData, PrintLogFunction);
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, (void*)&testData);
     umock_c_reset_all_calls();
 
     BUFFER_HANDLE connack_handle = TEST_BUFFER_HANDLE;
@@ -1350,7 +1344,7 @@ TEST_FUNCTION(mqtt_client_recvCompleteCallback_PUBLISH_EXACTLY_ONCE_succeeds)
 
     uint8_t flag = 0x0d;
 
-    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, (void*)&PUBLISH_RESP, PrintLogFunction);
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, (void*)&PUBLISH_RESP);
     umock_c_reset_all_calls();
 
     BUFFER_HANDLE publish_handle = TEST_BUFFER_HANDLE;
@@ -1392,7 +1386,7 @@ TEST_FUNCTION(mqtt_client_recvCompleteCallback_PUBLISH_AT_LEAST_ONCE_succeeds)
 
     uint8_t flag = 0x0a;
 
-    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, (void*)&PUBLISH_RESP, PrintLogFunction);
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, (void*)&PUBLISH_RESP);
     umock_c_reset_all_calls();
 
     BUFFER_HANDLE publish_handle = TEST_BUFFER_HANDLE;
@@ -1433,7 +1427,7 @@ TEST_FUNCTION(mqtt_client_recvCompleteCallback_PUBLISH_AT_MOST_ONCE_succeeds)
 
     uint8_t flag = 0x00;
 
-    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, (void*)&PUBLISH_VALUE, PrintLogFunction);
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, (void*)&PUBLISH_VALUE);
     umock_c_reset_all_calls();
 
     BUFFER_HANDLE publish_handle = TEST_BUFFER_HANDLE;
@@ -1472,7 +1466,7 @@ TEST_FUNCTION(mqtt_client_recvCompleteCallback_PUBLISH_ACK_succeeds)
     testData.actionResult = MQTT_CLIENT_ON_PUBLISH_ACK;
     testData.msgInfo = &puback;
 
-    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, (void*)&testData, PrintLogFunction);
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, (void*)&testData);
     umock_c_reset_all_calls();
 
     BUFFER_HANDLE packet_handle = TEST_BUFFER_HANDLE;
@@ -1503,7 +1497,7 @@ TEST_FUNCTION(mqtt_client_recvCompleteCallback_PUBLISH_RECIEVE_succeeds)
     testData.actionResult = MQTT_CLIENT_ON_PUBLISH_RECV;
     testData.msgInfo = &puback;
 
-    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, (void*)&testData, PrintLogFunction);
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, (void*)&testData);
     umock_c_reset_all_calls();
 
     BUFFER_HANDLE packet_handle = TEST_BUFFER_HANDLE;
@@ -1540,7 +1534,7 @@ TEST_FUNCTION(mqtt_client_recvCompleteCallback_PUBLISH_RELEASE_succeeds)
     testData.actionResult = MQTT_CLIENT_ON_PUBLISH_REL;
     testData.msgInfo = &puback;
 
-    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, (void*)&testData, PrintLogFunction);
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, (void*)&testData);
     umock_c_reset_all_calls();
 
     BUFFER_HANDLE packet_handle = TEST_BUFFER_HANDLE;
@@ -1577,7 +1571,7 @@ TEST_FUNCTION(mqtt_client_recvCompleteCallback_PUBLISH_COMPLETE_succeeds)
     testData.actionResult = MQTT_CLIENT_ON_PUBLISH_COMP;
     testData.msgInfo = &puback;
 
-    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, (void*)&testData, PrintLogFunction);
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, (void*)&testData);
     umock_c_reset_all_calls();
 
     BUFFER_HANDLE packet_handle = TEST_BUFFER_HANDLE;
@@ -1615,7 +1609,7 @@ TEST_FUNCTION(mqtt_client_recvCompleteCallback_SUBACK_succeeds)
     testData.actionResult = MQTT_CLIENT_ON_SUBSCRIBE_ACK;
     testData.msgInfo = &suback;
 
-    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, (void*)&testData, PrintLogFunction);
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, (void*)&testData);
     umock_c_reset_all_calls();
 
     BUFFER_HANDLE packet_handle = TEST_BUFFER_HANDLE;
@@ -1651,7 +1645,7 @@ TEST_FUNCTION(mqtt_client_recvCompleteCallback_UNSUBACK_succeeds)
     testData.actionResult = MQTT_CLIENT_ON_UNSUBSCRIBE_ACK;
     testData.msgInfo = &unsuback;
 
-    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, (void*)&testData, PrintLogFunction);
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, (void*)&testData);
     umock_c_reset_all_calls();
 
     BUFFER_HANDLE packet_handle = TEST_BUFFER_HANDLE;
@@ -1675,7 +1669,7 @@ TEST_FUNCTION(mqtt_client_recvCompleteCallback_PINGRESP_succeeds)
     unsigned char PINGRESP_ACK_RESP[] = { 0x0d, 0x00 };
     size_t length = sizeof(PINGRESP_ACK_RESP) / sizeof(PINGRESP_ACK_RESP[0]);
 
-    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, PrintLogFunction);
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL);
     umock_c_reset_all_calls();
 
     BUFFER_HANDLE packet_handle = TEST_BUFFER_HANDLE;
@@ -1696,7 +1690,7 @@ TEST_FUNCTION(mqtt_client_recvCompleteCallback_PINGRESP_succeeds)
 TEST_FUNCTION(mqtt_client_set_trace_succeeds)
 {
     // arrange
-    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, PrintLogFunction);
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL);
     umock_c_reset_all_calls();
 
     // act

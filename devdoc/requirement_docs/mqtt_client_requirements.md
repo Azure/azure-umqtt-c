@@ -25,7 +25,7 @@ DEFINE_ENUM(MQTT_CLIENT_ACTION_RESULT, MQTT_CLIENT_ACTION_VALUES);
 typedef void(*ON_MQTT_OPERATION_CALLBACK)(MQTT_CLIENT_ACTION_RESULT actionResult, const void* msgInfo, void* callbackCtx);
 typedef void(*ON_MQTT_MESSAGE_RECV_CALLBACK)(MQTT_MESSAGE_HANDLE msgHandle, void* callbackCtx);
 
-extern MQTT_CLIENT_HANDLE mqtt_client_init(ON_MQTT_MESSAGE_RECV_CALLBACK msgRecv, ON_MQTT_OPERATION_CALLBACK opCallback, void* callbackCtx, LOGGER_LOG logger);
+extern MQTT_CLIENT_HANDLE mqtt_client_init(ON_MQTT_MESSAGE_RECV_CALLBACK msgRecv, ON_MQTT_OPERATION_CALLBACK opCallback, void* callbackCtx);
 extern void mqtt_client_deinit(MQTT_CLIENT_HANDLE handle);
 
 extern int mqtt_client_connect(MQTT_CLIENT_HANDLE handle, XIO_HANDLE ioHandle, MQTT_CLIENT_OPTIONS* mqttOptions);
@@ -41,7 +41,7 @@ extern void mqtt_client_dowork(MQTT_CLIENT_HANDLE handle);
 
 ##mqtt_client_init
 ```
-extern MQTT_CLIENT_HANDLE mqtt_client_init(ON_MQTT_MESSAGE_RECV_CALLBACK msgRecv, ON_MQTT_OPERATION_CALLBACK opCallback, void* callbackCtx, LOGGER_LOG logger)
+extern MQTT_CLIENT_HANDLE mqtt_client_init(ON_MQTT_MESSAGE_RECV_CALLBACK msgRecv, ON_MQTT_OPERATION_CALLBACK opCallback, void* callbackCtx)
 ```
 **SRS_MQTT_CLIENT_07_001: [**If the parameters ON_MQTT_MESSAGE_RECV_CALLBACK is NULL then mqttclient_init shall return NULL.**]**  
 **SRS_MQTT_CLIENT_07_002: [**If any failure is encountered then mqttclient_init shall return NULL.**]**  
