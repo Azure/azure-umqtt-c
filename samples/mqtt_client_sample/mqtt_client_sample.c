@@ -12,8 +12,6 @@
 #include "azure_umqtt_c/mqtt_client.h"
 #include "azure_c_shared_utility/socketio.h"
 #include "azure_c_shared_utility/platform.h"
-#include "azure_c_shared_utility/xlogging.h"
-#include "azure_c_shared_utility/consolelogger.h"
 
 static const char* TOPIC_NAME_A = "msgA";
 static const char* TOPIC_NAME_B = "msgB";
@@ -138,8 +136,6 @@ static void OnOperationComplete(MQTT_CLIENT_HANDLE handle, MQTT_CLIENT_EVENT_RES
 
 void mqtt_client_sample_run()
 {
-    xlogging_set_log_function(consolelogger_log);
-
     if (platform_init() != 0)
     {
         (void)printf("platform_init failed\r\n");
