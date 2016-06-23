@@ -732,7 +732,6 @@ int mqtt_client_unsubscribe(MQTT_CLIENT_HANDLE handle, uint16_t packetId, const 
             mqttData->packetState = UNSUBSCRIBE_TYPE;
 
             /*Codes_SRS_MQTT_CLIENT_07_018: [On success mqtt_client_unsubscribe shall send the MQTT SUBCRIBE packet to the endpoint.]*/
-            LOG(LOG_ERROR, LOG_LINE, "MQTT unsubscribe");
             if (sendPacketItem(mqttData, BUFFER_u_char(unsubPacket), BUFFER_length(unsubPacket)) != 0)
             {
                 /*Codes_SRS_MQTT_CLIENT_07_017: [If any failure is encountered then mqtt_client_unsubscribe shall return a non-zero value.].]*/
@@ -760,12 +759,12 @@ int mqtt_client_disconnect(MQTT_CLIENT_HANDLE handle)
     }
     else
     {
-        mqttData->packetState = DISCONNECT_TYPE;
         BUFFER_HANDLE disconnectPacket = mqtt_codec_disconnect();
         if (disconnectPacket == NULL)
         {
             /*Codes_SRS_MQTT_CLIENT_07_011: [If any failure is encountered then mqtt_client_disconnect shall return a non-zero value.]*/
             LOG(LOG_ERROR, LOG_LINE, "Error: mqtt_client_disconnect failed");
+            mqttData->packetState = PACKET_TYPE_ERROR;
             result = __LINE__;
         }
         else
