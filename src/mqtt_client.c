@@ -173,7 +173,7 @@ static void logIncomingMsgTrace(MQTT_CLIENT* clientData, CONTROL_PACKET_TYPE pac
             char tmBuffer[TIME_MAX_BUFFER];
             getLogTime(tmBuffer, TIME_MAX_BUFFER);
 
-            LOG(LOG_TRACE, 0, "<- %s %s: 0x%02x 0x%02x ", tmBuffer, retrievePacketType((unsigned char)packet), (unsigned char)(packet | flags), length);
+            LOG(LOG_TRACE, 0, "<- %s %s: 0x%02x 0x%02x ", tmBuffer, retrievePacketType((CONTROL_PACKET_TYPE)packet), (unsigned char)(packet | flags), length);
             for (size_t index = 0; index < length; index++)
             {
                 LOG(LOG_TRACE, 0, (char*)FORMAT_HEX_CHAR, data[index]);
@@ -186,15 +186,14 @@ static void logIncomingMsgTrace(MQTT_CLIENT* clientData, CONTROL_PACKET_TYPE pac
             char tmBuffer[TIME_MAX_BUFFER];
             getLogTime(tmBuffer, TIME_MAX_BUFFER);
 
-            LOG(LOG_TRACE, LOG_LINE, "<- %s %s: 0x%02x 0x%02x ", tmBuffer, retrievePacketType((unsigned char)packet), (unsigned char)(packet | flags), length);
+            LOG(LOG_TRACE, LOG_LINE, "<- %s %s: 0x%02x 0x%02x ", tmBuffer, retrievePacketType((CONTROL_PACKET_TYPE)packet), (unsigned char)(packet | flags), length);
         }
     }
 }
 
-static int sendPacketItem(MQTT_CLIENT* clientData, const int8_t* data, size_t length)
+static int sendPacketItem(MQTT_CLIENT* clientData, const unsigned char* data, size_t length)
 {
     int result;
-    logOutgoingingMsgTrace(clientData, data, length);
 
     if (tickcounter_get_current_ms(clientData->packetTickCntr, &clientData->packetSendTimeMs) != 0)
     {
@@ -203,11 +202,15 @@ static int sendPacketItem(MQTT_CLIENT* clientData, const int8_t* data, size_t le
     }
     else
     {
-        result = xio_send(clientData->xioHandle, data, length, sendComplete, clientData);
+        result = xio_send(clientData->xioHandle, (const void*)data, length, sendComplete, clientData);
         if (result != 0)
         {
             LOG(LOG_ERROR, LOG_LINE, "%d: Failure sending control packet data", result);
             result = __LINE__;
+        }
+        else
+        {
+            logOutgoingingMsgTrace(clientData, (const uint8_t*)data, length);
         }
     }
     return result;
