@@ -1,4 +1,4 @@
-azure-umqtt-c (0.1.0.1-9) wily; urgency=low
+azure-umqtt-c (0.1.0.1-11) wily; urgency=low
 
   * Initial release (Closes: #5479749)
 
@@ -16,4 +16,9 @@ azure-umqtt-c (0.1.0.1-9) wily; urgency=low
 
   * Fix tlsio_schannel bug (not all input bytes were being read) (#451ab97)
 
- -- AzureIoT User <aziotsdklinux@outlook.com>  Fri, 20 May 2016 00:23:02 +0000
+  * Convert umqtt_client unit tests to umock_c
+
+  * Add messge to indicate Ping Response Failure (#21453b6)
+
+ -- AzureIoT User <aziotsdklinux@outlook.com>  Fri, 17 Jun 2016 00:23:02 +0000
+
