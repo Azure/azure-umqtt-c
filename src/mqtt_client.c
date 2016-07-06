@@ -95,6 +95,8 @@ static uint8_t byteutil_readByte(uint8_t** buffer)
 static void sendComplete(void* context, IO_SEND_RESULT send_result)
 {
     MQTT_CLIENT* mqttData = (MQTT_CLIENT*)context;
+    /* Bug: we should not ignore the send_result */
+    (void)send_result;
     if (mqttData != NULL && mqttData->fnOperationCallback != NULL)
     {
         if (mqttData->packetState == DISCONNECT_TYPE)
@@ -583,6 +585,7 @@ int mqtt_client_connect(MQTT_CLIENT_HANDLE handle, XIO_HANDLE xioHandle, MQTT_CL
     /*SRS_MQTT_CLIENT_07_006: [If any of the parameters handle, ioHandle, or mqttOptions are NULL then mqtt_client_connect shall return a non-zero value.]*/
     if (handle == NULL || mqttOptions == NULL)
     {
+        LOG(LOG_ERROR, LOG_LINE, "mqtt_client_connect: NULL argument (handle = %p, mqttOptions = %p)", handle, mqttOptions);
         result = __LINE__;
     }
     else

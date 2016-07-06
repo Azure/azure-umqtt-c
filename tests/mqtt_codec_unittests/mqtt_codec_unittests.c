@@ -76,7 +76,7 @@ static void SetupMqttLibOptions(MQTT_CLIENT_OPTIONS* options, const char* client
     const char* willTopic,
     const char* username,
     const char* password,
-    int keepAlive,
+    uint16_t keepAlive,
     bool messageRetain,
     bool cleanSession,
     QOS_VALUE qos)
@@ -111,9 +111,13 @@ extern size_t real_BUFFER_length(BUFFER_HANDLE handle);
 
 TEST_MUTEX_HANDLE test_serialize_mutex;
 
-void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
+DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
+
+static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    ASSERT_FAIL("umock_c reported error");
+    char temp_str[256];
+    (void)snprintf(temp_str, sizeof(temp_str), "umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
+    ASSERT_FAIL(temp_str);
 }
 
 BEGIN_TEST_SUITE(mqtt_codec_unittests)
@@ -149,7 +153,7 @@ TEST_SUITE_CLEANUP(suite_cleanup)
 
 TEST_FUNCTION_INITIALIZE(method_init)
 {
-    if (TEST_MUTEX_ACQUIRE(test_serialize_mutex) != 0)
+    if (TEST_MUTEX_ACQUIRE(test_serialize_mutex))
     {
         ASSERT_FAIL("Could not acquire test serialization mutex.");
     }
@@ -173,6 +177,7 @@ static void PrintLogFunction(unsigned int options, char* format, ...)
 static void TestOnCompleteCallback(void* context, CONTROL_PACKET_TYPE packet, int flags, BUFFER_HANDLE headerData)
 {
     TEST_COMPLETE_DATA_INSTANCE* testData = (TEST_COMPLETE_DATA_INSTANCE*)context;
+    (void)flags;
     if (testData != NULL)
     {
         if (packet == PINGRESP_TYPE)
@@ -432,8 +437,6 @@ TEST_FUNCTION(mqtt_codec_disconnect_succeed)
 TEST_FUNCTION(mqtt_codec_disconnect_BUFFER_enlarge_fails)
 {
     // arrange
-    const unsigned char DISCONNECT_VALUE[] = { 0xE0, 0x00 };
-
     EXPECTED_CALL(BUFFER_new());
     EXPECTED_CALL(BUFFER_enlarge(IGNORED_PTR_ARG, IGNORED_NUM_ARG)).SetReturn(__LINE__);
     EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG));
@@ -450,8 +453,6 @@ TEST_FUNCTION(mqtt_codec_disconnect_BUFFER_enlarge_fails)
 TEST_FUNCTION(mqtt_codec_ping_BUFFER_enlarge_fails)
 {
     // arrange
-    const unsigned char PING_VALUE[] = { 0xC0, 0x00 };
-
     EXPECTED_CALL(BUFFER_new());
     EXPECTED_CALL(BUFFER_enlarge(IGNORED_PTR_ARG, IGNORED_NUM_ARG)).SetReturn(__LINE__);
     EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG));
@@ -684,8 +685,6 @@ TEST_FUNCTION(mqtt_codec_publish_second_succeeds)
 TEST_FUNCTION(mqtt_codec_publish_ack_pre_build_fail)
 {
     // arrange
-    unsigned char PUBLISH_ACK_VALUE[] = { 0x40, 0x02, 0x81, 0x58 };
-
     EXPECTED_CALL(BUFFER_new());
     STRICT_EXPECTED_CALL(BUFFER_pre_build(IGNORED_PTR_ARG, 4))
         .IgnoreArgument(1)
@@ -996,7 +995,6 @@ TEST_FUNCTION(mqtt_codec_subscribe_succeeds)
 TEST_FUNCTION(mqtt_codec_unsubscribe_subscribeList_NULL_fails)
 {
     // arrange
-    unsigned char UNSUBSCRIBE_VALUE[] = { 0x80, 0x0f, 0x81, 0x58, 0x00, 0x0a, 0x74, 0x6f, 0x70, 0x69, 0x63, 0x20, 0x4e, 0x61, 0x6d, 0x65, 0x00 };
 
     // act
     BUFFER_HANDLE handle = mqtt_codec_unsubscribe(TEST_PACKET_ID, NULL, 0);
@@ -1010,8 +1008,6 @@ TEST_FUNCTION(mqtt_codec_unsubscribe_subscribeList_NULL_fails)
 TEST_FUNCTION(mqtt_codec_unsubscribe_BUFFER_enlarge_fails)
 {
     // arrange
-    unsigned char UNSUBSCRIBE_VALUE[] = { 0x80, 0x0f, 0x81, 0x58, 0x00, 0x0a, 0x74, 0x6f, 0x70, 0x69, 0x63, 0x20, 0x4e, 0x61, 0x6d, 0x65, 0x00 };
-
     EXPECTED_CALL(BUFFER_new());
     EXPECTED_CALL(BUFFER_enlarge(IGNORED_PTR_ARG, IGNORED_NUM_ARG)).SetReturn(__LINE__);
     EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG));
@@ -1028,8 +1024,6 @@ TEST_FUNCTION(mqtt_codec_unsubscribe_BUFFER_enlarge_fails)
 TEST_FUNCTION(mqtt_codec_unsubscribe_addListItemToUnsubscribePacket_BUFFER_enlarge_fails)
 {
     // arrange
-    unsigned char UNSUBSCRIBE_VALUE[] = { 0x80, 0x0f, 0x81, 0x58, 0x00, 0x0a, 0x74, 0x6f, 0x70, 0x69, 0x63, 0x20, 0x4e, 0x61, 0x6d, 0x65, 0x00 };
-
     EXPECTED_CALL(BUFFER_new());
     EXPECTED_CALL(BUFFER_enlarge(IGNORED_PTR_ARG, IGNORED_NUM_ARG));
     EXPECTED_CALL(BUFFER_u_char(IGNORED_PTR_ARG));
@@ -1049,8 +1043,6 @@ TEST_FUNCTION(mqtt_codec_unsubscribe_addListItemToUnsubscribePacket_BUFFER_enlar
 TEST_FUNCTION(mqtt_codec_unsubscribe_constructFixedHeader_fails)
 {
     // arrange
-    unsigned char UNSUBSCRIBE_VALUE[] = { 0xa0, 0x18, 0x81, 0x58, 0x00, 0x09, 0x73, 0x75, 0x62, 0x54, 0x6f, 0x70, 0x69, 0x63, 0x31, 0x00, 0x09, 0x73, 0x75, 0x62, 0x54, 0x6f, 0x70, 0x69, 0x63, 0x32 };
-
     EXPECTED_CALL(BUFFER_new());
     EXPECTED_CALL(BUFFER_enlarge(IGNORED_PTR_ARG, IGNORED_NUM_ARG));
     EXPECTED_CALL(BUFFER_u_char(IGNORED_PTR_ARG));
@@ -1171,7 +1163,6 @@ TEST_FUNCTION(mqtt_codec_bytesReceived_connack_succeed)
 {
     // arrange
     unsigned char CONNACK_RESP[] = { 0x20, 0x2, 0x1, 0x0 };
-    unsigned char TEST_CONNACK_VAR[] = { 0x1, 0x0 };
     size_t length = sizeof(CONNACK_RESP) / sizeof(CONNACK_RESP[0]);
 
     TEST_COMPLETE_DATA_INSTANCE testData = { 0 };
@@ -1213,7 +1204,6 @@ TEST_FUNCTION(mqtt_codec_bytesReceived_puback_succeed)
 {
     // arrange
     unsigned char PUBACK_RESP[] = { 0x40, 0x2, 0x12, 0x34 };
-    unsigned char TEST_PUBACK_VAR[] = { 0x12, 0x34 };
     size_t length = sizeof(PUBACK_RESP) / sizeof(PUBACK_RESP[0]);
 
     TEST_COMPLETE_DATA_INSTANCE testData = { 0 };

@@ -20,6 +20,10 @@ endif()
 
 include (CTest)
 
+if(MSVC)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
+endif()
+
 include(ExternalProject)
 
 #the following variables are project-wide and can be used with cmake-gui

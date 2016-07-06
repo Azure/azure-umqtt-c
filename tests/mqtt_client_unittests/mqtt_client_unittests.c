@@ -58,7 +58,7 @@ static const TICK_COUNTER_HANDLE TEST_COUNTER_HANDLE = (TICK_COUNTER_HANDLE)0x12
 static const MQTTCODEC_HANDLE TEST_MQTTCODEC_HANDLE = (MQTTCODEC_HANDLE)0x13;
 static const MQTT_MESSAGE_HANDLE TEST_MESSAGE_HANDLE = (MQTT_MESSAGE_HANDLE)0x14;
 static BUFFER_HANDLE TEST_BUFFER_HANDLE = (BUFFER_HANDLE)0x15;
-static const uint64_t TEST_KEEP_ALIVE_INTERVAL = 20;
+static const uint16_t TEST_KEEP_ALIVE_INTERVAL = 20;
 static const uint16_t TEST_PACKET_ID = (uint16_t)0x1234;
 static const unsigned char* TEST_BUFFER_U_CHAR = (const unsigned char*)0x19;
 
@@ -85,12 +85,19 @@ extern "C" {
 
     MQTTCODEC_HANDLE my_mqtt_codec_create(ON_PACKET_COMPLETE_CALLBACK packetComplete, void* callContext)
     {
+        (void)callContext;
         g_packetComplete = packetComplete;
         return TEST_MQTTCODEC_HANDLE;
     }
 
     int my_xio_open(XIO_HANDLE handle, ON_IO_OPEN_COMPLETE on_io_open_complete, void* on_io_open_complete_context, ON_BYTES_RECEIVED on_bytes_received, void* on_bytes_received_context, ON_IO_ERROR on_io_error, void* on_io_error_context)
     {
+        (void)handle;
+        /* Bug? : This is a bit wierd, why are we not using on_io_error and on_bytes_received? */
+        (void)on_bytes_received;
+        (void)on_bytes_received_context;
+        (void)on_io_error;
+        (void)on_io_error_context;
         g_openComplete = on_io_open_complete;
         g_onCompleteCtx = on_io_open_complete_context;
         return 0;
@@ -98,6 +105,7 @@ extern "C" {
 
     int my_tickcounter_get_current_ms(TICK_COUNTER_HANDLE tick_counter, uint64_t* current_ms)
     {
+        (void)tick_counter;
         *current_ms = g_current_ms;
         return 0;
     }
@@ -106,9 +114,13 @@ extern "C" {
 }
 #endif
 
-void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
+DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
+
+static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    ASSERT_FAIL("umock_c reported error");
+    char temp_str[256];
+    (void)snprintf(temp_str, sizeof(temp_str), "umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
+    ASSERT_FAIL(temp_str);
 }
 
 BEGIN_TEST_SUITE(mqtt_client_unittests)
@@ -182,7 +194,7 @@ TEST_SUITE_CLEANUP(suite_cleanup)
 
 TEST_FUNCTION_INITIALIZE(method_init)
 {
-    if (TEST_MUTEX_ACQUIRE(test_serialize_mutex) != 0)
+    if (TEST_MUTEX_ACQUIRE(test_serialize_mutex))
     {
         ASSERT_FAIL("Could not acquire test serialization mutex.");
     }
@@ -211,6 +223,7 @@ static void TestRecvCallback(MQTT_MESSAGE_HANDLE msgHandle, void* context)
 
 static void TestOpCallback(MQTT_CLIENT_HANDLE handle, MQTT_CLIENT_EVENT_RESULT actionResult, const void* msgInfo, void* context)
 {
+    (void)handle;
     switch (actionResult)
     {
         case MQTT_CLIENT_ON_CONNACK:
@@ -309,18 +322,20 @@ static void SetupMqttLibOptions(MQTT_CLIENT_OPTIONS* options, const char* client
     const char* willTopic,
     const char* username,
     const char* password,
-    uint64_t keepAlive,
+    uint16_t keepAlive,
     bool messageRetain,
     bool cleanSession,
     QOS_VALUE qos)
 {
     options->clientId = (char*)clientId;
     options->willMessage = (char*)willMsg;
+    options->willTopic = (char*)willTopic;
     options->username = (char*)username;
     options->password = (char*)password;
-    options->keepAliveInterval = (int)keepAlive;
+    options->keepAliveInterval = keepAlive;
     options->useCleanSession = cleanSession;
     options->qualityOfServiceValue = qos;
+    options->messageRetain = messageRetain;
 }
 
 /* mqttclient_connect */
@@ -1069,7 +1084,7 @@ TEST_FUNCTION(mqtt_client_dowork_ping_succeeds)
     STRICT_EXPECTED_CALL(BUFFER_u_char(TEST_BUFFER_HANDLE)).SetReturn(CONNACK_RESP);
     STRICT_EXPECTED_CALL(BUFFER_length(TEST_BUFFER_HANDLE)).SetReturn(length);
 
-    int result = mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
+    (void)mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
     g_openComplete(g_onCompleteCtx, IO_OPEN_OK);
     g_packetComplete(mqttHandle, CONNACK_TYPE, 0, connack_handle);
     umock_c_reset_all_calls();
@@ -1111,7 +1126,7 @@ TEST_FUNCTION(mqtt_client_dowork_ping_No_ping_response_succeeds)
     STRICT_EXPECTED_CALL(BUFFER_u_char(TEST_BUFFER_HANDLE)).SetReturn(CONNACK_RESP);
     STRICT_EXPECTED_CALL(BUFFER_length(TEST_BUFFER_HANDLE)).SetReturn(length);
 
-    int result = mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
+    (void)mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
     g_openComplete(g_onCompleteCtx, IO_OPEN_OK);
     g_packetComplete(mqttHandle, CONNACK_TYPE, 0, connack_handle);
 
@@ -1153,7 +1168,7 @@ TEST_FUNCTION(mqtt_client_dowork_no_keepalive_no_ping_succeeds)
     STRICT_EXPECTED_CALL(BUFFER_u_char(TEST_BUFFER_HANDLE)).SetReturn(CONNACK_RESP);
     STRICT_EXPECTED_CALL(BUFFER_length(TEST_BUFFER_HANDLE)).SetReturn(length);
 
-    int result = mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
+    (void)mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
     g_openComplete(g_onCompleteCtx, IO_OPEN_OK);
     g_packetComplete(mqttHandle, CONNACK_TYPE, 0, connack_handle);
     umock_c_reset_all_calls();
@@ -1190,7 +1205,7 @@ TEST_FUNCTION(mqtt_client_dowork_no_ping_succeeds)
     STRICT_EXPECTED_CALL(BUFFER_u_char(TEST_BUFFER_HANDLE)).SetReturn(CONNACK_RESP);
     STRICT_EXPECTED_CALL(BUFFER_length(TEST_BUFFER_HANDLE)).SetReturn(length);
 
-    int result = mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
+    (void)mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
     g_openComplete(g_onCompleteCtx, IO_OPEN_OK);
     g_packetComplete(mqttHandle, CONNACK_TYPE, 0, connack_handle);
     umock_c_reset_all_calls();
@@ -1224,7 +1239,7 @@ TEST_FUNCTION(mqtt_client_dowork_tickcounter_fails_succeeds)
     STRICT_EXPECTED_CALL(BUFFER_u_char(TEST_BUFFER_HANDLE)).SetReturn(CONNACK_RESP);
     STRICT_EXPECTED_CALL(BUFFER_length(TEST_BUFFER_HANDLE)).SetReturn(length);
 
-    int result = mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
+    (void)mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
     g_openComplete(g_onCompleteCtx, IO_OPEN_OK);
     g_packetComplete(mqttHandle, CONNACK_TYPE, 0, connack_handle);
     umock_c_reset_all_calls();
@@ -1278,8 +1293,6 @@ TEST_FUNCTION(mqtt_client_recvCompleteCallback_context_NULL_fails)
 TEST_FUNCTION(mqtt_client_recvCompleteCallback_BUFFER_HANDLE_NULL_fails)
 {
     // arrange
-    unsigned char CONNACK_RESP[] = { 0x1, 0x0 };
-    size_t length = sizeof(CONNACK_RESP) / sizeof(CONNACK_RESP[0]);
     TEST_COMPLETE_DATA_INSTANCE testData;
 
     CONNECT_ACK connack = { 0 };
@@ -1635,7 +1648,6 @@ TEST_FUNCTION(mqtt_client_recvCompleteCallback_SUBACK_succeeds)
 TEST_FUNCTION(mqtt_client_recvCompleteCallback_UNSUBACK_succeeds)
 {
     // arrange
-    const size_t PACKET_RETCODE_COUNT = 4;
     unsigned char UNSUBSCRIBE_ACK_RESP[] = { 0xB0, 0x02, 0x12, 0x34 };
     size_t length = sizeof(UNSUBSCRIBE_ACK_RESP) / sizeof(UNSUBSCRIBE_ACK_RESP[0]);
     TEST_COMPLETE_DATA_INSTANCE testData;

@@ -47,7 +47,7 @@ extern "C" {
 static bool g_fail_alloc_calls;
 
 static const char* TEST_SUBSCRIPTION_TOPIC = "subTopic";
-static const uint8_t TEST_PACKET_ID = (uint8_t)0x1234;
+static const uint8_t TEST_PACKET_ID = (uint8_t)0x12;
 static const char* TEST_TOPIC_NAME = "topic Name";
 static const uint8_t* TEST_MESSAGE = (const uint8_t*)"Message to send";
 static const int TEST_MSG_LEN = sizeof(TEST_MESSAGE)/sizeof(TEST_MESSAGE[0]);
@@ -63,9 +63,13 @@ IMPLEMENT_UMOCK_C_ENUM_TYPE(QOS_VALUE, QOS_VALUE_VALUES);
 
 TEST_MUTEX_HANDLE test_serialize_mutex;
 
-void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
+DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
+
+static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    ASSERT_FAIL("umock_c reported error");
+    char temp_str[256];
+    (void)snprintf(temp_str, sizeof(temp_str), "umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
+    ASSERT_FAIL(temp_str);
 }
 
 BEGIN_TEST_SUITE(mqtt_message_unittests)
@@ -91,7 +95,7 @@ TEST_SUITE_CLEANUP(suite_cleanup)
 
 TEST_FUNCTION_INITIALIZE(method_init)
 {
-    if (TEST_MUTEX_ACQUIRE(test_serialize_mutex) != 0)
+    if (TEST_MUTEX_ACQUIRE(test_serialize_mutex))
     {
         ASSERT_FAIL("Could not acquire test serialization mutex.");
     }

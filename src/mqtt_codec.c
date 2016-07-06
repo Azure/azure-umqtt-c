@@ -269,7 +269,7 @@ static int constructSubscibeTypeVariableHeader(BUFFER_HANDLE ctrlPacket, uint16_
     return result;
 }
 
-static BUFFER_HANDLE constructPublishReply(CONTROL_PACKET_TYPE type, int flags, uint16_t packetId)
+static BUFFER_HANDLE constructPublishReply(CONTROL_PACKET_TYPE type, uint8_t flags, uint16_t packetId)
 {
     BUFFER_HANDLE result = BUFFER_new();
     if (result != NULL)
@@ -289,7 +289,7 @@ static BUFFER_HANDLE constructPublishReply(CONTROL_PACKET_TYPE type, int flags, 
             }
             else
             {
-                *iterator = type | flags;
+                *iterator = (uint8_t)type | flags;
                 iterator++;
                 *iterator = 0x2;
                 iterator++;
@@ -339,7 +339,7 @@ static int constructFixedHeader(BUFFER_HANDLE ctrlPacket, CONTROL_PACKET_TYPE pa
         else
         {
             uint8_t* iterator = BUFFER_u_char(fixedHeader);
-            *iterator = packetType | flags;
+            *iterator = (uint8_t)packetType | flags;
             iterator++;
             (void)memcpy(iterator, remainSize, index);
 
@@ -915,7 +915,6 @@ int mqtt_codec_bytesReceived(MQTTCODEC_HANDLE handle, const unsigned char* buffe
             }
             else if (codec_Data->codecState == CODEC_STATE_VAR_HEADER)
             {
-                size_t payloadLen = 0;
                 if (codec_Data->headerData == NULL)
                 {
                     codec_Data->codecState = CODEC_STATE_PAYLOAD;
