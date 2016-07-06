@@ -9,20 +9,31 @@
 #include <crtdbg.h>
 #endif
 
+#include "testrunnerswitcher.h"
+#include "umock_c.h"
+#include "umocktypes_bool.h"
+#include "umocktypes_stdint.h"
+
+static int g_fail_alloc_calls;
+
 void* my_gballoc_malloc(size_t size)
 {
-    return malloc(size);
+    void* alloc_result;
+    if (g_fail_alloc_calls != 0)
+    {
+        alloc_result = NULL;
+    }
+    else
+    {
+        alloc_result = malloc(size);
+    }
+    return alloc_result;
 }
 
 void my_gballoc_free(void* ptr)
 {
     free(ptr);
 }
-
-#include "testrunnerswitcher.h"
-#include "umock_c.h"
-#include "umocktypes_bool.h"
-#include "umocktypes_stdint.h"
 
 #define ENABLE_MOCKS
 
@@ -64,11 +75,17 @@ static const unsigned char* TEST_BUFFER_U_CHAR = (const unsigned char*)0x19;
 
 static bool g_operationCallbackInvoked;
 static bool g_msgRecvCallbackInvoked;
-static bool g_fail_alloc_calls;
+static bool g_mqtt_codec_publish_func_fail;
 static uint64_t g_current_ms;
 ON_PACKET_COMPLETE_CALLBACK g_packetComplete;
 ON_IO_OPEN_COMPLETE g_openComplete;
+ON_BYTES_RECEIVED g_bytesRecv;
+ON_IO_ERROR g_ioError;
+ON_SEND_COMPLETE g_sendComplete;
 void* g_onCompleteCtx;
+void* g_onSendCtx;
+void* g_bytesRecvCtx;
+void* g_ioErrorCtx;
 typedef struct TEST_COMPLETE_DATA_INSTANCE_TAG
 {
     MQTT_CLIENT_EVENT_RESULT actionResult;
@@ -100,6 +117,20 @@ extern "C" {
         (void)on_io_error_context;
         g_openComplete = on_io_open_complete;
         g_onCompleteCtx = on_io_open_complete_context;
+        g_bytesRecv = on_bytes_received;
+        g_bytesRecvCtx = on_bytes_received_context;
+        g_ioError = on_io_error;
+        g_ioErrorCtx = on_io_error_context;
+        return 0;
+    }
+
+    int my_xio_send(XIO_HANDLE xio, const void* buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void* callback_context)
+    {
+        (void)xio;
+        (void)buffer;
+        (void)size;
+        g_sendComplete = on_send_complete;
+        g_onSendCtx = callback_context;
         return 0;
     }
 
@@ -108,6 +139,28 @@ extern "C" {
         (void)tick_counter;
         *current_ms = g_current_ms;
         return 0;
+    }
+
+    BUFFER_HANDLE my_mqtt_codec_publishComplete(uint16_t packetId)
+    {
+        (void)packetId;
+        BUFFER_HANDLE buffer_result = TEST_BUFFER_HANDLE;
+        if (g_mqtt_codec_publish_func_fail)
+        {
+            buffer_result = NULL;
+        }
+        return buffer_result;
+    }
+
+    BUFFER_HANDLE my_mqtt_codec_publishRelease(uint16_t packetId)
+    {
+        (void)packetId;
+        BUFFER_HANDLE buffer_result = TEST_BUFFER_HANDLE;
+        if (g_mqtt_codec_publish_func_fail)
+        {
+            buffer_result = NULL;
+        }
+        return buffer_result;
     }
 
 #ifdef __cplusplus
@@ -155,7 +208,10 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
     REGISTER_GLOBAL_MOCK_HOOK(mqtt_codec_create, my_mqtt_codec_create);
     REGISTER_GLOBAL_MOCK_HOOK(xio_open, my_xio_open);
+    REGISTER_GLOBAL_MOCK_HOOK(xio_send, my_xio_send);
     REGISTER_GLOBAL_MOCK_HOOK(tickcounter_get_current_ms, my_tickcounter_get_current_ms);
+    REGISTER_GLOBAL_MOCK_HOOK(mqtt_codec_publishRelease, my_mqtt_codec_publishRelease);
+    REGISTER_GLOBAL_MOCK_HOOK(mqtt_codec_publishComplete, my_mqtt_codec_publishComplete);
     REGISTER_GLOBAL_MOCK_RETURN(mqtt_codec_connect, TEST_BUFFER_HANDLE);
     REGISTER_GLOBAL_MOCK_RETURN(mqtt_codec_publish, TEST_BUFFER_HANDLE);
     REGISTER_GLOBAL_MOCK_RETURN(mqtt_codec_subscribe, TEST_BUFFER_HANDLE);
@@ -164,11 +220,8 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_GLOBAL_MOCK_RETURN(mqtt_codec_ping, TEST_BUFFER_HANDLE);
     REGISTER_GLOBAL_MOCK_RETURN(mqtt_codec_publishAck, TEST_BUFFER_HANDLE);
     REGISTER_GLOBAL_MOCK_RETURN(mqtt_codec_publishReceived, TEST_BUFFER_HANDLE);
-    REGISTER_GLOBAL_MOCK_RETURN(mqtt_codec_publishRelease, TEST_BUFFER_HANDLE);
-    REGISTER_GLOBAL_MOCK_RETURN(mqtt_codec_publishComplete, TEST_BUFFER_HANDLE);
     REGISTER_GLOBAL_MOCK_RETURN(mqtt_codec_bytesReceived, 0);
     REGISTER_GLOBAL_MOCK_RETURN(xio_close, 0);
-    REGISTER_GLOBAL_MOCK_RETURN(xio_send, 0);
     REGISTER_GLOBAL_MOCK_RETURN(platform_init, 0);
     REGISTER_GLOBAL_MOCK_RETURN(tickcounter_create, TEST_COUNTER_HANDLE);
     REGISTER_GLOBAL_MOCK_RETURN(BUFFER_u_char, (unsigned char*)TEST_BUFFER_U_CHAR);
@@ -199,13 +252,20 @@ TEST_FUNCTION_INITIALIZE(method_init)
         ASSERT_FAIL("Could not acquire test serialization mutex.");
     }
 
-    g_fail_alloc_calls = false;
+    g_fail_alloc_calls = 0;
     g_current_ms = 0;
     g_packetComplete = NULL;
     g_operationCallbackInvoked = false;
     g_msgRecvCallbackInvoked = false;
+    g_mqtt_codec_publish_func_fail = false;
     g_openComplete = NULL;
     g_onCompleteCtx = NULL;
+    g_sendComplete = NULL;
+    g_onSendCtx = NULL;
+    g_bytesRecv = NULL;
+    g_ioError = NULL;
+    g_bytesRecvCtx = NULL;
+    g_ioErrorCtx = NULL;
 }
 
 TEST_FUNCTION_CLEANUP(method_cleanup)
@@ -564,6 +624,8 @@ TEST_FUNCTION(mqtt_client_connect_mqtt_codec_connect_fails)
     int result = mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
 
     ASSERT_IS_NOT_NULL(g_openComplete);
+    ASSERT_IS_NOT_NULL(g_bytesRecv);
+    ASSERT_IS_NOT_NULL(g_ioError);
     g_openComplete(g_onCompleteCtx, IO_OPEN_OK);
 
     // assert
@@ -605,6 +667,8 @@ TEST_FUNCTION(mqtt_client_connect_xio_send_fails)
     int result = mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
 
     ASSERT_IS_NOT_NULL(g_openComplete);
+    ASSERT_IS_NOT_NULL(g_bytesRecv);
+    ASSERT_IS_NOT_NULL(g_ioError);
     g_openComplete(g_onCompleteCtx, IO_OPEN_OK);
 
     // assert
@@ -647,6 +711,8 @@ TEST_FUNCTION(mqtt_client_connect_succeeds)
     int result = mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
 
     ASSERT_IS_NOT_NULL(g_openComplete);
+    ASSERT_IS_NOT_NULL(g_bytesRecv);
+    ASSERT_IS_NOT_NULL(g_ioError);
     g_openComplete(g_onCompleteCtx, IO_OPEN_OK);
 
     // assert
@@ -688,6 +754,8 @@ TEST_FUNCTION(mqtt_client_connect_multiple_completes_one_connect_succeeds)
     int result = mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
 
     ASSERT_IS_NOT_NULL(g_openComplete);
+    ASSERT_IS_NOT_NULL(g_bytesRecv);
+    ASSERT_IS_NOT_NULL(g_ioError);
     g_openComplete(g_onCompleteCtx, IO_OPEN_OK);
     g_openComplete(g_onCompleteCtx, IO_OPEN_OK);
 
@@ -1053,6 +1121,43 @@ TEST_FUNCTION(mqtt_client_disconnect_succeeds)
     mqtt_client_deinit(mqttHandle);
 }
 
+TEST_FUNCTION(mqtt_client_disconnect_send_complete_SEND_OK_succeeds)
+{
+    // arrange
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL);
+    (void)mqtt_client_disconnect(mqttHandle);
+    umock_c_reset_all_calls();
+
+    EXPECTED_CALL(xio_close(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG));
+
+    // act
+    ASSERT_IS_NOT_NULL(g_sendComplete);
+    g_sendComplete(g_onSendCtx, IO_SEND_OK);
+
+    // assert
+
+    // cleanup
+    mqtt_client_deinit(mqttHandle);
+}
+
+
+TEST_FUNCTION(mqtt_client_disconnect_send_complete_SEND_ERROR_succeeds)
+{
+    // arrange
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL);
+    (void)mqtt_client_disconnect(mqttHandle);
+    umock_c_reset_all_calls();
+
+    // act
+    ASSERT_IS_NOT_NULL(g_sendComplete);
+    g_sendComplete(g_onSendCtx, IO_SEND_ERROR);
+
+    // assert
+
+    // cleanup
+    mqtt_client_deinit(mqttHandle);
+}
+
 /*Codes_SRS_MQTT_CLIENT_07_023: [If the parameter handle is NULL then mqtt_client_dowork shall do nothing.]*/
 TEST_FUNCTION(mqtt_client_dowork_ping_handle_NULL_fails)
 {
@@ -1375,8 +1480,8 @@ TEST_FUNCTION(mqtt_client_recvCompleteCallback_PUBLISH_EXACTLY_ONCE_succeeds)
     STRICT_EXPECTED_CALL(tickcounter_get_current_ms(TEST_COUNTER_HANDLE, IGNORED_PTR_ARG)).IgnoreArgument(2);
     EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
     EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(mqttmessage_destroy(TEST_MESSAGE_HANDLE));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
     g_packetComplete(mqttHandle, PUBLISH_TYPE, flag, publish_handle);
@@ -1384,6 +1489,36 @@ TEST_FUNCTION(mqtt_client_recvCompleteCallback_PUBLISH_EXACTLY_ONCE_succeeds)
     // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_IS_TRUE(g_msgRecvCallbackInvoked);
+
+    // cleanup
+    mqtt_client_deinit(mqttHandle);
+}
+
+/*Test_SRS_MQTT_CLIENT_07_029: [If the actionResult parameter are of types PUBACK_TYPE, PUBREC_TYPE, PUBREL_TYPE or PUBCOMP_TYPE then the msgInfo value shall be a PUBLISH_ACK structure.]*/
+TEST_FUNCTION(mqtt_client_recvCompleteCallback_PUBLISH_EXACTLY_ONCE_fails)
+{
+    // arrange
+    unsigned char PUBLISH_RESP[] ={ 0x00, 0x0a, 0x74, 0x6f, 0x70, 0x69, 0x63, 0x20, 0x4e, 0x61, 0x6d, 0x65, 0x12, 0x34, \
+        0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x20, 0x74, 0x6f, 0x20, 0x73, 0x65, 0x6e, 0x64 };
+    size_t length = sizeof(PUBLISH_RESP) / sizeof(PUBLISH_RESP[0]);
+
+    uint8_t flag = 0x0d;
+
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, (void*)&PUBLISH_RESP);
+    umock_c_reset_all_calls();
+
+    BUFFER_HANDLE publish_handle = TEST_BUFFER_HANDLE;
+    STRICT_EXPECTED_CALL(BUFFER_length(TEST_BUFFER_HANDLE)).SetReturn(length);
+    STRICT_EXPECTED_CALL(BUFFER_u_char(TEST_BUFFER_HANDLE)).SetReturn(PUBLISH_RESP);
+    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+
+    // act
+    g_fail_alloc_calls = 1;
+    g_packetComplete(mqttHandle, PUBLISH_TYPE, flag, publish_handle);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_IS_FALSE(g_msgRecvCallbackInvoked);
 
     // cleanup
     mqtt_client_deinit(mqttHandle);
@@ -1417,8 +1552,8 @@ TEST_FUNCTION(mqtt_client_recvCompleteCallback_PUBLISH_AT_LEAST_ONCE_succeeds)
     STRICT_EXPECTED_CALL(tickcounter_get_current_ms(TEST_COUNTER_HANDLE, IGNORED_PTR_ARG)).IgnoreArgument(2);
     EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
     EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(mqttmessage_destroy(TEST_MESSAGE_HANDLE));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
     g_packetComplete(mqttHandle, PUBLISH_TYPE, flag, publish_handle);
@@ -1452,8 +1587,8 @@ TEST_FUNCTION(mqtt_client_recvCompleteCallback_PUBLISH_AT_MOST_ONCE_succeeds)
         .IgnoreArgument(4);
     STRICT_EXPECTED_CALL(mqttmessage_setIsDuplicateMsg(TEST_MESSAGE_HANDLE, false));
     STRICT_EXPECTED_CALL(mqttmessage_setIsRetained(TEST_MESSAGE_HANDLE, false));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(mqttmessage_destroy(TEST_MESSAGE_HANDLE));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
     g_packetComplete(mqttHandle, PUBLISH_TYPE, flag, publish_handle);
@@ -1498,7 +1633,7 @@ TEST_FUNCTION(mqtt_client_recvCompleteCallback_PUBLISH_ACK_succeeds)
 }
 
 /*Test_SRS_MQTT_CLIENT_07_029: [If the actionResult parameter are of types PUBACK_TYPE, PUBREC_TYPE, PUBREL_TYPE or PUBCOMP_TYPE then the msgInfo value shall be a PUBLISH_ACK structure.]*/
-TEST_FUNCTION(mqtt_client_recvCompleteCallback_PUBLISH_RECIEVE_succeeds)
+TEST_FUNCTION(mqtt_client_recvCompleteCallback_PUBLISH_RECEIVE_succeeds)
 {
     // arrange
     unsigned char PUBLISH_ACK_RESP[] = { 0x12, 0x34 };
@@ -1524,6 +1659,39 @@ TEST_FUNCTION(mqtt_client_recvCompleteCallback_PUBLISH_RECIEVE_succeeds)
     EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG));
 
     // act
+    g_packetComplete(mqttHandle, PUBREC_TYPE, 0, packet_handle);
+
+    // assert
+    ASSERT_IS_TRUE(g_operationCallbackInvoked);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    mqtt_client_deinit(mqttHandle);
+}
+
+/*Test_SRS_MQTT_CLIENT_07_029: [If the actionResult parameter are of types PUBACK_TYPE, PUBREC_TYPE, PUBREL_TYPE or PUBCOMP_TYPE then the msgInfo value shall be a PUBLISH_ACK structure.]*/
+TEST_FUNCTION(mqtt_client_recvCompleteCallback_PUBLISH_RECEIVE_fails)
+{
+    // arrange
+    unsigned char PUBLISH_ACK_RESP[] ={ 0x12, 0x34 };
+    size_t length = sizeof(PUBLISH_ACK_RESP) / sizeof(PUBLISH_ACK_RESP[0]);
+    TEST_COMPLETE_DATA_INSTANCE testData;
+    PUBLISH_ACK puback ={ 0 };
+    puback.packetId = 0x1234;
+
+    testData.actionResult = MQTT_CLIENT_ON_PUBLISH_RECV;
+    testData.msgInfo = &puback;
+
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, (void*)&testData);
+    umock_c_reset_all_calls();
+
+    BUFFER_HANDLE packet_handle = TEST_BUFFER_HANDLE;
+    STRICT_EXPECTED_CALL(BUFFER_length(TEST_BUFFER_HANDLE)).SetReturn(length);
+    STRICT_EXPECTED_CALL(BUFFER_u_char(TEST_BUFFER_HANDLE)).SetReturn(PUBLISH_ACK_RESP);
+    EXPECTED_CALL(mqtt_codec_publishRelease(IGNORED_NUM_ARG));
+
+    // act
+    g_mqtt_codec_publish_func_fail = true;
     g_packetComplete(mqttHandle, PUBREC_TYPE, 0, packet_handle);
 
     // assert
@@ -1561,6 +1729,39 @@ TEST_FUNCTION(mqtt_client_recvCompleteCallback_PUBLISH_RELEASE_succeeds)
     EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG));
 
     // act
+    g_packetComplete(mqttHandle, PUBREL_TYPE, 0, packet_handle);
+
+    // assert
+    ASSERT_IS_TRUE(g_operationCallbackInvoked);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    mqtt_client_deinit(mqttHandle);
+}
+
+/*Test_SRS_MQTT_CLIENT_07_029: [If the actionResult parameter are of types PUBACK_TYPE, PUBREC_TYPE, PUBREL_TYPE or PUBCOMP_TYPE then the msgInfo value shall be a PUBLISH_ACK structure.]*/
+TEST_FUNCTION(mqtt_client_recvCompleteCallback_PUBLISH_RELEASE_fails)
+{
+    // arrange
+    unsigned char PUBLISH_ACK_RESP[] ={ 0x12, 0x34 };
+    size_t length = sizeof(PUBLISH_ACK_RESP) / sizeof(PUBLISH_ACK_RESP[0]);
+    TEST_COMPLETE_DATA_INSTANCE testData;
+    PUBLISH_ACK puback ={ 0 };
+    puback.packetId = 0x1234;
+
+    testData.actionResult = MQTT_CLIENT_ON_PUBLISH_REL;
+    testData.msgInfo = &puback;
+
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, (void*)&testData);
+    umock_c_reset_all_calls();
+
+    BUFFER_HANDLE packet_handle = TEST_BUFFER_HANDLE;
+    STRICT_EXPECTED_CALL(BUFFER_length(TEST_BUFFER_HANDLE)).SetReturn(length);
+    STRICT_EXPECTED_CALL(BUFFER_u_char(TEST_BUFFER_HANDLE)).SetReturn(PUBLISH_ACK_RESP);
+    EXPECTED_CALL(mqtt_codec_publishComplete(IGNORED_NUM_ARG));
+
+    // act
+    g_mqtt_codec_publish_func_fail = true;
     g_packetComplete(mqttHandle, PUBREL_TYPE, 0, packet_handle);
 
     // assert
