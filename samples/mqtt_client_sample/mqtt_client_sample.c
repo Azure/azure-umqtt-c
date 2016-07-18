@@ -61,6 +61,7 @@ static void OnRecvCallback(MQTT_MESSAGE_HANDLE msgHandle, void* context)
 
 static void OnCloseComplete(void* context)
 {
+    (void)context;
     (void)printf("%d: On Close Connection failed\r\n", __LINE__);
 }
 
