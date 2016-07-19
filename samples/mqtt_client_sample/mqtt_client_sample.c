@@ -43,6 +43,7 @@ static const char* QosToString(QOS_VALUE qosValue)
 
 static void OnRecvCallback(MQTT_MESSAGE_HANDLE msgHandle, void* context)
 {
+	(void)context;
     const APP_PAYLOAD* appMsg = mqttmessage_getApplicationMsg(msgHandle);
 
     (void)printf("Incoming Msg: Packet Id: %d\r\nQOS: %s\r\nTopic Name: %s\r\nIs Retained: %s\r\nIs Duplicate: %s\r\nApp Msg: ", mqttmessage_getPacketId(msgHandle),
@@ -61,22 +62,26 @@ static void OnRecvCallback(MQTT_MESSAGE_HANDLE msgHandle, void* context)
 
 static void OnCloseComplete(void* context)
 {
+	(void)context;
     (void)printf("%d: On Close Connection failed\r\n", __LINE__);
 }
 
 static void OnOperationComplete(MQTT_CLIENT_HANDLE handle, MQTT_CLIENT_EVENT_RESULT actionResult, const void* msgInfo, void* callbackCtx)
 {
+	(void)msgInfo;
     (void)callbackCtx;
     switch (actionResult)
     {
         case MQTT_CLIENT_ON_CONNACK:
         {
             (void)printf("ConnAck function called\r\n");
-            const CONNECT_ACK* connack = (CONNECT_ACK*)msgInfo;
-            SUBSCRIBE_PAYLOAD subscribe[] = {
-                { TOPIC_NAME_A, DELIVER_AT_MOST_ONCE },
-                { TOPIC_NAME_B, DELIVER_EXACTLY_ONCE },
-            };
+
+			SUBSCRIBE_PAYLOAD subscribe[2];
+			subscribe[0].subscribeTopic = TOPIC_NAME_A;
+			subscribe[0].qosReturn = DELIVER_AT_MOST_ONCE;
+			subscribe[1].subscribeTopic = TOPIC_NAME_B;
+			subscribe[1].qosReturn = DELIVER_EXACTLY_ONCE;
+
             if (mqtt_client_subscribe(handle, PACKET_ID_VALUE++, subscribe, sizeof(subscribe) / sizeof(subscribe[0])) != 0)
             {
                 (void)printf("%d: mqtt_client_subscribe failed\r\n", __LINE__);
@@ -86,8 +91,7 @@ static void OnOperationComplete(MQTT_CLIENT_HANDLE handle, MQTT_CLIENT_EVENT_RES
         }
         case MQTT_CLIENT_ON_SUBSCRIBE_ACK:
         {
-            const SUBSCRIBE_ACK* suback = (SUBSCRIBE_ACK*)msgInfo;
-            MQTT_MESSAGE_HANDLE msg = mqttmessage_create(PACKET_ID_VALUE++, TOPIC_NAME_A, DELIVER_EXACTLY_ONCE, APP_NAME_A, strlen(APP_NAME_A));
+            MQTT_MESSAGE_HANDLE msg = mqttmessage_create(PACKET_ID_VALUE++, TOPIC_NAME_A, DELIVER_EXACTLY_ONCE, (const uint8_t*)APP_NAME_A, strlen(APP_NAME_A));
             if (msg == NULL)
             {
                 (void)printf("%d: mqttmessage_create failed\r\n", __LINE__);
@@ -107,22 +111,18 @@ static void OnOperationComplete(MQTT_CLIENT_HANDLE handle, MQTT_CLIENT_EVENT_RES
         }
         case MQTT_CLIENT_ON_PUBLISH_ACK:
         {
-            const PUBLISH_ACK* puback = (PUBLISH_ACK*)msgInfo;
             break;
         }
         case MQTT_CLIENT_ON_PUBLISH_RECV:
         {
-            const PUBLISH_ACK* puback = (PUBLISH_ACK*)msgInfo;
             break;
         }
         case MQTT_CLIENT_ON_PUBLISH_REL:
         {
-            const PUBLISH_ACK* puback = (PUBLISH_ACK*)msgInfo;
             break;
         }
         case MQTT_CLIENT_ON_PUBLISH_COMP:
         {
-            const PUBLISH_ACK* puback = (PUBLISH_ACK*)msgInfo;
             // Done so send disconnect
             mqtt_client_disconnect(handle);
             break;
