@@ -1452,6 +1452,38 @@ TEST_FUNCTION(mqtt_client_recvCompleteCallback_CONNACK_succeeds)
     mqtt_client_deinit(mqttHandle);
 }
 
+/*Test_SRS_MQTT_CLIENT_07_028: [If the actionResult parameter is of type CONNECT_ACK then the msgInfo value shall be a CONNECT_ACK structure.]*/
+TEST_FUNCTION(mqtt_client_recvCompleteCallback_CONNACK_auth_reject_succeeds)
+{
+    // arrange
+    unsigned char CONNACK_RESP[] ={ 0x00, 0x05 };
+    size_t length = sizeof(CONNACK_RESP) / sizeof(CONNACK_RESP[0]);
+    TEST_COMPLETE_DATA_INSTANCE testData;
+
+    CONNECT_ACK connack = { 0 };
+    connack.isSessionPresent = false;
+    connack.returnCode = CONN_REFUSED_NOT_AUTHORIZED;
+    testData.actionResult = MQTT_CLIENT_ON_CONNACK;
+    testData.msgInfo = &connack;
+
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, (void*)&testData);
+    umock_c_reset_all_calls();
+
+    BUFFER_HANDLE connack_handle = TEST_BUFFER_HANDLE;
+    STRICT_EXPECTED_CALL(BUFFER_length(TEST_BUFFER_HANDLE)).SetReturn(length);
+    STRICT_EXPECTED_CALL(BUFFER_u_char(TEST_BUFFER_HANDLE)).SetReturn(CONNACK_RESP);
+
+    // act
+    g_packetComplete(mqttHandle, CONNACK_TYPE, 0, connack_handle);
+
+    // assert
+    ASSERT_IS_TRUE(g_operationCallbackInvoked);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    mqtt_client_deinit(mqttHandle);
+}
+
 /*Test_SRS_MQTT_CLIENT_07_029: [If the actionResult parameter are of types PUBACK_TYPE, PUBREC_TYPE, PUBREL_TYPE or PUBCOMP_TYPE then the msgInfo value shall be a PUBLISH_ACK structure.]*/
 TEST_FUNCTION(mqtt_client_recvCompleteCallback_PUBLISH_EXACTLY_ONCE_succeeds)
 {
