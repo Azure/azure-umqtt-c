@@ -67,11 +67,11 @@ rem -- Copy all Win32 files from cmake build directory to the repo directory
 echo copying %build-path%\umqtt_win32\win32\debug
 
 xcopy /q /y /R %build-path%\umqtt_win32\Debug\*.* %build-path%\azure_mqtt_output\win32\debug\*.*
-if %errorlevel% neq 0 exit /b %errorlevel%
+if !ERRORLEVEL! neq 0 exit /b !ERRORLEVEL!
 
 rem -- Copy all Win32 Release files from cmake build directory to the repo directory
 xcopy /q /y /R %build-path%\umqtt_win32\Release\*.* %build-path%\azure_mqtt_output\win32\Release\*.*
-if %errorlevel% neq 0 exit /b %errorlevel%
+if !ERRORLEVEL! neq 0 exit /b !ERRORLEVEL!
 
 rem -----------------------------------------------------------------------------
 rem -- build with CMAKE x64
@@ -79,11 +79,11 @@ rem ----------------------------------------------------------------------------
 
 rem -- Copy all x64 files from cmake build directory to the repo directory
 xcopy /q /y /R %build-path%\umqtt_x64\Debug\*.* %build-path%\azure_mqtt_output\x64\debug\*.*
-if %errorlevel% neq 0 exit /b %errorlevel%
+if !ERRORLEVEL! neq 0 exit /b !ERRORLEVEL!
 
 rem -- Copy all x64 Release files from cmake build directory to the repo directory
 xcopy /q /y /R %build-path%\umqtt_x64\Release\*.* %build-path%\azure_mqtt_output\x64\Release\*.*
-if %errorlevel% neq 0 exit /b %errorlevel%
+if !ERRORLEVEL! neq 0 exit /b !ERRORLEVEL!
 
 
 rem -----------------------------------------------------------------------------
@@ -92,11 +92,11 @@ rem ----------------------------------------------------------------------------
 
 rem -- Copy all ARM files from cmake build directory to the repo directory
 xcopy /q /y /R %build-path%\umqtt_arm\Debug\*.* %build-path%\azure_mqtt_output\arm\debug\*.*
-if %errorlevel% neq 0 exit /b %errorlevel%
+if !ERRORLEVEL! neq 0 exit /b !ERRORLEVEL!
 
 rem -- Copy all x64 Release files from cmake build directory to the repo directory
 xcopy /q /y /R %build-path%\umqtt_arm\Release\*.* %build-path%\azure_mqtt_output\arm\Release\*.*
-if %errorlevel% neq 0 exit /b %errorlevel%
+if !ERRORLEVEL! neq 0 exit /b !ERRORLEVEL!
 
 if exist *.nupkg (
 	del *.nupkg

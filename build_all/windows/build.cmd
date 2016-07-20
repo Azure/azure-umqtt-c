@@ -104,7 +104,7 @@ pushd %build-root%\cmake\%CMAKE_DIR%
 if %MAKE_NUGET_PKG% == yes (
     echo ***Running CMAKE for Win32***
     cmake %build-root% -Dskip_unittests:BOOL=%CMAKE_skip_unittests%
-    if not %errorlevel%==0 exit /b %errorlevel%
+    if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
     popd
 
     echo ***Running CMAKE for Win64***
@@ -114,7 +114,7 @@ if %MAKE_NUGET_PKG% == yes (
     mkdir %build-root%\cmake\umqtt_x64
     pushd %build-root%\cmake\umqtt_x64
     cmake -Dskip_unittests:BOOL=%CMAKE_skip_unittests% %build-root% -G "Visual Studio 14 Win64"
-    if not %errorlevel%==0 exit /b %errorlevel%
+    if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
     popd
 
     echo ***Running CMAKE for ARM***
@@ -125,39 +125,39 @@ if %MAKE_NUGET_PKG% == yes (
     pushd %build-root%\cmake\umqtt_arm
     echo ***Running CMAKE for ARM***
     cmake -Dskip_unittests:BOOL=%CMAKE_skip_unittests% %build-root% -G "Visual Studio 14 ARM" 
-    if not %errorlevel%==0 exit /b %errorlevel%
+    if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
     
 ) else if %build-platform% == Win32 (
     echo ***Running CMAKE for Win32***
     cmake %build-root% -Dskip_unittests:BOOL=%CMAKE_skip_unittests%
-    if not %errorlevel%==0 exit /b %errorlevel%
+    if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 ) else if %build-platform% == arm (
     echo ***Running CMAKE for ARM***
     cmake -Dskip_unittests:BOOL=%CMAKE_skip_unittests% %build-root% -G "Visual Studio 14 ARM" 
-    if not %errorlevel%==0 exit /b %errorlevel%
+    if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 ) else (
     echo ***Running CMAKE for Win64***
     cmake -Dskip_unittests:BOOL=%CMAKE_skip_unittests% %build-root% -G "Visual Studio 14 Win64"
-    if not %errorlevel%==0 exit /b %errorlevel%
+    if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 )
 
 if %MAKE_NUGET_PKG% == yes (
         echo ***Building all configurations***
         msbuild /m %build-root%\cmake\umqtt_win32\umqtt.sln /p:Configuration=Release
         msbuild /m %build-root%\cmake\umqtt_win32\umqtt.sln /p:Configuration=Debug
-        if not %errorlevel%==0 exit /b %errorlevel%
+        if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 
         msbuild /m %build-root%\cmake\umqtt_x64\umqtt.sln /p:Configuration=Release
         msbuild /m %build-root%\cmake\umqtt_x64\umqtt.sln /p:Configuration=Debug
-        if not %errorlevel%==0 exit /b %errorlevel%
+        if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 
         msbuild /m %build-root%\cmake\umqtt_arm\umqtt.sln /p:Configuration=Release
         msbuild /m %build-root%\cmake\umqtt_arm\umqtt.sln /p:Configuration=Debug
-        if not %errorlevel%==0 exit /b %errorlevel%
+        if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 ) else (
     rem msbuild /m umqtt.sln
     call :_run-msbuild "Build" umqtt.sln %2 %3
-    if not %errorlevel%==0 exit /b %errorlevel%
+    if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 
     echo Build Config: %build-config%
     echo Build Platform: %build-platform%
@@ -167,7 +167,7 @@ if %MAKE_NUGET_PKG% == yes (
         
         if "%build-config%" == "Debug" (
             ctest -C "debug" -V
-            if not %errorlevel%==0 exit /b %errorlevel%
+            if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
         )
     )
 )
@@ -216,7 +216,7 @@ if "%~3" neq "" set build-config=%~3
 if "%~4" neq "" set build-platform=%~4
 
 msbuild /m %build-target% "/p:Configuration=%build-config%;Platform=%build-platform%" %2
-if not %errorlevel%==0 exit /b %errorlevel%
+if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 goto :eof
 
 :_run-tests
@@ -234,7 +234,7 @@ rem // run tests
 echo Test DLLs: %test-dlls-list%
 echo.
 vstest.console.exe %test-dlls-list%
-if not %errorlevel%==0 exit /b %errorlevel%
+if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 goto :eof
 
 echo done
