@@ -400,7 +400,7 @@ static int constructConnPayload(BUFFER_HANDLE ctrlPacket, const MQTT_CLIENT_OPTI
         {
             result = __LINE__;
         }
-        else if (usernameLen > 0 && passwordLen == 0)
+        else if (usernameLen == 0 && passwordLen > 0)
         {
             result = __LINE__;
         }
@@ -440,8 +440,12 @@ static int constructConnPayload(BUFFER_HANDLE ctrlPacket, const MQTT_CLIENT_OPTI
                 }
                 if (usernameLen > 0)
                 {
-                    packet[CONN_FLAG_BYTE_OFFSET] |= USERNAME_FLAG | PASSWORD_FLAG;
+                    packet[CONN_FLAG_BYTE_OFFSET] |= USERNAME_FLAG;
                     byteutil_writeUTF(&iterator, mqttOptions->username, (uint16_t)usernameLen);
+                }
+                if (passwordLen > 0)
+                {
+                    packet[CONN_FLAG_BYTE_OFFSET] |= PASSWORD_FLAG;
                     byteutil_writeUTF(&iterator, mqttOptions->password, (uint16_t)passwordLen);
                 }
                 // TODO: Get the rest of the flags
