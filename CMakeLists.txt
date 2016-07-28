@@ -114,7 +114,7 @@ endmacro(compileAsC11)
 
 #Update_dependencies()
 
-compileAsC11()
+compileAsC99()
 
 #these are the C source files
 set(source_c_files
