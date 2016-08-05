@@ -177,6 +177,9 @@ static void logOutgoingingMsgTrace(MQTT_CLIENT* clientData, const uint8_t* data,
 
 static void logIncomingMsgTrace(MQTT_CLIENT* clientData, CONTROL_PACKET_TYPE packet, int flags, const uint8_t* data, size_t length)
 {
+#ifdef NO_LOGGING
+	UNUSED(flags);
+#endif
     if (clientData != NULL && clientData->logTrace)
     {
         if (data != NULL && length > 0)
