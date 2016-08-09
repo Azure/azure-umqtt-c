@@ -176,7 +176,7 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
     ASSERT_FAIL(temp_str);
 }
 
-BEGIN_TEST_SUITE(mqtt_client_unittests)
+BEGIN_TEST_SUITE(mqtt_client_ut)
 
 TEST_SUITE_INITIALIZE(suite_init)
 {
@@ -1961,4 +1961,4 @@ TEST_FUNCTION(mqtt_client_set_trace_traceOn_NULL_fail)
     // cleanup
 }
 
-END_TEST_SUITE(mqtt_client_unittests)
+END_TEST_SUITE(mqtt_client_ut)

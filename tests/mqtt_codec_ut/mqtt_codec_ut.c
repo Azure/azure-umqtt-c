@@ -120,7 +120,7 @@ static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
     ASSERT_FAIL(temp_str);
 }
 
-BEGIN_TEST_SUITE(mqtt_codec_unittests)
+BEGIN_TEST_SUITE(mqtt_codec_ut)
 
 TEST_SUITE_INITIALIZE(suite_init)
 {
@@ -1570,4 +1570,4 @@ TEST_FUNCTION(mqtt_codec_bytesReceived_unsuback_succeed)
     mqtt_codec_destroy(handle);
 }
 
-END_TEST_SUITE(mqtt_codec_unittests)
+END_TEST_SUITE(mqtt_codec_ut)
