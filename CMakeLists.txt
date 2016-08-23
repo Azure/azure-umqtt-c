@@ -149,6 +149,7 @@ IF(WIN32)
 ELSE()
     # Make warning as error
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
 ENDIF(WIN32)
 
 #this is the product (a library)
