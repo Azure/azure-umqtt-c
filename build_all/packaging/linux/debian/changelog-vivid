@@ -1,39 +1,34 @@
-azure-uamqp-c (0.1.0-29) vivid; urgency=low
+azure-umqtt-c (0.1.0-19) vivid; urgency=low
 
-  * Initial release
+  * Initial release (Closes: #5479749)
 
-  * Fixed bug in link regarding settled transfer (#5181061)
+  * Update dependencies for Azure-c-shared-util (Closes: #5515797)
 
-  * Fix a flow bug and make on_message_sent have a non-const context (#360fa34)
+  * Update the mqtt codec to ensure totalLen is > 0 (#8c519d16)
 
-  * Remove const from on_message_send_complete callbacks (#adf4910)
+  * Added fix for have a 0 keep alive value (#464d0a5)
 
-  * Fix leak of message_annotations in message.c (#e48a19)
+  * Add mqtt bug fix for restricting size (#16480f6)
 
-  * Update xio definition to deal with connection opens (#1b13a97b)
+  * Update shared-util along with update the KeepAlive second buffer (#f7f54b4)
 
-  * Adding the wsio_open changes required due to xio_open signature change (#070db5c0)
+  * Added times to the logging (#5e37608)
 
-  * Update uamqp to use namespacing for includes (#f1667a4)
-
-  * Fix messagereceiver_destroy by calling messagereceiver_close (#0309f57)
-
-  * fix av in teardown of message_sender/receiver (#3c59616)
+  * Make mqtt codec and mqtt message headers have mockable functions
 
   * Fix tlsio_schannel bug (not all input bytes were being read) (#451ab97)
 
-  * Added ability to turn on/off logging (#32f1585)
+  * Convert umqtt_client unit tests to umock_c
 
-  * calling a new connection_create function (#6d91225)
+  * Add messge to indicate Ping Response Failure (#21453b6)
 
-  * Remove logger argument from message_sender
+  * Update umqtt to use the new runtime configurable logging functions
 
-  * Bug fix: WSIO.c on_ws_callback should not update certs if wsio_instance->trusted_ca is NULL
+  * Make consolelogger be the default logger
 
-  * Bug fix: libwebsockets to build without -Werror, fixed x86/x64 build with support for websockets
+  * Bug fix: enabled warnings as errors on build, plus fix for W4 build errors 
 
-  * Add check for missing delivery state
+  * Fix logging for the build
 
-  * Fix crash when receiving Disposition frames
+ -- AzureIoT User <aziotsdklinux@outlook.com> Tue, 16 Aug 2016 11:00:00 +0000
 
- -- AzureIoT User <aziotsdklinux@outlook.com>  Sat, 27 Aug 2016 11:00:00 +0000
