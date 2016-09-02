@@ -20,4 +20,4 @@ set(${theseTestsName}_h_files
 
 include_directories(${MQTT_SRC_FOLDER})
 
-build_c_test_artifacts(${theseTestsName} ON "umqtt_tests")
+build_c_test_artifacts(${theseTestsName} ON "tests/umqtt_tests")
