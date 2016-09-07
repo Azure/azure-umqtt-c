@@ -166,8 +166,18 @@ if (NOT ${skip_unittests})
     add_subdirectory(tests)
 endif()
 
+# Set CMAKE_INSTALL_LIBDIR if not defined
+include(GNUInstallDirs)
+
+# Overridable install variables
+if (CMAKE_INSTALL_LIBDIR)
+    set (LIB_INSTALL_DIR "${CMAKE_INSTALL_LIBDIR}" CACHE PATH "Library object file directory")
+else ()
+    set (LIB_INSTALL_DIR "lib" CACHE PATH "Library object file directory")
+endif ()
+
 if(WIN32)  
 else()  
-    install (TARGETS umqtt DESTINATION lib)  
-    install (FILES ${source_h_files} DESTINATION include/azureiot/azure_umqtt_c)  
+    install (TARGETS umqtt DESTINATION ${LIB_INSTALL_DIR})  
+    install (FILES ${source_h_files} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azureiot/azure_umqtt_c)  
 endif (WIN32)  
