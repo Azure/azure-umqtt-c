@@ -19,6 +19,7 @@ extern "C" {
 #include "azure_c_shared_utility/buffer_.h"
 #include "azure_c_shared_utility/umock_c_prod.h"
 #include "azure_umqtt_c/mqttconst.h"
+#include "azure_c_shared_utility/strings.h"
 
 typedef struct MQTTCODEC_INSTANCE_TAG* MQTTCODEC_HANDLE;
 
@@ -27,16 +28,16 @@ typedef void(*ON_PACKET_COMPLETE_CALLBACK)(void* context, CONTROL_PACKET_TYPE pa
 MOCKABLE_FUNCTION(, MQTTCODEC_HANDLE, mqtt_codec_create, ON_PACKET_COMPLETE_CALLBACK, packetComplete, void*, callbackCtx);
 MOCKABLE_FUNCTION(, void, mqtt_codec_destroy, MQTTCODEC_HANDLE, handle);
 
-MOCKABLE_FUNCTION(, BUFFER_HANDLE, mqtt_codec_connect, const MQTT_CLIENT_OPTIONS*, mqttOptions);
+MOCKABLE_FUNCTION(, BUFFER_HANDLE, mqtt_codec_connect, const MQTT_CLIENT_OPTIONS*, mqttOptions, STRING_HANDLE, trace_log);
 MOCKABLE_FUNCTION(, BUFFER_HANDLE, mqtt_codec_disconnect);
-MOCKABLE_FUNCTION(, BUFFER_HANDLE, mqtt_codec_publish, QOS_VALUE, qosValue, bool, duplicateMsg, bool, serverRetain, uint16_t, packetId, const char*, topicName, const uint8_t*, msgBuffer, size_t, buffLen);
+MOCKABLE_FUNCTION(, BUFFER_HANDLE, mqtt_codec_publish, QOS_VALUE, qosValue, bool, duplicateMsg, bool, serverRetain, uint16_t, packetId, const char*, topicName, const uint8_t*, msgBuffer, size_t, buffLen, STRING_HANDLE, trace_log);
 MOCKABLE_FUNCTION(, BUFFER_HANDLE, mqtt_codec_publishAck, uint16_t, packetId);
 MOCKABLE_FUNCTION(, BUFFER_HANDLE, mqtt_codec_publishReceived, uint16_t, packetId);
 MOCKABLE_FUNCTION(, BUFFER_HANDLE, mqtt_codec_publishRelease, uint16_t, packetId);
 MOCKABLE_FUNCTION(, BUFFER_HANDLE, mqtt_codec_publishComplete, uint16_t, packetId);
 MOCKABLE_FUNCTION(, BUFFER_HANDLE, mqtt_codec_ping);
-MOCKABLE_FUNCTION(, BUFFER_HANDLE, mqtt_codec_subscribe, uint16_t, packetId, SUBSCRIBE_PAYLOAD*, subscribeList, size_t, count);
-MOCKABLE_FUNCTION(, BUFFER_HANDLE, mqtt_codec_unsubscribe, uint16_t, packetId, const char**, unsubscribeList, size_t, count);
+MOCKABLE_FUNCTION(, BUFFER_HANDLE, mqtt_codec_subscribe, uint16_t, packetId, SUBSCRIBE_PAYLOAD*, subscribeList, size_t, count, STRING_HANDLE, trace_log);
+MOCKABLE_FUNCTION(, BUFFER_HANDLE, mqtt_codec_unsubscribe, uint16_t, packetId, const char**, unsubscribeList, size_t, count, STRING_HANDLE, trace_log);
 
 MOCKABLE_FUNCTION(, int, mqtt_codec_bytesReceived, MQTTCODEC_HANDLE, handle, const unsigned char*, buffer, size_t, size);
 
