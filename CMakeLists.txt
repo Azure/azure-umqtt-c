@@ -63,12 +63,24 @@ if (NOT DEFINED ARCHITECTURE)
     set(ARCHITECTURE "GENERIC") 
 endif() 
 
-message(STATUS "MQTT Target architecture: ${ARCHITECTURE}") 
+message(STATUS "MQTT Target architecture: ${ARCHITECTURE}")
 
-# Start of variables used during install
-#set (INCLUDE_INSTALL_DIR include CACHE PATH "Include file directory")
+# Check if shared utils library is already provided
+find_library (SHARED_UTIL_LIB_PATH NAMES aziotsharedutil)
 
-add_subdirectory(azure-c-shared-utility)
+if (SHARED_UTIL_LIB_PATH AND SHARED_UTIL_INCLUDE_DIR)
+    set(SHARED_UTIL_FOUND 1)
+
+    # Disable tests
+    set(skip_unittests ON)
+endif()
+
+# Build shared util library if not found
+if (NOT SHARED_UTIL_FOUND)
+    add_subdirectory(azure-c-shared-utility)
+    set(SHARED_UTIL_LIB_PATH aziotsharedutil)
+    set(SHARED_UTIL_INCLUDE_DIR ${SHARED_UTIL_INC_FOLDER})
+endif()
 
 enable_testing()
 
@@ -134,7 +146,7 @@ set(source_h_files
 #the following "set" statetement exports across the project a global variable called COMMON_INC_FOLDER that expands to whatever needs to included when using COMMON library
 set(MQTT_INC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/inc CACHE INTERNAL "this is what needs to be included if using sharedLib lib" FORCE)
 set(MQTT_SRC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/src CACHE INTERNAL "this is what needs to be included when doing include sources" FORCE)
-include_directories(${MQTT_INC_FOLDER} ${SHARED_UTIL_INC_FOLDER})
+include_directories(${MQTT_INC_FOLDER} ${SHARED_UTIL_INCLUDE_DIR})
 
 get_directory_property(hasParent PARENT_DIRECTORY)
 if(hasParent)
@@ -155,9 +167,7 @@ ENDIF(WIN32)
 #this is the product (a library)
 add_library(umqtt ${source_c_files} ${source_h_files})
 
-set(SHARED_UTIL_ADAPTER_FOLDER "${CMAKE_CURRENT_LIST_DIR}/azure-c-shared-utility/c/adapters")
-
-target_link_libraries(umqtt aziotsharedutil)
+target_link_libraries(umqtt ${SHARED_UTIL_LIB_PATH})
 
 if (NOT ${ARCHITECTURE} STREQUAL "ARM")
     add_subdirectory(samples)
