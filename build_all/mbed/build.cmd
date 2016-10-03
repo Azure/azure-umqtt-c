@@ -16,14 +16,14 @@ rem ----------------------------------------------------------------------------
 rem -- build (clean) compilembed tool
 rem -----------------------------------------------------------------------------
 
-call "%repo-build-root%\azure-c-shared-utility\tools\compilembed\build.cmd" --clean
+call "%repo-build-root%\c-utility\tools\compilembed\build.cmd" --clean
 if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 
 rem -----------------------------------------------------------------------------
 rem -- build uMQTT and samples
 rem -----------------------------------------------------------------------------
 
-call %repo-build-root%\azure-c-shared-utility\tools\mbed_build_scripts\release_mbed_project.cmd %repo-build-root%\build_all
+call %repo-build-root%\c-utility\tools\mbed_build_scripts\release_mbed_project.cmd %repo-build-root%\build_all
 if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 
 call :compile mqtt_client_sample %repo-build-root%\samples\mqtt_client_sample\mbed

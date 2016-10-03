@@ -68,7 +68,7 @@ message(STATUS "MQTT Target architecture: ${ARCHITECTURE}")
 # Start of variables used during install
 #set (INCLUDE_INSTALL_DIR include CACHE PATH "Include file directory")
 
-add_subdirectory(azure-c-shared-utility)
+add_subdirectory(c-utility)
 
 enable_testing()
 
@@ -155,7 +155,7 @@ ENDIF(WIN32)
 #this is the product (a library)
 add_library(umqtt ${source_c_files} ${source_h_files})
 
-set(SHARED_UTIL_ADAPTER_FOLDER "${CMAKE_CURRENT_LIST_DIR}/azure-c-shared-utility/c/adapters")
+set(SHARED_UTIL_ADAPTER_FOLDER "${CMAKE_CURRENT_LIST_DIR}/c-utility/adapters")
 
 target_link_libraries(umqtt aziotsharedutil)
 
