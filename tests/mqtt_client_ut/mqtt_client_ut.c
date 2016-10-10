@@ -551,7 +551,7 @@ static void SetupMqttLibOptions(MQTT_CLIENT_OPTIONS* options, const char* client
 
 /* mqttclient_connect */
 
-/*Codes_SRS_MQTT_CLIENT_07_003: [mqttclient_init shall allocate MQTTCLIENT_DATA_INSTANCE and return the MQTTCLIENT_HANDLE on success.]*/
+/*Tests_SRS_MQTT_CLIENT_07_003: [mqttclient_init shall allocate MQTTCLIENT_DATA_INSTANCE and return the MQTTCLIENT_HANDLE on success.]*/
 TEST_FUNCTION(mqtt_client_init_succeeds)
 {
     // arrange
@@ -570,7 +570,7 @@ TEST_FUNCTION(mqtt_client_init_succeeds)
     mqtt_client_deinit(result);
 }
 
-/*Codes_SRS_MQTT_CLIENT_07_001: [If the parameters ON_MQTT_MESSAGE_RECV_CALLBACK is NULL then mqttclient_init shall return NULL.]*/
+/*Tests_SRS_MQTT_CLIENT_07_001: [If the parameters ON_MQTT_MESSAGE_RECV_CALLBACK is NULL then mqttclient_init shall return NULL.]*/
 TEST_FUNCTION(mqtt_client_init_fail)
 {
     // arrange
@@ -603,7 +603,7 @@ TEST_FUNCTION(mqtt_client_init_fail)
     umock_c_negative_tests_deinit();
 }
 
-/*Codes_SRS_MQTT_CLIENT_07_001: [If the parameters ON_MQTT_MESSAGE_RECV_CALLBACK is NULL then mqttclient_init shall return NULL.]*/
+/*Tests_SRS_MQTT_CLIENT_07_001: [If the parameters ON_MQTT_MESSAGE_RECV_CALLBACK is NULL then mqttclient_init shall return NULL.]*/
 TEST_FUNCTION(mqtt_client_init_ON_MQTT_MESSAGE_RECV_CALLBACK_NULL_fails)
 {
     // arrange
@@ -615,7 +615,7 @@ TEST_FUNCTION(mqtt_client_init_ON_MQTT_MESSAGE_RECV_CALLBACK_NULL_fails)
     ASSERT_IS_NULL(result);
 }
 
-/*Codes_SRS_MQTT_CLIENT_07_004: [If the parameter handle is NULL then function mqtt_client_deinit shall do nothing.]*/
+/*Tests_SRS_MQTT_CLIENT_07_004: [If the parameter handle is NULL then function mqtt_client_deinit shall do nothing.]*/
 TEST_FUNCTION(mqtt_client_deinit_handle_NULL_succeeds)
 {
     // arrange
@@ -626,7 +626,7 @@ TEST_FUNCTION(mqtt_client_deinit_handle_NULL_succeeds)
     // assert
 }
 
-/*Codes_SRS_MQTT_CLIENT_07_005: [mqtt_client_deinit shall deallocate all memory allocated in this unit.]*/
+/*Tests_SRS_MQTT_CLIENT_07_005: [mqtt_client_deinit shall deallocate all memory allocated in this unit.]*/
 TEST_FUNCTION(mqtt_client_deinit_succeeds)
 {
     // arrange
@@ -651,7 +651,7 @@ TEST_FUNCTION(mqtt_client_deinit_succeeds)
     // assert
 }
 
-/*SRS_MQTT_CLIENT_07_006: [If any of the parameters handle, ioHandle, or mqttOptions are NULL then mqtt_client_connect shall return a non-zero value.]*/
+/*Tests_SRS_MQTT_CLIENT_07_006: [If any of the parameters handle, ioHandle, or mqttOptions are NULL then mqtt_client_connect shall return a non-zero value.]*/
 TEST_FUNCTION(mqtt_client_connect_MQTT_CLIENT_HANDLE_NULL_fails)
 {
     // arrange
@@ -667,7 +667,7 @@ TEST_FUNCTION(mqtt_client_connect_MQTT_CLIENT_HANDLE_NULL_fails)
     // cleanup
 }
 
-/*SRS_MQTT_CLIENT_07_006: [If any of the parameters handle, ioHandle, or mqttOptions are NULL then mqtt_client_connect shall return a non-zero value.]*/
+/*Tests_SRS_MQTT_CLIENT_07_006: [If any of the parameters handle, ioHandle, or mqttOptions are NULL then mqtt_client_connect shall return a non-zero value.]*/
 TEST_FUNCTION(mqtt_client_connect_XIO_HANDLE_NULL_fails)
 {
     // arrange
@@ -689,7 +689,7 @@ TEST_FUNCTION(mqtt_client_connect_XIO_HANDLE_NULL_fails)
     mqtt_client_deinit(mqttHandle);
 }
 
-/*SRS_MQTT_CLIENT_07_006: [If any of the parameters handle, ioHandle, or mqttOptions are NULL then mqtt_client_connect shall return a non-zero value.]*/
+/*Tests_SRS_MQTT_CLIENT_07_006: [If any of the parameters handle, ioHandle, or mqttOptions are NULL then mqtt_client_connect shall return a non-zero value.]*/
 TEST_FUNCTION(mqtt_client_connect_MQTT_CLIENT_OPTIONS_NULL_fails)
 {
     // arrange
@@ -709,7 +709,7 @@ TEST_FUNCTION(mqtt_client_connect_MQTT_CLIENT_OPTIONS_NULL_fails)
     mqtt_client_deinit(mqttHandle);
 }
 
-/*Codes_SRS_MQTT_CLIENT_07_007: [If any failure is encountered then mqtt_client_connect shall return a non-zero value.]*/
+/*Tests_SRS_MQTT_CLIENT_07_007: [If any failure is encountered then mqtt_client_connect shall return a non-zero value.]*/
 TEST_FUNCTION(mqtt_client_connect_fails)
 {
     // arrange
@@ -764,7 +764,7 @@ TEST_FUNCTION(mqtt_client_connect_fails)
     umock_c_negative_tests_deinit();
 }
 
-/*Codes_SRS_MQTT_CLIENT_07_009: [On success mqtt_client_connect shall send the MQTT CONNECT to the endpoint.]*/
+/*Tests_SRS_MQTT_CLIENT_07_009: [On success mqtt_client_connect shall send the MQTT CONNECT to the endpoint.]*/
 TEST_FUNCTION(mqtt_client_connect_succeeds)
 {
     // arrange
@@ -822,8 +822,32 @@ TEST_FUNCTION(mqtt_client_connect_multiple_completes_one_connect_succeeds)
     mqtt_client_deinit(mqttHandle);
 }
 
+/* Tests_SRS_MQTT_CLIENT_07_036: [ If an error is encountered by the ioHandle the mqtt_client shall call xio_close. ] */
+TEST_FUNCTION(mqtt_client_ioerror_succeeds)
+{
+    // arrange
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL);
 
-/*Codes_SRS_MQTT_CLIENT_07_013: [If any of the parameters handle, subscribeList is NULL or count is 0 then mqtt_client_subscribe shall return a non-zero value.]*/
+    MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
+    SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, NULL, NULL, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
+
+    (void)mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(xio_close(TEST_IO_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+
+    // act
+    g_ioError(g_ioErrorCtx);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    mqtt_client_deinit(mqttHandle);
+}
+
+
+/* Tests_SRS_MQTT_CLIENT_07_013: [If any of the parameters handle, subscribeList is NULL or count is 0 then mqtt_client_subscribe shall return a non-zero value.]*/
 TEST_FUNCTION(mqtt_client_subscribe_handle_NULL_fail)
 {
     // arrange
@@ -837,7 +861,7 @@ TEST_FUNCTION(mqtt_client_subscribe_handle_NULL_fail)
     // cleanup
 }
 
-/*Codes_SRS_MQTT_CLIENT_07_013: [If any of the parameters handle, subscribeList is NULL or count is 0 then mqtt_client_subscribe shall return a non-zero value.]*/
+/*Tests_SRS_MQTT_CLIENT_07_013: [If any of the parameters handle, subscribeList is NULL or count is 0 then mqtt_client_subscribe shall return a non-zero value.]*/
 TEST_FUNCTION(mqtt_client_subscribe_subscribeList_NULL_fail)
 {
     // arrange
@@ -859,7 +883,7 @@ TEST_FUNCTION(mqtt_client_subscribe_subscribeList_NULL_fail)
     mqtt_client_deinit(mqttHandle);
 }
 
-/*Codes_SRS_MQTT_CLIENT_07_013: [If any of the parameters handle, subscribeList is NULL or count is 0 then mqtt_client_subscribe shall return a non-zero value.]*/
+/* Tests_SRS_MQTT_CLIENT_07_013: [If any of the parameters handle, subscribeList is NULL or count is 0 then mqtt_client_subscribe shall return a non-zero value.]*/
 TEST_FUNCTION(mqtt_client_subscribe_count_0_fail)
 {
     // arrange
@@ -881,7 +905,7 @@ TEST_FUNCTION(mqtt_client_subscribe_count_0_fail)
     mqtt_client_deinit(mqttHandle);
 }
 
-/*Codes_SRS_MQTT_CLIENT_07_015: [On success mqtt_client_subscribe shall send the MQTT SUBCRIBE packet to the endpoint.]*/
+/*Tests_SRS_MQTT_CLIENT_07_015: [On success mqtt_client_subscribe shall send the MQTT SUBCRIBE packet to the endpoint.]*/
 TEST_FUNCTION(mqtt_client_subscribe_succeeds)
 {
     // arrange
@@ -948,7 +972,7 @@ TEST_FUNCTION(mqtt_client_subscribe_fails)
     umock_c_negative_tests_deinit();
 }
 
-/*Codes_SRS_MQTT_CLIENT_07_016: [If any of the parameters handle, unsubscribeList is NULL or count is 0 then mqtt_client_unsubscribe shall return a non-zero value.]*/
+/*Tests_SRS_MQTT_CLIENT_07_016: [If any of the parameters handle, unsubscribeList is NULL or count is 0 then mqtt_client_unsubscribe shall return a non-zero value.]*/
 TEST_FUNCTION(mqtt_client_unsubscribe_handle_NULL_fails)
 {
     // arrange
@@ -963,7 +987,7 @@ TEST_FUNCTION(mqtt_client_unsubscribe_handle_NULL_fails)
     // cleanup
 }
 
-/*Codes_SRS_MQTT_CLIENT_07_016: [If any of the parameters handle, unsubscribeList is NULL or count is 0 then mqtt_client_unsubscribe shall return a non-zero value.]*/
+/*Tests_SRS_MQTT_CLIENT_07_016: [If any of the parameters handle, unsubscribeList is NULL or count is 0 then mqtt_client_unsubscribe shall return a non-zero value.]*/
 TEST_FUNCTION(mqtt_client_unsubscribe_unsubscribeList_NULL_succeeds)
 {
     // arrange
@@ -981,7 +1005,7 @@ TEST_FUNCTION(mqtt_client_unsubscribe_unsubscribeList_NULL_succeeds)
     mqtt_client_deinit(mqttHandle);
 }
 
-/*Codes_SRS_MQTT_CLIENT_07_016: [If any of the parameters handle, unsubscribeList is NULL or count is 0 then mqtt_client_unsubscribe shall return a non-zero value.]*/
+/*Tests_SRS_MQTT_CLIENT_07_016: [If any of the parameters handle, unsubscribeList is NULL or count is 0 then mqtt_client_unsubscribe shall return a non-zero value.]*/
 TEST_FUNCTION(mqtt_client_unsubscribe_count_0_succeeds)
 {
     // arrange
@@ -999,7 +1023,7 @@ TEST_FUNCTION(mqtt_client_unsubscribe_count_0_succeeds)
     mqtt_client_deinit(mqttHandle);
 }
 
-/*Codes_SRS_MQTT_CLIENT_07_018: [On success mqtt_client_unsubscribe shall send the MQTT SUBCRIBE packet to the endpoint.]*/
+/*Tests_SRS_MQTT_CLIENT_07_018: [On success mqtt_client_unsubscribe shall send the MQTT SUBCRIBE packet to the endpoint.]*/
 TEST_FUNCTION(mqtt_client_unsubscribe_succeeds)
 {
     // arrange
@@ -1317,7 +1341,7 @@ TEST_FUNCTION(mqtt_client_disconnect_send_complete_SEND_ERROR_succeeds)
     mqtt_client_deinit(mqttHandle);
 }
 
-/*Codes_SRS_MQTT_CLIENT_07_023: [If the parameter handle is NULL then mqtt_client_dowork shall do nothing.]*/
+/*Tests_SRS_MQTT_CLIENT_07_023: [If the parameter handle is NULL then mqtt_client_dowork shall do nothing.]*/
 TEST_FUNCTION(mqtt_client_dowork_ping_handle_NULL_fails)
 {
     // arrange
@@ -1331,9 +1355,9 @@ TEST_FUNCTION(mqtt_client_dowork_ping_handle_NULL_fails)
     // cleanup
 }
 
-/*Codes_SRS_MQTT_CLIENT_07_024: [mqtt_client_dowork shall call the xio_dowork function to complete operations.]*/
-/*Codes_SRS_MQTT_CLIENT_07_025: [mqtt_client_dowork shall retrieve the the last packet send value and ...]*/
-/*Codes_SRS_MQTT_CLIENT_07_026: [if keepAliveInternal is > 0 and the send time is greater than the MQTT KeepAliveInterval then it shall construct an MQTT PINGREQ packet.]*/
+/*Tests_SRS_MQTT_CLIENT_07_024: [mqtt_client_dowork shall call the xio_dowork function to complete operations.]*/
+/*Tests_SRS_MQTT_CLIENT_07_025: [mqtt_client_dowork shall retrieve the the last packet send value and ...]*/
+/*Tests_SRS_MQTT_CLIENT_07_026: [if keepAliveInternal is > 0 and the send time is greater than the MQTT KeepAliveInterval then it shall construct an MQTT PINGREQ packet.]*/
 TEST_FUNCTION(mqtt_client_dowork_ping_succeeds)
 {
     // arrange
@@ -1415,9 +1439,9 @@ TEST_FUNCTION(mqtt_client_dowork_ping_No_ping_response_succeeds)
     mqtt_client_deinit(mqttHandle);
 }
 
-/*Codes_SRS_MQTT_CLIENT_07_024: [mqtt_client_dowork shall call the xio_dowork function to complete operations.]*/
-/*Codes_SRS_MQTT_CLIENT_07_025: [mqtt_client_dowork shall retrieve the the last packet send value and ...]*/
-/*Codes_SRS_MQTT_CLIENT_07_026: [if keepAliveInternal is > 0 and the send time is greater than the MQTT KeepAliveInterval then it shall construct an MQTT PINGREQ packet.]*/
+/*Tests_SRS_MQTT_CLIENT_07_024: [mqtt_client_dowork shall call the xio_dowork function to complete operations.]*/
+/*Tests_SRS_MQTT_CLIENT_07_025: [mqtt_client_dowork shall retrieve the the last packet send value and ...]*/
+/*Tests_SRS_MQTT_CLIENT_07_026: [if keepAliveInternal is > 0 and the send time is greater than the MQTT KeepAliveInterval then it shall construct an MQTT PINGREQ packet.]*/
 TEST_FUNCTION(mqtt_client_dowork_no_keepalive_no_ping_succeeds)
 {
     // arrange
@@ -1451,8 +1475,8 @@ TEST_FUNCTION(mqtt_client_dowork_no_keepalive_no_ping_succeeds)
     mqtt_client_deinit(mqttHandle);
 }
 
-/*Codes_SRS_MQTT_CLIENT_07_024: [mqtt_client_dowork shall call the xio_dowork function to complete operations.]*/
-/*Codes_SRS_MQTT_CLIENT_07_025: [mqtt_client_dowork shall retrieve the the last packet send value and ...]*/
+/*Tests_SRS_MQTT_CLIENT_07_024: [mqtt_client_dowork shall call the xio_dowork function to complete operations.]*/
+/*Tests_SRS_MQTT_CLIENT_07_025: [mqtt_client_dowork shall retrieve the the last packet send value and ...]*/
 TEST_FUNCTION(mqtt_client_dowork_no_ping_succeeds)
 {
     // arrange

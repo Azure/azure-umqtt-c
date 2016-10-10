@@ -45,7 +45,7 @@ extern MQTT_CLIENT_HANDLE mqtt_client_init(ON_MQTT_MESSAGE_RECV_CALLBACK msgRecv
 ```
 **SRS_MQTT_CLIENT_07_001: [**If the parameters ON_MQTT_MESSAGE_RECV_CALLBACK is NULL then mqttclient_init shall return NULL.**]**  
 **SRS_MQTT_CLIENT_07_002: [**If any failure is encountered then mqttclient_init shall return NULL.**]**  
-**SRS_MQTT_CLIENT_07_003: [**mqttclient_init shall allocate MQTTCLIENT_DATA_INSTANCE and return the MQTTCLIENT_HANDLE on success.**]**  
+**SRS_MQTT_CLIENT_07_003: [**mqttclient_init shall allocate MQTTCLIENT_DATA_INSTANCE and return the MQTTCLIENT_HANDLE on success.**]**
 
 ##mqtt_client_deinit
 ```
@@ -62,6 +62,7 @@ extern int mqtt_client_connect(MQTT_CLIENT_HANDLE handle, XIO_HANDLE ioHandle, M
 **SRS_MQTT_CLIENT_07_007: [**If any failure is encountered then mqtt_client_connect shall return a non-zero value.**]**  
 **SRS_MQTT_CLIENT_07_008: [**mqtt_client_connect shall open the XIO_HANDLE by calling into the xio_open interface.**]**  
 **SRS_MQTT_CLIENT_07_009: [**On success mqtt_client_connect shall send the MQTT CONNECT packet to the endpoint.**]**  
+**SRS_MQTT_CLIENT_07_036: [** If an error is encountered by the ioHandle the mqtt_client shall call xio_close. **]**  
 
 ##mqtt_client_disconnect
 ```
