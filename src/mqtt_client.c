@@ -370,6 +370,8 @@ static void onIoError(void* context)
         /*Codes_SRS_MQTT_CLIENT_07_032: [If the actionResult parameter is of type MQTT_CLIENT_ON_DISCONNECT or MQTT_CLIENT_ON_ERROR the the msgInfo value shall be NULL.]*/
         mqtt_client->fnOperationCallback(mqtt_client, MQTT_CLIENT_ON_ERROR, NULL, mqtt_client->ctx);
         mqtt_client->socketConnected = false;
+        /* Codes_SRS_MQTT_CLIENT_07_036: [ If an error is encountered by the ioHandle the mqtt_client shall call xio_close. ] */
+        (void)xio_close(mqtt_client->xioHandle, NULL, NULL); 
     }
     else
     {
