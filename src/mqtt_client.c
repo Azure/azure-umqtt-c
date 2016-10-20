@@ -40,6 +40,8 @@ typedef struct MQTT_CLIENT_TAG
     ON_MQTT_OPERATION_CALLBACK fnOperationCallback;
     ON_MQTT_MESSAGE_RECV_CALLBACK fnMessageRecv;
     void* ctx;
+    ON_MQTT_ERROR_CALLBACK fnOnErrorCallBack;
+    void* errorCBCtx;
     QOS_VALUE qosValue;
     uint16_t keepAliveInterval;
     MQTT_CLIENT_OPTIONS mqttOptions;
@@ -131,7 +133,7 @@ static void sendComplete(void* context, IO_SEND_RESULT send_result)
     {
         if (mqtt_client->packetState == DISCONNECT_TYPE)
         {
-            /*Codes_SRS_MQTT_CLIENT_07_032: [If the actionResult parameter is of type MQTT_CLIENT_ON_DISCONNECT or MQTT_CLIENT_ON_ERROR the the msgInfo value shall be NULL.]*/
+            /*Codes_SRS_MQTT_CLIENT_07_032: [If the actionResult parameter is of type MQTT_CLIENT_ON_DISCONNECT the the msgInfo value shall be NULL.]*/
             mqtt_client->fnOperationCallback(mqtt_client, MQTT_CLIENT_ON_DISCONNECT, NULL, mqtt_client->ctx);
 
             // close the xio
@@ -146,9 +148,9 @@ static void sendComplete(void* context, IO_SEND_RESULT send_result)
     else
     {
         LOG(LOG_ERROR, LOG_LINE, "MQTT Send Complete Failure send_result: %d", (int)send_result);
-        if (mqtt_client->fnOperationCallback)
+        if (mqtt_client->fnOnErrorCallBack)
         {
-            mqtt_client->fnOperationCallback(mqtt_client, MQTT_CLIENT_ON_ERROR, NULL, mqtt_client->ctx);
+            mqtt_client->fnOnErrorCallBack(mqtt_client, MQTT_CLIENT_COMMUNICATION_ERROR, mqtt_client->errorCBCtx);
         }
     }
 }
@@ -331,9 +333,9 @@ static void onOpenComplete(void* context, IO_OPEN_RESULT open_result)
         }
         else
         {
-            if (mqtt_client->fnOperationCallback)
+            if (mqtt_client->socketConnected == false && mqtt_client->fnOnErrorCallBack)
             {
-                mqtt_client->fnOperationCallback(mqtt_client, MQTT_CLIENT_ON_ERROR, NULL, mqtt_client->ctx);
+                mqtt_client->fnOnErrorCallBack(mqtt_client, MQTT_CLIENT_CONNECTION_ERROR, mqtt_client->errorCBCtx);
             }
         }
     }
@@ -350,9 +352,9 @@ static void onBytesReceived(void* context, const unsigned char* buffer, size_t s
     {
         if (mqtt_codec_bytesReceived(mqtt_client->codec_handle, buffer, size) != 0)
         {
-            if (mqtt_client->fnOperationCallback)
+            if (mqtt_client->fnOnErrorCallBack)
             {
-                mqtt_client->fnOperationCallback(mqtt_client, MQTT_CLIENT_ON_ERROR, NULL, mqtt_client->ctx);
+                mqtt_client->fnOnErrorCallBack(mqtt_client, MQTT_CLIENT_PARSE_ERROR, mqtt_client->errorCBCtx);
             }
         }
     }
@@ -367,8 +369,11 @@ static void onIoError(void* context)
     MQTT_CLIENT* mqtt_client = (MQTT_CLIENT*)context;
     if (mqtt_client != NULL && mqtt_client->fnOperationCallback)
     {
-        /*Codes_SRS_MQTT_CLIENT_07_032: [If the actionResult parameter is of type MQTT_CLIENT_ON_DISCONNECT or MQTT_CLIENT_ON_ERROR the the msgInfo value shall be NULL.]*/
-        mqtt_client->fnOperationCallback(mqtt_client, MQTT_CLIENT_ON_ERROR, NULL, mqtt_client->ctx);
+        /*Codes_SRS_MQTT_CLIENT_07_032: [If the actionResult parameter is of type MQTT_CLIENT_ON_DISCONNECT the the msgInfo value shall be NULL.]*/
+        if (mqtt_client->fnOnErrorCallBack != NULL)
+        {
+            mqtt_client->fnOnErrorCallBack(mqtt_client, MQTT_CLIENT_CONNECTION_ERROR, mqtt_client->errorCBCtx);
+        }
         mqtt_client->socketConnected = false;
         /* Codes_SRS_MQTT_CLIENT_07_036: [ If an error is encountered by the ioHandle the mqtt_client shall call xio_close. ] */
         (void)xio_close(mqtt_client->xioHandle, NULL, NULL); 
@@ -506,9 +511,9 @@ static void recvCompleteCallback(void* context, CONTROL_PACKET_TYPE packet, int 
                         if (topicName == NULL)
                         {
                             LOG(LOG_ERROR, LOG_LINE, "Publish MSG: failure reading topic name");
-                            if (mqtt_client->fnOperationCallback)
+                            if (mqtt_client->fnOnErrorCallBack)
                             {
-                                mqtt_client->fnOperationCallback(mqtt_client, MQTT_CLIENT_ON_ERROR, NULL, mqtt_client->ctx);
+                                mqtt_client->fnOnErrorCallBack(mqtt_client, MQTT_CLIENT_PARSE_ERROR, mqtt_client->errorCBCtx);
                             }
                             if (trace_log != NULL)
                             {
@@ -537,9 +542,9 @@ static void recvCompleteCallback(void* context, CONTROL_PACKET_TYPE packet, int 
                             if (msgHandle == NULL)
                             {
                                 LOG(LOG_ERROR, LOG_LINE, "failure in mqttmessage_create");
-                                if (mqtt_client->fnOperationCallback)
+                                if (mqtt_client->fnOnErrorCallBack)
                                 {
-                                    mqtt_client->fnOperationCallback(mqtt_client, MQTT_CLIENT_ON_ERROR, NULL, mqtt_client->ctx);
+                                    mqtt_client->fnOnErrorCallBack(mqtt_client, MQTT_CLIENT_MEMORY_ERROR, mqtt_client->errorCBCtx);
                                 }
                                 if (trace_log != NULL) {
                                     STRING_delete(trace_log);
@@ -551,9 +556,9 @@ static void recvCompleteCallback(void* context, CONTROL_PACKET_TYPE packet, int 
                                     mqttmessage_setIsRetained(msgHandle, isRetainMsg) != 0)
                                 {
                                     LOG(LOG_ERROR, LOG_LINE, "failure setting mqtt message property");
-                                    if (mqtt_client->fnOperationCallback)
+                                    if (mqtt_client->fnOnErrorCallBack)
                                     {
-                                        mqtt_client->fnOperationCallback(mqtt_client, MQTT_CLIENT_ON_ERROR, NULL, mqtt_client->ctx);
+                                        mqtt_client->fnOnErrorCallBack(mqtt_client, MQTT_CLIENT_MEMORY_ERROR, mqtt_client->errorCBCtx);
                                     }
                                     if (trace_log != NULL) {
                                         STRING_delete(trace_log);
@@ -577,9 +582,9 @@ static void recvCompleteCallback(void* context, CONTROL_PACKET_TYPE packet, int 
                                         if (pubRel == NULL)
                                         {
                                             LOG(LOG_ERROR, LOG_LINE, "Failed to allocate publish receive message.");
-                                            if (mqtt_client->fnOperationCallback)
+                                            if (mqtt_client->fnOnErrorCallBack)
                                             {
-                                                mqtt_client->fnOperationCallback(mqtt_client, MQTT_CLIENT_ON_ERROR, NULL, mqtt_client->ctx);
+                                                mqtt_client->fnOnErrorCallBack(mqtt_client, MQTT_CLIENT_MEMORY_ERROR, mqtt_client->errorCBCtx);
                                             }
                                         }
                                     }
@@ -589,9 +594,9 @@ static void recvCompleteCallback(void* context, CONTROL_PACKET_TYPE packet, int 
                                         if (pubRel == NULL)
                                         {
                                             LOG(LOG_ERROR, LOG_LINE, "Failed to allocate publish ack message.");
-                                            if (mqtt_client->fnOperationCallback)
+                                            if (mqtt_client->fnOnErrorCallBack)
                                             {
-                                                mqtt_client->fnOperationCallback(mqtt_client, MQTT_CLIENT_ON_ERROR, NULL, mqtt_client->ctx);
+                                                mqtt_client->fnOnErrorCallBack(mqtt_client, MQTT_CLIENT_MEMORY_ERROR, mqtt_client->errorCBCtx);
                                             }
                                         }
                                     }
@@ -642,9 +647,9 @@ static void recvCompleteCallback(void* context, CONTROL_PACKET_TYPE packet, int 
                             if (pubRel == NULL)
                             {
                                 LOG(LOG_ERROR, LOG_LINE, "Failed to allocate publish release message.");
-                                if (mqtt_client->fnOperationCallback)
+                                if (mqtt_client->fnOnErrorCallBack)
                                 {
-                                    mqtt_client->fnOperationCallback(mqtt_client, MQTT_CLIENT_ON_ERROR, NULL, mqtt_client->ctx);
+                                    mqtt_client->fnOnErrorCallBack(mqtt_client, MQTT_CLIENT_MEMORY_ERROR, mqtt_client->errorCBCtx);
                                 }
                             }
                         }
@@ -654,9 +659,9 @@ static void recvCompleteCallback(void* context, CONTROL_PACKET_TYPE packet, int 
                             if (pubRel == NULL)
                             {
                                 LOG(LOG_ERROR, LOG_LINE, "Failed to allocate publish complete message.");
-                                if (mqtt_client->fnOperationCallback)
+                                if (mqtt_client->fnOnErrorCallBack)
                                 {
-                                    mqtt_client->fnOperationCallback(mqtt_client, MQTT_CLIENT_ON_ERROR, NULL, mqtt_client->ctx);
+                                    mqtt_client->fnOnErrorCallBack(mqtt_client, MQTT_CLIENT_MEMORY_ERROR, mqtt_client->errorCBCtx);
                                 }
                             }
                         }
@@ -711,9 +716,9 @@ static void recvCompleteCallback(void* context, CONTROL_PACKET_TYPE packet, int 
                         else
                         {
                             LOG(LOG_ERROR, LOG_LINE, "allocation of quality of service value failed.");
-                            if (mqtt_client->fnOperationCallback)
+                            if (mqtt_client->fnOnErrorCallBack)
                             {
-                                mqtt_client->fnOperationCallback(mqtt_client, MQTT_CLIENT_ON_ERROR, NULL, mqtt_client->ctx);
+                                mqtt_client->fnOnErrorCallBack(mqtt_client, MQTT_CLIENT_MEMORY_ERROR, mqtt_client->errorCBCtx);
                             }
                         }
                     }
@@ -757,7 +762,7 @@ static void recvCompleteCallback(void* context, CONTROL_PACKET_TYPE packet, int 
     }
 }
 
-MQTT_CLIENT_HANDLE mqtt_client_init(ON_MQTT_MESSAGE_RECV_CALLBACK msgRecv, ON_MQTT_OPERATION_CALLBACK opCallback, void* callbackCtx)
+MQTT_CLIENT_HANDLE mqtt_client_init(ON_MQTT_MESSAGE_RECV_CALLBACK msgRecv, ON_MQTT_OPERATION_CALLBACK opCallback, void* opCallbackCtx, ON_MQTT_ERROR_CALLBACK onErrorCallBack, void* errorCBCtx)
 {
     MQTT_CLIENT* result;
     /*Codes_SRS_MQTT_CLIENT_07_001: [If the parameters ON_MQTT_MESSAGE_RECV_CALLBACK is NULL then mqttclient_init shall return NULL.]*/
@@ -780,8 +785,10 @@ MQTT_CLIENT_HANDLE mqtt_client_init(ON_MQTT_MESSAGE_RECV_CALLBACK msgRecv, ON_MQ
             result->packetState = UNKNOWN_TYPE;
             result->packetSendTimeMs = 0;
             result->fnOperationCallback = opCallback;
+            result->ctx = opCallbackCtx;
             result->fnMessageRecv = msgRecv;
-            result->ctx = callbackCtx;
+            result->fnOnErrorCallBack = onErrorCallBack;
+            result->errorCBCtx = errorCBCtx;
             result->qosValue = DELIVER_AT_MOST_ONCE;
             result->keepAliveInterval = 0;
             result->packetTickCntr = tickcounter_create();
@@ -1099,13 +1106,13 @@ void mqtt_client_dowork(MQTT_CLIENT_HANDLE handle)
             }
             else
             {
-                /* Codes_SRS_MQTT_CLIENT_07_035: [If the timeSincePing has expired past the maxPingRespTime then mqtt_client_dowork shall call the Operation Callback function with the message MQTT_CLIENT_NO_PING_RESPONSE] */
+                /* Codes_SRS_MQTT_CLIENT_07_035: [If the timeSincePing has expired past the maxPingRespTime then mqtt_client_dowork shall call the Error Callback function with the message MQTT_CLIENT_NO_PING_RESPONSE] */
                 if (mqtt_client->timeSincePing > 0 && ((current_ms - mqtt_client->timeSincePing)/1000) > mqtt_client->maxPingRespTime)
                 {
                     // We haven't gotten a ping response in the alloted time
-                    if (mqtt_client->fnOperationCallback != NULL)
+                    if (mqtt_client->fnOnErrorCallBack)
                     {
-                        mqtt_client->fnOperationCallback(mqtt_client, MQTT_CLIENT_NO_PING_RESPONSE, NULL, mqtt_client->ctx);
+                        mqtt_client->fnOnErrorCallBack(mqtt_client, MQTT_CLIENT_NO_PING_RESPONSE, mqtt_client->errorCBCtx);
                     }
                     mqtt_client->socketConnected = false;
                     mqtt_client->clientConnected = false;

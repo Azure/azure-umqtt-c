@@ -128,10 +128,26 @@ static void OnOperationComplete(MQTT_CLIENT_HANDLE handle, MQTT_CLIENT_EVENT_RES
             mqtt_client_disconnect(handle);
             break;
         }
-        case MQTT_CLIENT_ON_ERROR:
         case MQTT_CLIENT_ON_DISCONNECT:
             g_continue = false;
             break;
+    }
+}
+
+static void OnErrorComplete(MQTT_CLIENT_HANDLE handle, MQTT_CLIENT_EVENT_ERROR error, void* callbackCtx)
+{
+    (void)callbackCtx;
+    (void)handle;
+    switch (error)
+    {
+    case MQTT_CLIENT_CONNECTION_ERROR:
+    case MQTT_CLIENT_PARSE_ERROR:
+    case MQTT_CLIENT_MEMORY_ERROR:
+    case MQTT_CLIENT_COMMUNICATION_ERROR:
+    case MQTT_CLIENT_NO_PING_RESPONSE:
+    case MQTT_CLIENT_UNKNOWN_ERROR:
+        g_continue = false;
+        break;
     }
 }
 
@@ -143,7 +159,7 @@ void mqtt_client_sample_run()
     }
     else
     {
-        MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(OnRecvCallback, OnOperationComplete, NULL);
+        MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(OnRecvCallback, OnOperationComplete, NULL, OnErrorComplete, NULL);
         if (mqttHandle == NULL)
         {
             (void)printf("mqtt_client_init failed\r\n");
