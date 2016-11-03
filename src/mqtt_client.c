@@ -9,6 +9,7 @@
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/strings.h"
 #include "azure_c_shared_utility/agenttime.h"
+#include "azure_c_shared_utility/threadapi.h"
 
 #include "azure_umqtt_c/mqtt_client.h"
 #include "azure_umqtt_c/mqtt_codec.h"
@@ -23,6 +24,7 @@
 #define CONNECT_PACKET_MASK             0xf0
 #define TIME_MAX_BUFFER                 16
 #define DEFAULT_MAX_PING_RESPONSE_TIME  80  // % of time to send pings
+#define MAX_CLOSE_RETRIES               10
 
 static const char* FORMAT_HEX_CHAR = "0x%02x ";
 static const char* TRUE_CONST = "true";
@@ -53,9 +55,24 @@ typedef struct MQTT_CLIENT_TAG
     uint16_t maxPingRespTime;
 } MQTT_CLIENT;
 
+static void on_connection_closed(void* context)
+{
+    size_t* close_complete = (size_t*)context;
+    *close_complete = 1;
+}
+
 static void close_connection(MQTT_CLIENT* mqtt_client)
 {
-    (void)xio_close(mqtt_client->xioHandle, NULL, NULL); 
+    size_t close_complete = 0;
+    (void)xio_close(mqtt_client->xioHandle, on_connection_closed, &close_complete);
+
+    size_t counter = 0;
+    do
+    {
+        xio_dowork(mqtt_client->xioHandle);
+        counter++;
+        ThreadAPI_Sleep(10);
+    } while (close_complete == 0 && counter < MAX_CLOSE_RETRIES);
     mqtt_client->socketConnected = false;
     mqtt_client->clientConnected = false;
 }
