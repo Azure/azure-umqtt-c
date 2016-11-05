@@ -27,7 +27,8 @@ endif()
 include(ExternalProject)
 
 #the following variables are project-wide and can be used with cmake-gui
-option(skip_unittests "set skip_unittests to ON to skip unittests (default is OFF)[if possible, they are always build]" OFF)
+option(skip_unittests "set skip_unittests to ON to skip unittests (default is OFF)[if possible, they are always built]" OFF)
+option(skip_samples "set skip_samples to ON to skip building samples (default is OFF)[if possible, they are always built]" OFF)
 option(compileOption_C "passes a string to the command line of the C compiler" OFF)
 option(compileOption_CXX "passes a string to the command line of the C++ compiler" OFF)
 
@@ -160,7 +161,9 @@ set(SHARED_UTIL_ADAPTER_FOLDER "${CMAKE_CURRENT_LIST_DIR}/c-utility/adapters")
 target_link_libraries(umqtt aziotsharedutil)
 
 if (NOT ${ARCHITECTURE} STREQUAL "ARM")
-    add_subdirectory(samples)
+    if (NOT ${skip_samples})
+        add_subdirectory(samples)
+    endif()
 endif()
 
 if (NOT ${skip_unittests})
