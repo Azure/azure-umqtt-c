@@ -9,6 +9,9 @@ endif()
 
 project(umqtt)
 
+# Build with -fPIC always
+set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
+
 #making a nice global variable to know if we are on linux or not.
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     set(LINUX TRUE)
@@ -30,6 +33,7 @@ include(ExternalProject)
 option(skip_unittests "set skip_unittests to ON to skip unittests (default is OFF)[if possible, they are always build]" OFF)
 option(compileOption_C "passes a string to the command line of the C compiler" OFF)
 option(compileOption_CXX "passes a string to the command line of the C++ compiler" OFF)
+option(use_installed_dependencies "set use_installed_dependencies to ON to use installed packages instead of building dependencies from submodules" OFF)
 
 #Use solution folders. 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -65,10 +69,7 @@ endif()
 
 message(STATUS "MQTT Target architecture: ${ARCHITECTURE}") 
 
-# Start of variables used during install
-#set (INCLUDE_INSTALL_DIR include CACHE PATH "Include file directory")
-
-add_subdirectory(c-utility)
+include("dependencies.cmake")
 
 enable_testing()
 
@@ -164,11 +165,50 @@ if (NOT ${ARCHITECTURE} STREQUAL "ARM")
 endif()
 
 if (NOT ${skip_unittests})
+    include("dependencies-test.cmake")
     add_subdirectory(tests)
 endif()
 
-if(WIN32)  
-else()  
-    install (TARGETS umqtt DESTINATION lib)  
-    install (FILES ${source_h_files} DESTINATION include/azureiot/azure_umqtt_c)  
-endif (WIN32)  
+if(${use_installed_dependencies})
+    # Set CMAKE_INSTALL_LIBDIR if not defined
+    include(GNUInstallDirs)
+
+    # Install umqtt
+    set(package_location "cmake")
+
+    if(NOT DEFINED CMAKE_INSTALL_LIBDIR)
+        set(CMAKE_INSTALL_LIBDIR "lib")
+    endif()
+
+    install(TARGETS umqtt EXPORT umqttTargets
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR}/../bin
+        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azureiot
+    )
+    install(FILES ${source_h_files} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azureiot/azure_umqtt_c)
+
+    include(CMakePackageConfigHelpers)
+
+    configure_file("configs/${PROJECT_NAME}Config.cmake"
+        "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}/${PROJECT_NAME}Config.cmake"
+        COPYONLY
+    )
+
+    install(EXPORT umqttTargets
+        FILE
+            "${PROJECT_NAME}Targets.cmake"
+        DESTINATION
+            ${package_location}
+    )
+
+    install(
+        FILES
+            "configs/${PROJECT_NAME}Config.cmake"
+        DESTINATION
+            ${package_location}
+    )
+
+else()
+    message(WARNING "This package may only be installed when 'use_installed_dependencies' is ON")
+endif() 

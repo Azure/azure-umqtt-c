@@ -4,6 +4,7 @@
 
 /build_all/windows/nuget.exe
 /cmake
+/build
 /devdoc/~$o_requirements.docm
 *.jar
 
