@@ -1,4 +1,4 @@
-azure-umqtt-c (0.1.0-20) vivid; urgency=low
+azure-umqtt-c (0.1.0-22) vivid; urgency=low
 
   * Initial release (Closes: #5479749)
 
@@ -31,5 +31,7 @@ azure-umqtt-c (0.1.0-20) vivid; urgency=low
   * Fix logging for the build
 
   * Update submodule for testing
+
+  * Bug fixes
 
  -- AzureIoT User <aziotsdklinux@outlook.com>  Tue, 27 Sep 2016 11:00:00 +0000
