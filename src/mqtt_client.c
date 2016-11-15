@@ -38,7 +38,7 @@ typedef struct MQTT_CLIENT_TAG
     MQTTCODEC_HANDLE codec_handle;
     CONTROL_PACKET_TYPE packetState;
     TICK_COUNTER_HANDLE packetTickCntr;
-    uint64_t packetSendTimeMs;
+    tickcounter_ms_t packetSendTimeMs;
     ON_MQTT_OPERATION_CALLBACK fnOperationCallback;
     ON_MQTT_MESSAGE_RECV_CALLBACK fnMessageRecv;
     void* ctx;
@@ -51,7 +51,7 @@ typedef struct MQTT_CLIENT_TAG
     bool socketConnected;
     bool logTrace;
     bool rawBytesTrace;
-    uint64_t timeSincePing;
+    tickcounter_ms_t timeSincePing;
     uint16_t maxPingRespTime;
 } MQTT_CLIENT;
 
@@ -1102,7 +1102,7 @@ void mqtt_client_dowork(MQTT_CLIENT_HANDLE handle)
         /*Codes_SRS_MQTT_CLIENT_07_025: [mqtt_client_dowork shall retrieve the the last packet send value and ...]*/
         if (mqtt_client->socketConnected && mqtt_client->clientConnected && mqtt_client->keepAliveInterval > 0)
         {
-            uint64_t current_ms;
+            tickcounter_ms_t current_ms;
             if (tickcounter_get_current_ms(mqtt_client->packetTickCntr, &current_ms) != 0)
             {
                 LOG(LOG_ERROR, LOG_LINE, "Error: tickcounter_get_current_ms failed");

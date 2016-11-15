@@ -87,7 +87,7 @@ static bool g_operationCallbackInvoked;
 static bool g_errorCallbackInvoked;
 static bool g_msgRecvCallbackInvoked;
 static bool g_mqtt_codec_publish_func_fail;
-static uint64_t g_current_ms;
+static tickcounter_ms_t g_current_ms;
 ON_PACKET_COMPLETE_CALLBACK g_packetComplete;
 ON_IO_OPEN_COMPLETE g_openComplete;
 ON_BYTES_RECEIVED g_bytesRecv;
@@ -141,7 +141,7 @@ extern "C" {
         return 0;
     }
 
-    static int my_tickcounter_get_current_ms(TICK_COUNTER_HANDLE tick_counter, uint64_t* current_ms)
+    static int my_tickcounter_get_current_ms(TICK_COUNTER_HANDLE tick_counter, tickcounter_ms_t* current_ms)
     {
         (void)tick_counter;
         *current_ms = g_current_ms;
