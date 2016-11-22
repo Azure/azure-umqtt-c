@@ -1,35 +1,5 @@
-azure-umqtt-c (0.1.0.1-20) wily; urgency=low
+azure-umqtt-c (0.1.0.1-21) wily; urgency=low
 
-  * Initial release (Closes: #5479749)
-
-  * Update the mqtt codec to ensure totalLen is > 0 (#8c519d16)
-
-  * Added fix for have a 0 keep alive value (#464d0a5)
-
-  * Add mqtt bug fix for restricting size (#16480f6)
-
-  * Update shared-util along with update the KeepAlive second buffer (#f7f54b4)
-
-  * Added times to the logging (#5e37608)
-
-  * Make mqtt codec and mqtt message headers have mockable functions
-
-  * Fix tlsio_schannel bug (not all input bytes were being read) (#451ab97)
-
-  * Convert umqtt_client unit tests to umock_c
-
-  * Add messge to indicate Ping Response Failure (#21453b6)
-
-  * Update umqtt to use the new runtime configurable logging functions
-
-  * Make consolelogger be the default logger
-
-  * Bug fix: enabled warnings as errors on build, plus fix for W4 build errors
-
-  * Fix logging for the build
- 
-  * Update submodule for testing
-
-  * Bug fixes.
+  * See https://github.com/Azure/azure-iot-sdks/releases for details of the release
 
  -- AzureIoT User <aziotsdklinux@outlook.com>  Tue, 27 Sep 2016 11:00:00 +0000
