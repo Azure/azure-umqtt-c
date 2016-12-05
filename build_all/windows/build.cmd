@@ -34,7 +34,7 @@ rem // default build options
 set build-clean=0
 set build-config=Debug
 set build-platform=Win32
-set CMAKE_skip_unittests=OFF
+set CMAKE_run_unittests=OFF
 set CMAKE_DIR=umqtt_win32
 set MAKE_NUGET_PKG=no
 
@@ -44,7 +44,7 @@ if "%1" equ "-c" goto arg-build-clean
 if "%1" equ "--clean" goto arg-build-clean
 if "%1" equ "--config" goto arg-build-config
 if "%1" equ "--platform" goto arg-build-platform
-if "%1" equ "--skip-unittests" goto arg-skip-unittests
+if "%1" equ "--run-unittests" goto arg-run-unittests
 if "%1" equ "--make_nuget" goto arg-build-nuget
 call :usage && exit /b 1
 
@@ -69,15 +69,15 @@ if %build-platform% == x64 (
 )
 goto args-continue
 
-:arg-skip-unittests
-set CMAKE_skip_unittests=ON
+:arg-run-unittests
+set CMAKE_run_unittests=ON
 goto args-continue
 
 :arg-build-nuget
 shift
 if "%1" equ "" call :usage && exit /b 1
 set MAKE_NUGET_PKG=%1
-set CMAKE_skip_unittests=ON
+set CMAKE_run_unittests=ON
 goto args-continue
 
 :args-continue
@@ -103,7 +103,7 @@ pushd %build-root%\cmake\%CMAKE_DIR%
 
 if %MAKE_NUGET_PKG% == yes (
     echo ***Running CMAKE for Win32***
-    cmake %build-root% -Dskip_unittests:BOOL=%CMAKE_skip_unittests%
+    cmake %build-root% -Drun_unittests:BOOL=%CMAKE_run_unittests%
     if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
     popd
 
@@ -113,7 +113,7 @@ if %MAKE_NUGET_PKG% == yes (
     )
     mkdir %build-root%\cmake\umqtt_x64
     pushd %build-root%\cmake\umqtt_x64
-    cmake -Dskip_unittests:BOOL=%CMAKE_skip_unittests% %build-root% -G "Visual Studio 14 Win64"
+    cmake -Drun_unittests:BOOL=%CMAKE_run_unittests% %build-root% -G "Visual Studio 14 Win64"
     if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
     popd
 
@@ -124,20 +124,20 @@ if %MAKE_NUGET_PKG% == yes (
     mkdir %build-root%\cmake\umqtt_arm
     pushd %build-root%\cmake\umqtt_arm
     echo ***Running CMAKE for ARM***
-    cmake -Dskip_unittests:BOOL=%CMAKE_skip_unittests% %build-root% -G "Visual Studio 14 ARM" 
+    cmake -Drun_unittests:BOOL=%CMAKE_run_unittests% %build-root% -G "Visual Studio 14 ARM" 
     if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
     
 ) else if %build-platform% == Win32 (
     echo ***Running CMAKE for Win32***
-    cmake %build-root% -Dskip_unittests:BOOL=%CMAKE_skip_unittests%
+    cmake %build-root% -Drun_unittests:BOOL=%CMAKE_run_unittests%
     if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 ) else if %build-platform% == arm (
     echo ***Running CMAKE for ARM***
-    cmake -Dskip_unittests:BOOL=%CMAKE_skip_unittests% %build-root% -G "Visual Studio 14 ARM" 
+    cmake -Drun_unittests:BOOL=%CMAKE_run_unittests% %build-root% -G "Visual Studio 14 ARM" 
     if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 ) else (
     echo ***Running CMAKE for Win64***
-    cmake -Dskip_unittests:BOOL=%CMAKE_skip_unittests% %build-root% -G "Visual Studio 14 Win64"
+    cmake -Drun_unittests:BOOL=%CMAKE_run_unittests% %build-root% -G "Visual Studio 14 Win64"
     if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 )
 
@@ -196,7 +196,7 @@ echo options:
 echo  -c, --clean             delete artifacts from previous build before building
 echo  --config ^<value^>      [Debug] build configuration (e.g. Debug, Release)
 echo  --platform ^<value^>    [Win32] build platform (e.g. Win32, x64, arm, ...)
-echo  --skip-unittests        skip the unit tests
+echo  --run-unittests         run the unit tests
 echo  --make_nuget ^<value^>  [no] generates the binaries to be used for nuget packaging (e.g. yes, no)
 goto :eof
 

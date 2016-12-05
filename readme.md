@@ -2,7 +2,7 @@ This project has adopted the [Microsoft Open Source Code of Conduct](https://ope
 
 # Microsoft Azure MQTT
 
-azure-mqtt is a general purpose library build for MQTT protocol
+azure-umqtt-c is a general purpose library build for MQTT protocol
 
 ## Dependencies
 
@@ -12,13 +12,27 @@ azure-c-shared-utility needs to be built before building azure-mqtt-c.
 
 ## Setup
 
+### Build
+
 - Clone azure-umqtt-c by:
+
 ```
 git clone --recursive https://github.com/Azure/azure-umqtt-c.git
 ```
-- Create a folder build under azure-umqtt-c
-- Switch to the build folder and run
-   cmake ..
+
+- Create a folder cmake under azure-umqtt-c
+
+- Switch to the cmake folder and run
+
+```
+cmake ..
+```
+
+- Build 
+
+```
+cmake --build .
+```
 
 ### Installation and Use
 Optionally, you may choose to install azure-umqtt-c on your machine:
@@ -52,3 +66,11 @@ Optionally, you may choose to install azure-umqtt-c on your machine:
 _This requires that azure-c-shared-utility is installed (through CMake) on your machine._
 
 _If running tests, this requires that umock-c, azure-ctest, and azure-c-testrunnerswitcher are installed (through CMake) on your machine._
+
+### Building the tests
+
+In order to build the tests use:
+
+```
+cmake .. -Drun_unittests:bool=ON
+```

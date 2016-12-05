@@ -30,7 +30,7 @@ endif()
 include(ExternalProject)
 
 #the following variables are project-wide and can be used with cmake-gui
-option(skip_unittests "set skip_unittests to ON to skip unittests (default is OFF)[if possible, they are always built]" OFF)
+option(run_unittests "set run_unittests to ON to run unittests (default is OFF)" OFF)
 option(skip_samples "set skip_samples to ON to skip building samples (default is OFF)[if possible, they are always built]" OFF)
 option(compileOption_C "passes a string to the command line of the C compiler" OFF)
 option(compileOption_CXX "passes a string to the command line of the C++ compiler" OFF)
@@ -167,7 +167,7 @@ if (NOT ${ARCHITECTURE} STREQUAL "ARM")
     endif()
 endif()
 
-if (NOT ${skip_unittests})
+if (${run_unittests})
     include("dependencies-test.cmake")
     add_subdirectory(tests)
 endif()
