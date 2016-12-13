@@ -77,7 +77,7 @@ goto args-continue
 shift
 if "%1" equ "" call :usage && exit /b 1
 set MAKE_NUGET_PKG=%1
-set CMAKE_run_unittests=ON
+set CMAKE_run_unittests=OFF
 goto args-continue
 
 :args-continue
