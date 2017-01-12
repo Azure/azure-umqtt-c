@@ -133,7 +133,8 @@ static int addListItemsToUnsubscribePacket(BUFFER_HANDLE ctrlPacket, const char*
     }
     else
     {
-        for (size_t index = 0; index < payloadCount && result == 0; index++)
+        size_t index = 0;
+        for (index = 0; index < payloadCount && result == 0; index++)
         {
             // Add the Payload
             size_t offsetLen = BUFFER_length(ctrlPacket);
@@ -170,7 +171,8 @@ static int addListItemsToSubscribePacket(BUFFER_HANDLE ctrlPacket, SUBSCRIBE_PAY
     }
     else
     {
-        for (size_t index = 0; index < payloadCount && result == 0; index++)
+        size_t index = 0;
+        for (index = 0; index < payloadCount && result == 0; index++)
         {
             // Add the Payload
             size_t offsetLen = BUFFER_length(ctrlPacket);
@@ -1048,7 +1050,8 @@ int mqtt_codec_bytesReceived(MQTTCODEC_HANDLE handle, const unsigned char* buffe
     {
         /* Codes_SRS_MQTT_CODEC_07_033: [mqtt_codec_bytesReceived constructs a sequence of bytes into the corresponding MQTT packets and on success returns zero.] */
         result = 0;
-        for (size_t index = 0; index < size && result == 0; index++)
+        size_t index = 0;
+        for (index = 0; index < size && result == 0; index++)
         {
             uint8_t iterator = ((int8_t*)buffer)[index];
             if (codec_Data->codecState == CODEC_STATE_FIXED_HEADER)
