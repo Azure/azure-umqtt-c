@@ -43,7 +43,7 @@ static const char* QosToString(QOS_VALUE qosValue)
 
 static void OnRecvCallback(MQTT_MESSAGE_HANDLE msgHandle, void* context)
 {
-	(void)context;
+    (void)context;
     const APP_PAYLOAD* appMsg = mqttmessage_getApplicationMsg(msgHandle);
 
     (void)printf("Incoming Msg: Packet Id: %d\r\nQOS: %s\r\nTopic Name: %s\r\nIs Retained: %s\r\nIs Duplicate: %s\r\nApp Msg: ", mqttmessage_getPacketId(msgHandle),
@@ -62,14 +62,14 @@ static void OnRecvCallback(MQTT_MESSAGE_HANDLE msgHandle, void* context)
 
 static void OnCloseComplete(void* context)
 {
-	(void)context;
+    (void)context;
 
     (void)printf("%d: On Close Connection failed\r\n", __LINE__);
 }
 
 static void OnOperationComplete(MQTT_CLIENT_HANDLE handle, MQTT_CLIENT_EVENT_RESULT actionResult, const void* msgInfo, void* callbackCtx)
 {
-	(void)msgInfo;
+    (void)msgInfo;
     (void)callbackCtx;
     switch (actionResult)
     {
@@ -77,11 +77,11 @@ static void OnOperationComplete(MQTT_CLIENT_HANDLE handle, MQTT_CLIENT_EVENT_RES
         {
             (void)printf("ConnAck function called\r\n");
 
-			SUBSCRIBE_PAYLOAD subscribe[2];
-			subscribe[0].subscribeTopic = TOPIC_NAME_A;
-			subscribe[0].qosReturn = DELIVER_AT_MOST_ONCE;
-			subscribe[1].subscribeTopic = TOPIC_NAME_B;
-			subscribe[1].qosReturn = DELIVER_EXACTLY_ONCE;
+            SUBSCRIBE_PAYLOAD subscribe[2];
+            subscribe[0].subscribeTopic = TOPIC_NAME_A;
+            subscribe[0].qosReturn = DELIVER_AT_MOST_ONCE;
+            subscribe[1].subscribeTopic = TOPIC_NAME_B;
+            subscribe[1].qosReturn = DELIVER_EXACTLY_ONCE;
 
             if (mqtt_client_subscribe(handle, PACKET_ID_VALUE++, subscribe, sizeof(subscribe) / sizeof(subscribe[0])) != 0)
             {
