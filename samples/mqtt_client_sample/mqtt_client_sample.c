@@ -2,12 +2,11 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include <stdlib.h>
-#ifdef _CRT_DBG_MAP_ALLOC
-#include <crtdbg.h>
-#endif // _CRT_DBG_MAP_ALLOC
+#include <stdbool.h>
+#include <stddef.h>
 #include <stdarg.h>
 #include <stdio.h>
-
+#include <stdint.h>
 #include "mqtt_client_sample.h"
 #include "azure_umqtt_c/mqtt_client.h"
 #include "azure_c_shared_utility/socketio.h"
