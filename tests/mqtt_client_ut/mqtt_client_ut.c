@@ -1294,11 +1294,12 @@ TEST_FUNCTION(mqtt_client_publish_mqtt_codec_publish_fail)
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(mqttmessage_getApplicationMsg(TEST_MESSAGE_HANDLE));
-    STRICT_EXPECTED_CALL(mqttmessage_getTopicName(TEST_MESSAGE_HANDLE));
-    STRICT_EXPECTED_CALL(mqttmessage_getPacketId(TEST_MESSAGE_HANDLE));
-    STRICT_EXPECTED_CALL(mqttmessage_getIsRetained(TEST_MESSAGE_HANDLE));
-    STRICT_EXPECTED_CALL(mqttmessage_getIsDuplicateMsg(TEST_MESSAGE_HANDLE));
     STRICT_EXPECTED_CALL(mqttmessage_getQosType(TEST_MESSAGE_HANDLE));
+    STRICT_EXPECTED_CALL(mqttmessage_getIsDuplicateMsg(TEST_MESSAGE_HANDLE));
+    STRICT_EXPECTED_CALL(mqttmessage_getIsRetained(TEST_MESSAGE_HANDLE));
+    STRICT_EXPECTED_CALL(mqttmessage_getPacketId(TEST_MESSAGE_HANDLE));
+    STRICT_EXPECTED_CALL(mqttmessage_getTopicName(TEST_MESSAGE_HANDLE));
+    
     EXPECTED_CALL(mqtt_codec_publish(DELIVER_AT_MOST_ONCE, true, true, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG))
         .SetReturn((BUFFER_HANDLE)NULL);
 
@@ -1321,11 +1322,12 @@ TEST_FUNCTION(mqtt_client_publish_xio_send_fails)
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(mqttmessage_getApplicationMsg(TEST_MESSAGE_HANDLE));
-    STRICT_EXPECTED_CALL(mqttmessage_getTopicName(TEST_MESSAGE_HANDLE));
-    STRICT_EXPECTED_CALL(mqttmessage_getPacketId(TEST_MESSAGE_HANDLE));
-    STRICT_EXPECTED_CALL(mqttmessage_getIsRetained(TEST_MESSAGE_HANDLE));
-    STRICT_EXPECTED_CALL(mqttmessage_getIsDuplicateMsg(TEST_MESSAGE_HANDLE));
     STRICT_EXPECTED_CALL(mqttmessage_getQosType(TEST_MESSAGE_HANDLE));
+    STRICT_EXPECTED_CALL(mqttmessage_getIsDuplicateMsg(TEST_MESSAGE_HANDLE));
+    STRICT_EXPECTED_CALL(mqttmessage_getIsRetained(TEST_MESSAGE_HANDLE));
+    STRICT_EXPECTED_CALL(mqttmessage_getPacketId(TEST_MESSAGE_HANDLE));
+    STRICT_EXPECTED_CALL(mqttmessage_getTopicName(TEST_MESSAGE_HANDLE));
+    
     EXPECTED_CALL(mqtt_codec_publish(DELIVER_AT_MOST_ONCE, true, true, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(BUFFER_length(TEST_BUFFER_HANDLE));
     STRICT_EXPECTED_CALL(BUFFER_u_char(TEST_BUFFER_HANDLE));
@@ -1351,12 +1353,13 @@ TEST_FUNCTION(mqtt_client_publish_succeeds)
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(mqttmessage_getApplicationMsg(TEST_MESSAGE_HANDLE));
-    STRICT_EXPECTED_CALL(mqttmessage_getTopicName(TEST_MESSAGE_HANDLE));
-    STRICT_EXPECTED_CALL(mqttmessage_getPacketId(TEST_MESSAGE_HANDLE));
-    STRICT_EXPECTED_CALL(mqttmessage_getIsRetained(TEST_MESSAGE_HANDLE));
-    STRICT_EXPECTED_CALL(mqttmessage_getIsDuplicateMsg(TEST_MESSAGE_HANDLE));
     STRICT_EXPECTED_CALL(mqttmessage_getQosType(TEST_MESSAGE_HANDLE));
-
+    STRICT_EXPECTED_CALL(mqttmessage_getIsDuplicateMsg(TEST_MESSAGE_HANDLE));
+    STRICT_EXPECTED_CALL(mqttmessage_getIsRetained(TEST_MESSAGE_HANDLE));
+    STRICT_EXPECTED_CALL(mqttmessage_getPacketId(TEST_MESSAGE_HANDLE));
+    STRICT_EXPECTED_CALL(mqttmessage_getTopicName(TEST_MESSAGE_HANDLE));
+    
+    
     EXPECTED_CALL(mqtt_codec_publish(DELIVER_AT_MOST_ONCE, true, true, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(BUFFER_length(TEST_BUFFER_HANDLE));
     STRICT_EXPECTED_CALL(BUFFER_u_char(TEST_BUFFER_HANDLE));

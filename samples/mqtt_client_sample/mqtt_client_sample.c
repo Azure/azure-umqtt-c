@@ -131,6 +131,14 @@ static void OnOperationComplete(MQTT_CLIENT_HANDLE handle, MQTT_CLIENT_EVENT_RES
         case MQTT_CLIENT_ON_DISCONNECT:
             g_continue = false;
             break;
+        case MQTT_CLIENT_ON_UNSUBSCRIBE_ACK:
+        {
+            break;
+        }
+        default:
+        {
+            printf("unexpected value received for enumeration (%d)\n", (int)actionResult);
+        }
     }
 }
 

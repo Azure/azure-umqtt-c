@@ -348,8 +348,9 @@ static void onOpenComplete(void* context, IO_OPEN_RESULT open_result)
             }
             else
             {
+                size_t size = BUFFER_length(connPacket);
                 /*Codes_SRS_MQTT_CLIENT_07_009: [On success mqtt_client_connect shall send the MQTT CONNECT to the endpoint.]*/
-                if (sendPacketItem(mqtt_client, BUFFER_u_char(connPacket), BUFFER_length(connPacket)) != 0)
+                if (sendPacketItem(mqtt_client, BUFFER_u_char(connPacket), size) != 0)
                 {
                     LOG(AZ_LOG_ERROR, LOG_LINE, "Error: mqtt_codec_connect failed");
                 }
@@ -613,7 +614,8 @@ static void recvCompleteCallback(void* context, CONTROL_PACKET_TYPE packet, int 
                                     }
                                     if (pubRel != NULL)
                                     {
-                                        (void)sendPacketItem(mqtt_client, BUFFER_u_char(pubRel), BUFFER_length(pubRel));
+                                        size_t size = BUFFER_length(pubRel);
+                                        (void)sendPacketItem(mqtt_client, BUFFER_u_char(pubRel), size);
                                         BUFFER_delete(pubRel);
                                     }
                                 }
@@ -672,7 +674,8 @@ static void recvCompleteCallback(void* context, CONTROL_PACKET_TYPE packet, int 
                         }
                         if (pubRel != NULL)
                         {
-                            (void)sendPacketItem(mqtt_client, BUFFER_u_char(pubRel), BUFFER_length(pubRel));
+                            size_t size = BUFFER_length(pubRel);
+                            (void)sendPacketItem(mqtt_client, BUFFER_u_char(pubRel), size);
                             BUFFER_delete(pubRel);
                         }
                     }
@@ -916,8 +919,12 @@ int mqtt_client_publish(MQTT_CLIENT_HANDLE handle, MQTT_MESSAGE_HANDLE msgHandle
         {
             STRING_HANDLE trace_log = construct_trace_log_handle(mqtt_client);
 
-            BUFFER_HANDLE publishPacket = mqtt_codec_publish(mqttmessage_getQosType(msgHandle), mqttmessage_getIsDuplicateMsg(msgHandle),
-                mqttmessage_getIsRetained(msgHandle), mqttmessage_getPacketId(msgHandle), mqttmessage_getTopicName(msgHandle), payload->message, payload->length, trace_log);
+            QOS_VALUE qos = mqttmessage_getQosType(msgHandle);
+            bool isDuplicate = mqttmessage_getIsDuplicateMsg(msgHandle);
+            bool isRetained = mqttmessage_getIsRetained(msgHandle);
+            uint16_t packetId = mqttmessage_getPacketId(msgHandle);
+            const char* topicName = mqttmessage_getTopicName(msgHandle);
+            BUFFER_HANDLE publishPacket = mqtt_codec_publish(qos, isDuplicate, isRetained, packetId, topicName, payload->message, payload->length, trace_log);
             if (publishPacket == NULL)
             {
                 /*Codes_SRS_MQTT_CLIENT_07_020: [If any failure is encountered then mqtt_client_unsubscribe shall return a non-zero value.]*/
@@ -929,7 +936,8 @@ int mqtt_client_publish(MQTT_CLIENT_HANDLE handle, MQTT_MESSAGE_HANDLE msgHandle
                 mqtt_client->packetState = PUBLISH_TYPE;
 
                 /*Codes_SRS_MQTT_CLIENT_07_022: [On success mqtt_client_publish shall send the MQTT SUBCRIBE packet to the endpoint.]*/
-                if (sendPacketItem(mqtt_client, BUFFER_u_char(publishPacket), BUFFER_length(publishPacket)) != 0)
+                size_t size = BUFFER_length(publishPacket);
+                if (sendPacketItem(mqtt_client, BUFFER_u_char(publishPacket), size) != 0)
                 {
                     /*Codes_SRS_MQTT_CLIENT_07_020: [If any failure is encountered then mqtt_client_unsubscribe shall return a non-zero value.]*/
                     LOG(AZ_LOG_ERROR, LOG_LINE, "Error: mqtt_client_publish send failed");
@@ -975,8 +983,9 @@ int mqtt_client_subscribe(MQTT_CLIENT_HANDLE handle, uint16_t packetId, SUBSCRIB
         {
             mqtt_client->packetState = SUBSCRIBE_TYPE;
 
+            size_t size = BUFFER_length(subPacket);
             /*Codes_SRS_MQTT_CLIENT_07_015: [On success mqtt_client_subscribe shall send the MQTT SUBCRIBE packet to the endpoint.]*/
-            if (sendPacketItem(mqtt_client, BUFFER_u_char(subPacket), BUFFER_length(subPacket)) != 0)
+            if (sendPacketItem(mqtt_client, BUFFER_u_char(subPacket), size) != 0)
             {
                 /*Codes_SRS_MQTT_CLIENT_07_014: [If any failure is encountered then mqtt_client_subscribe shall return a non-zero value.]*/
                 LOG(AZ_LOG_ERROR, LOG_LINE, "Error: mqtt_client_subscribe send failed");
@@ -1021,8 +1030,9 @@ int mqtt_client_unsubscribe(MQTT_CLIENT_HANDLE handle, uint16_t packetId, const 
         {
             mqtt_client->packetState = UNSUBSCRIBE_TYPE;
 
+            size_t size = BUFFER_length(unsubPacket);
             /*Codes_SRS_MQTT_CLIENT_07_018: [On success mqtt_client_unsubscribe shall send the MQTT SUBCRIBE packet to the endpoint.]*/
-            if (sendPacketItem(mqtt_client, BUFFER_u_char(unsubPacket), BUFFER_length(unsubPacket)) != 0)
+            if (sendPacketItem(mqtt_client, BUFFER_u_char(unsubPacket), size) != 0)
             {
                 /*Codes_SRS_MQTT_CLIENT_07_017: [If any failure is encountered then mqtt_client_unsubscribe shall return a non-zero value.].]*/
                 LOG(AZ_LOG_ERROR, LOG_LINE, "Error: mqtt_client_unsubscribe send failed");
@@ -1066,8 +1076,9 @@ int mqtt_client_disconnect(MQTT_CLIENT_HANDLE handle)
         {
             mqtt_client->packetState = DISCONNECT_TYPE;
 
+            size_t size = BUFFER_length(disconnectPacket);
             /*Codes_SRS_MQTT_CLIENT_07_012: [On success mqtt_client_disconnect shall send the MQTT DISCONNECT packet to the endpoint.]*/
-            if (sendPacketItem(mqtt_client, BUFFER_u_char(disconnectPacket), BUFFER_length(disconnectPacket)) != 0)
+            if (sendPacketItem(mqtt_client, BUFFER_u_char(disconnectPacket), size) != 0)
             {
                 /*Codes_SRS_MQTT_CLIENT_07_011: [If any failure is encountered then mqtt_client_disconnect shall return a non-zero value.]*/
                 LOG(AZ_LOG_ERROR, LOG_LINE, "Error: mqtt_client_disconnect send failed");
@@ -1123,7 +1134,8 @@ void mqtt_client_dowork(MQTT_CLIENT_HANDLE handle)
                     BUFFER_HANDLE pingPacket = mqtt_codec_ping();
                     if (pingPacket != NULL)
                     {
-                        (void)sendPacketItem(mqtt_client, BUFFER_u_char(pingPacket), BUFFER_length(pingPacket));
+                        size_t size = BUFFER_length(pingPacket);
+                        (void)sendPacketItem(mqtt_client, BUFFER_u_char(pingPacket), size);
                         BUFFER_delete(pingPacket);
                         (void)tickcounter_get_current_ms(mqtt_client->packetTickCntr, &mqtt_client->timeSincePing);
 
