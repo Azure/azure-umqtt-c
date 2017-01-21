@@ -136,7 +136,7 @@ static void OnOperationComplete(MQTT_CLIENT_HANDLE handle, MQTT_CLIENT_EVENT_RES
         }
         default:
         {
-            printf("unexpected value received for enumeration (%d)\n", (int)actionResult);
+            (void)printf("unexpected value received for enumeration (%d)\n", (int)actionResult);
         }
     }
 }
