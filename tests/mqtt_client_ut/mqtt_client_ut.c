@@ -4,9 +4,16 @@
 //
 // PUT NO INCLUDES BEFORE HERE !!!!
 //
+#ifdef __cplusplus
+#include <cstdlib>
+#include <cstddef>
+#include <cstdbool>
+#include <cstdint>
+#else
 #include <stdlib.h>
-#ifdef _CRTDBG_MAP_ALLOC
-#include <crtdbg.h>
+#include <stddef.h>
+#include <stdbool.h>
+#include <stdint.h>
 #endif
 
 #include "testrunnerswitcher.h"

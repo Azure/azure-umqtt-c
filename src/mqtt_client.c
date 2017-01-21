@@ -257,7 +257,8 @@ static void logOutgoingingRawTrace(MQTT_CLIENT* mqtt_client, const uint8_t* data
         getLogTime(tmBuffer, TIME_MAX_BUFFER);
 
         LOG(AZ_LOG_TRACE, 0, "-> %s %s: ", tmBuffer, retrievePacketType((unsigned char)data[0]));
-        for (size_t index = 0; index < length; index++)
+        size_t index = 0;
+        for (index = 0; index < length; index++)
         {
             LOG(AZ_LOG_TRACE, 0, "0x%02x ", data[index]);
         }
@@ -288,7 +289,8 @@ static void logIncomingRawTrace(MQTT_CLIENT* mqtt_client, CONTROL_PACKET_TYPE pa
             getLogTime(tmBuffer, TIME_MAX_BUFFER);
 
             LOG(AZ_LOG_TRACE, 0, "<- %s %s: 0x%02x 0x%02x ", tmBuffer, retrievePacketType((CONTROL_PACKET_TYPE)packet), (unsigned char)(packet | flags), length);
-            for (size_t index = 0; index < length; index++)
+            size_t index = 0;
+            for (index = 0; index < length; index++)
             {
                 LOG(AZ_LOG_TRACE, 0, "0x%02x ", data[index]);
             }

@@ -9,6 +9,8 @@ endif()
 
 project(umqtt)
 
+set(UMQTT_VERSION 1.0.25)
+
 # Build with -fPIC always
 set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 
@@ -148,6 +150,8 @@ IF(WIN32)
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
     # Make warning as error
     add_definitions(/WX)
+elseif(APPLE)
+    # Remove this clause when we're ready for clang warnings to be errors
 ELSE()
     # Make warning as error
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
@@ -193,6 +197,12 @@ if(${use_installed_dependencies})
 
     include(CMakePackageConfigHelpers)
 
+    write_basic_package_version_file(
+        "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}/${PROJECT_NAME}ConfigVersion.cmake"
+        VERSION ${UMQTT_VERSION}
+        COMPATIBILITY SameMajorVersion
+    )
+
     configure_file("configs/${PROJECT_NAME}Config.cmake"
         "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}/${PROJECT_NAME}Config.cmake"
         COPYONLY
@@ -208,6 +218,7 @@ if(${use_installed_dependencies})
     install(
         FILES
             "configs/${PROJECT_NAME}Config.cmake"
+            "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}/${PROJECT_NAME}ConfigVersion.cmake"
         DESTINATION
             ${package_location}
     )
