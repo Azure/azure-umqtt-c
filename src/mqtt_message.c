@@ -56,7 +56,7 @@ MQTT_MESSAGE_HANDLE mqttmessage_create(uint16_t packetId, const char* topicName,
                     }
                     else
                     {
-                        memcpy(result->appPayload.message, appMsg, appMsgLength);
+                        (void)memcpy(result->appPayload.message, appMsg, appMsgLength);
                     }
                 }
                 else
