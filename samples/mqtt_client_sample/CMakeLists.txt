@@ -47,7 +47,7 @@ else()
         pthread
         umqtt)
     #if(${use_openssl})
-        target_link_libraries(mqtt_client_sample ssl crypto)
+        target_link_libraries(mqtt_client_sample ${OPENSSL_LIBRARIES})
     #endif()
 endif()
 
