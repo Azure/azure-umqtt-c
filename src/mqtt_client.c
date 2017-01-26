@@ -843,11 +843,6 @@ void mqtt_client_deinit(MQTT_CLIENT_HANDLE handle)
         MQTT_CLIENT* mqtt_client = (MQTT_CLIENT*)handle;
         tickcounter_destroy(mqtt_client->packetTickCntr);
         mqtt_codec_destroy(mqtt_client->codec_handle);
-        free(mqtt_client->mqttOptions.clientId);
-        free(mqtt_client->mqttOptions.willTopic);
-        free(mqtt_client->mqttOptions.willMessage);
-        free(mqtt_client->mqttOptions.username);
-        free(mqtt_client->mqttOptions.password);
         free(mqtt_client);
     }
 }
@@ -1097,6 +1092,11 @@ int mqtt_client_disconnect(MQTT_CLIENT_HANDLE handle)
                 result = 0;
             }
             BUFFER_delete(disconnectPacket);
+            free(mqtt_client->mqttOptions.clientId);
+            free(mqtt_client->mqttOptions.willTopic);
+            free(mqtt_client->mqttOptions.willMessage);
+            free(mqtt_client->mqttOptions.username);
+            free(mqtt_client->mqttOptions.password);
         }
     }
     return result;
