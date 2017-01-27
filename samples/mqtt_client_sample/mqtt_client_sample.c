@@ -15,9 +15,6 @@
 static const char* TOPIC_NAME_A = "msgA";
 static const char* TOPIC_NAME_B = "msgB";
 static const char* APP_NAME_A = "This is the app msg A.";
-static const char* APP_NAME_B = "This is the app msg B.";
-static const char* HOSTNAME = "test.mosquitto.org";
-static unsigned int sent_messages = 0;
 
 static uint16_t PACKET_ID_VALUE = 11;
 static bool g_continue = true;
