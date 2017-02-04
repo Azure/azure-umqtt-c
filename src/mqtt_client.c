@@ -413,6 +413,20 @@ static void onIoError(void* context)
     }
 }
 
+static void clear_mqtt_options(MQTT_CLIENT* mqtt_client)
+{
+    free(mqtt_client->mqttOptions.clientId);
+    mqtt_client->mqttOptions.clientId = NULL;
+    free(mqtt_client->mqttOptions.willTopic);
+    mqtt_client->mqttOptions.willTopic = NULL;
+    free(mqtt_client->mqttOptions.willMessage);
+    mqtt_client->mqttOptions.willMessage = NULL;
+    free(mqtt_client->mqttOptions.username);
+    mqtt_client->mqttOptions.username = NULL;
+    free(mqtt_client->mqttOptions.password);
+    mqtt_client->mqttOptions.password = NULL;
+}
+
 static int cloneMqttOptions(MQTT_CLIENT* mqtt_client, const MQTT_CLIENT_OPTIONS* mqttOptions)
 {
     int result = 0;
@@ -465,11 +479,7 @@ static int cloneMqttOptions(MQTT_CLIENT* mqtt_client, const MQTT_CLIENT_OPTIONS*
     }
     else
     {
-        free(mqtt_client->mqttOptions.clientId);
-        free(mqtt_client->mqttOptions.willTopic);
-        free(mqtt_client->mqttOptions.willMessage);
-        free(mqtt_client->mqttOptions.username);
-        free(mqtt_client->mqttOptions.password);
+        clear_mqtt_options(mqtt_client);
     }
     return result;
 }
@@ -883,6 +893,8 @@ int mqtt_client_connect(MQTT_CLIENT_HANDLE handle, XIO_HANDLE xioHandle, MQTT_CL
                 /*Codes_SRS_MQTT_CLIENT_07_007: [If any failure is encountered then mqtt_client_connect shall return a non-zero value.]*/
                 LOG(AZ_LOG_ERROR, LOG_LINE, "Error: io_open failed");
                 result = __LINE__;
+                // Remove cloned options
+                clear_mqtt_options(mqtt_client);
             }
             else
             {
@@ -1092,11 +1104,7 @@ int mqtt_client_disconnect(MQTT_CLIENT_HANDLE handle)
                 result = 0;
             }
             BUFFER_delete(disconnectPacket);
-            free(mqtt_client->mqttOptions.clientId);
-            free(mqtt_client->mqttOptions.willTopic);
-            free(mqtt_client->mqttOptions.willMessage);
-            free(mqtt_client->mqttOptions.username);
-            free(mqtt_client->mqttOptions.password);
+            clear_mqtt_options(mqtt_client);
         }
     }
     return result;

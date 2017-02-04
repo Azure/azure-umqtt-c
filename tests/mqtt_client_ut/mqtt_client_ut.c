@@ -77,6 +77,8 @@ static const char* TEST_PASSWORD = "testpassword";
 static const char* TEST_TOPIC_NAME = "topic Name";
 static const APP_PAYLOAD TEST_APP_PAYLOAD = { (uint8_t*)"Message to send", 15 };
 static const char* TEST_CLIENT_ID = "test_client_id";
+static const char* TEST_WILL_MSG = "test_will_msg";
+static const char* TEST_WILL_TOPIC = "test_will_topic";
 static const char* TEST_SUBSCRIPTION_TOPIC = "subTopic";
 static SUBSCRIBE_PAYLOAD TEST_SUBSCRIBE_PAYLOAD[] = { {"subTopic1", DELIVER_AT_LEAST_ONCE }, {"subTopic2", DELIVER_EXACTLY_ONCE } };
 static const char* TEST_UNSUBSCRIPTION_TOPIC[] = { "subTopic1", "subTopic2" };
@@ -416,6 +418,8 @@ static void setup_mqtt_client_connect_mocks()
 {
     STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_CLIENT_ID))
         .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_WILL_MSG))
+        .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_USERNAME))
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_PASSWORD))
@@ -434,6 +438,51 @@ static void setup_mqtt_client_connect_mocks()
         .IgnoreArgument_current_ms();
     EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(BUFFER_delete(TEST_BUFFER_HANDLE));
+}
+
+static void setup_mqtt_client_connect_retry_mocks()
+{
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_CLIENT_ID))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_WILL_MSG))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_USERNAME))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_PASSWORD))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(xio_open(TEST_IO_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        .IgnoreArgument(2)
+        .IgnoreArgument(3)
+        .IgnoreArgument_on_bytes_received_context()
+        .IgnoreArgument_on_io_error_context()
+        .IgnoreArgument(4)
+        .IgnoreArgument(6)
+        .SetReturn(__LINE__);
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+        .IgnoreArgument_ptr();
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+        .IgnoreArgument_ptr();
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+        .IgnoreArgument_ptr();
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+        .IgnoreArgument_ptr();
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
+        .IgnoreArgument_ptr();
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_CLIENT_ID))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_WILL_MSG))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_USERNAME))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_PASSWORD))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(xio_open(TEST_IO_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
+        .IgnoreArgument(2)
+        .IgnoreArgument(3)
+        .IgnoreArgument_on_bytes_received_context()
+        .IgnoreArgument_on_io_error_context()
+        .IgnoreArgument(4)
+        .IgnoreArgument(6);
 }
 
 static void TestRecvCallback(MQTT_MESSAGE_HANDLE msgHandle, void* context)
@@ -655,7 +704,7 @@ TEST_FUNCTION(mqtt_client_deinit_succeeds)
 {
     // arrange
     MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
-    SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, NULL, NULL, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
+    SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, TEST_WILL_MSG, TEST_WILL_TOPIC, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
     MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, TestErrorCallback, NULL);
 
     umock_c_reset_all_calls();
@@ -676,7 +725,7 @@ TEST_FUNCTION(mqtt_client_connect_MQTT_CLIENT_HANDLE_NULL_fails)
 {
     // arrange
     MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
-    SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, NULL, NULL, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
+    SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, TEST_WILL_MSG, TEST_WILL_TOPIC, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
 
     // act
     int result = mqtt_client_connect(NULL, TEST_IO_HANDLE, &mqttOptions);
@@ -696,7 +745,7 @@ TEST_FUNCTION(mqtt_client_connect_XIO_HANDLE_NULL_fails)
 
     // Arrange
     MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
-    SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, NULL, NULL, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
+    SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, TEST_WILL_MSG, TEST_WILL_TOPIC, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
 
     // act
     int result = mqtt_client_connect(mqttHandle, NULL, &mqttOptions);
@@ -740,10 +789,14 @@ TEST_FUNCTION(mqtt_client_connect_fails)
 
     // Arrange
     MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
-    SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, NULL, NULL, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
+    SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, TEST_WILL_MSG, TEST_WILL_TOPIC, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_CLIENT_ID))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_WILL_TOPIC))
+        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_WILL_MSG))
         .IgnoreArgument(1);
     STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_USERNAME))
         .IgnoreArgument(1);
@@ -793,7 +846,7 @@ TEST_FUNCTION(mqtt_client_connect_succeeds)
 
     // Arrange
     MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
-    SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, NULL, NULL, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
+    SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, TEST_WILL_MSG, NULL, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
 
     setup_mqtt_client_connect_mocks();
 
@@ -814,6 +867,33 @@ TEST_FUNCTION(mqtt_client_connect_succeeds)
 }
 
 /*Tests_SRS_MQTT_CLIENT_07_009: [On success mqtt_client_connect shall send the MQTT CONNECT to the endpoint.]*/
+TEST_FUNCTION(mqtt_client_connect_retries_twice_succeeds)
+{
+    // arrange
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, TestErrorCallback, NULL);
+    umock_c_reset_all_calls();
+
+    // Arrange
+    MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
+    SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, TEST_WILL_MSG, NULL, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
+
+    setup_mqtt_client_connect_retry_mocks();
+
+    // act
+    int result = mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+
+    result = mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
+
+    // assert
+    ASSERT_ARE_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    mqtt_client_deinit(mqttHandle);
+}
+
+/*Tests_SRS_MQTT_CLIENT_07_009: [On success mqtt_client_connect shall send the MQTT CONNECT to the endpoint.]*/
 TEST_FUNCTION(mqtt_client_on_bytes_received_succeeds)
 {
     // arrange
@@ -822,7 +902,7 @@ TEST_FUNCTION(mqtt_client_on_bytes_received_succeeds)
 
     // Arrange
     MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
-    SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, NULL, NULL, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
+    SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, TEST_WILL_MSG, TEST_WILL_TOPIC, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
     (void)mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
     umock_c_reset_all_calls();
 
@@ -847,7 +927,7 @@ TEST_FUNCTION(mqtt_client_on_bytes_received_context_NULL_fail)
 
     // Arrange
     MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
-    SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, NULL, NULL, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
+    SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, TEST_WILL_MSG, TEST_WILL_TOPIC, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
     (void)mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
     umock_c_reset_all_calls();
 
@@ -870,7 +950,7 @@ TEST_FUNCTION(mqtt_client_on_bytes_received_bytesReceived_fail_succeeds)
 
     // Arrange
     MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
-    SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, NULL, NULL, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
+    SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, TEST_WILL_MSG, TEST_WILL_TOPIC, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
     (void)mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
     umock_c_reset_all_calls();
 
@@ -903,7 +983,7 @@ TEST_FUNCTION(mqtt_client_connect_multiple_completes_one_connect_succeeds)
 
     // Arrange
     MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
-    SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, NULL, NULL, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
+    SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, TEST_WILL_MSG, NULL, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
 
     setup_mqtt_client_connect_mocks();
     STRICT_EXPECTED_CALL(xio_close(TEST_IO_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
@@ -940,7 +1020,7 @@ TEST_FUNCTION(mqtt_client_connect_completes_IO_OPEN_ERROR_succeeds)
 
     // Arrange
     MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
-    SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, NULL, NULL, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
+    SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, TEST_WILL_MSG, TEST_WILL_TOPIC, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
 
     (void)mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
     umock_c_reset_all_calls();
@@ -974,7 +1054,7 @@ TEST_FUNCTION(mqtt_client_ioerror_succeeds)
     MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, TestErrorCallback, NULL);
 
     MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
-    SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, NULL, NULL, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
+    SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, TEST_WILL_MSG, TEST_WILL_TOPIC, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
 
     (void)mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
     umock_c_reset_all_calls();
@@ -1519,7 +1599,7 @@ TEST_FUNCTION(mqtt_client_dowork_ping_succeeds)
     MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, TestErrorCallback, NULL);
 
     MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
-    SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, NULL, NULL, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
+    SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, TEST_WILL_MSG, TEST_WILL_TOPIC, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
 
     unsigned char CONNACK_RESP[] = { 0x1, 0x0 };
     size_t length = sizeof(CONNACK_RESP) / sizeof(CONNACK_RESP[0]);
@@ -1648,7 +1728,7 @@ TEST_FUNCTION(mqtt_client_dowork_no_ping_succeeds)
     MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, TestErrorCallback, NULL);
 
     MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
-    SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, NULL, NULL, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
+    SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, TEST_WILL_MSG, TEST_WILL_TOPIC, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
 
     unsigned char CONNACK_RESP[] = { 0x1, 0x0 };
     size_t length = sizeof(CONNACK_RESP) / sizeof(CONNACK_RESP[0]);
@@ -1682,7 +1762,7 @@ TEST_FUNCTION(mqtt_client_dowork_tickcounter_fails_succeeds)
     MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, TestErrorCallback, NULL);
 
     MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
-    SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, NULL, NULL, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
+    SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, TEST_WILL_MSG, TEST_WILL_TOPIC, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
 
     unsigned char CONNACK_RESP[] = { 0x1, 0x0 };
     size_t length = sizeof(CONNACK_RESP) / sizeof(CONNACK_RESP[0]);
