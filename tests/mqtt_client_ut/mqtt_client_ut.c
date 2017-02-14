@@ -34,6 +34,7 @@ static void my_gballoc_free(void* ptr)
 
 #define ENABLE_MOCKS
 
+#include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/tickcounter.h"
 #include "azure_c_shared_utility/agenttime.h"
 #include "azure_c_shared_utility/buffer_.h"
@@ -261,12 +262,12 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_GLOBAL_MOCK_RETURN(mqtt_codec_create, NULL);
 
     REGISTER_GLOBAL_MOCK_HOOK(xio_open, my_xio_open);
-    REGISTER_GLOBAL_MOCK_FAIL_RETURN(xio_open, __LINE__);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(xio_open, __FAILURE__);
     REGISTER_GLOBAL_MOCK_HOOK(xio_send, my_xio_send);
-    REGISTER_GLOBAL_MOCK_FAIL_RETURN(xio_send, __LINE__);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(xio_send, __FAILURE__);
 
     REGISTER_GLOBAL_MOCK_HOOK(tickcounter_get_current_ms, my_tickcounter_get_current_ms);
-    REGISTER_GLOBAL_MOCK_FAIL_RETURN(tickcounter_get_current_ms, __LINE__);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(tickcounter_get_current_ms, __FAILURE__);
 
     REGISTER_GLOBAL_MOCK_HOOK(mqtt_codec_publishRelease, my_mqtt_codec_publishRelease);
     REGISTER_GLOBAL_MOCK_HOOK(mqtt_codec_publishComplete, my_mqtt_codec_publishComplete);
@@ -289,12 +290,12 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_GLOBAL_MOCK_RETURN(mqtt_codec_publishReceived, TEST_BUFFER_HANDLE);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(mqtt_codec_publishReceived, NULL);
     REGISTER_GLOBAL_MOCK_RETURN(mqtt_codec_bytesReceived, 0);
-    REGISTER_GLOBAL_MOCK_FAIL_RETURN(mqtt_codec_bytesReceived, __LINE__);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(mqtt_codec_bytesReceived, __FAILURE__);
     REGISTER_GLOBAL_MOCK_RETURN(xio_close, 0);
-    REGISTER_GLOBAL_MOCK_FAIL_RETURN(xio_close, __LINE__);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(xio_close, __FAILURE__);
 
     REGISTER_GLOBAL_MOCK_RETURN(platform_init, 0);
-    REGISTER_GLOBAL_MOCK_FAIL_RETURN(platform_init, __LINE__);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(platform_init, __FAILURE__);
 
     REGISTER_GLOBAL_MOCK_RETURN(tickcounter_create, TEST_COUNTER_HANDLE);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(tickcounter_create, NULL);
@@ -311,13 +312,13 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_GLOBAL_MOCK_RETURN(mqttmessage_getIsDuplicateMsg, true);
     REGISTER_GLOBAL_MOCK_RETURN(mqttmessage_getIsRetained, true);
     REGISTER_GLOBAL_MOCK_RETURN(mqttmessage_setIsDuplicateMsg, 0);
-    REGISTER_GLOBAL_MOCK_FAIL_RETURN(mqttmessage_setIsDuplicateMsg, __LINE__);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(mqttmessage_setIsDuplicateMsg, __FAILURE__);
     REGISTER_GLOBAL_MOCK_RETURN(mqttmessage_setIsRetained, 0);
-    REGISTER_GLOBAL_MOCK_FAIL_RETURN(mqttmessage_setIsRetained, __LINE__);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(mqttmessage_setIsRetained, __FAILURE__);
     REGISTER_GLOBAL_MOCK_RETURN(mqttmessage_getApplicationMsg, &TEST_APP_PAYLOAD);
 
     REGISTER_GLOBAL_MOCK_RETURN(mallocAndStrcpy_s, 0);
-    REGISTER_GLOBAL_MOCK_FAIL_RETURN(mallocAndStrcpy_s, __LINE__);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(mallocAndStrcpy_s, __FAILURE__);
 }
 
 TEST_SUITE_CLEANUP(suite_cleanup)
@@ -362,7 +363,7 @@ static int should_skip_index(size_t current_index, const size_t skip_array[], si
     {
         if (current_index == skip_array[index])
         {
-            result = __LINE__;
+            result = __FAILURE__;
             break;
         }
     }
@@ -457,7 +458,7 @@ static void setup_mqtt_client_connect_retry_mocks()
         .IgnoreArgument_on_io_error_context()
         .IgnoreArgument(4)
         .IgnoreArgument(6)
-        .SetReturn(__LINE__);
+        .SetReturn(__FAILURE__);
     STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
         .IgnoreArgument_ptr();
     STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
@@ -955,7 +956,7 @@ TEST_FUNCTION(mqtt_client_on_bytes_received_bytesReceived_fail_succeeds)
     umock_c_reset_all_calls();
 
     EXPECTED_CALL(mqtt_codec_bytesReceived(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG))
-        .SetReturn(__LINE__);
+        .SetReturn(__FAILURE__);
     STRICT_EXPECTED_CALL(xio_close(TEST_IO_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
         .IgnoreArgument_on_io_close_complete()
         .IgnoreArgument_callback_context();
@@ -1420,7 +1421,7 @@ TEST_FUNCTION(mqtt_client_publish_xio_send_fails)
     STRICT_EXPECTED_CALL(BUFFER_length(TEST_BUFFER_HANDLE));
     STRICT_EXPECTED_CALL(BUFFER_u_char(TEST_BUFFER_HANDLE));
     STRICT_EXPECTED_CALL(tickcounter_get_current_ms(TEST_COUNTER_HANDLE, IGNORED_PTR_ARG)).IgnoreArgument(2);
-    EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG)).SetReturn(__LINE__);
+    EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG)).SetReturn(__FAILURE__);
     STRICT_EXPECTED_CALL(BUFFER_delete(TEST_BUFFER_HANDLE));
 
     // act
@@ -1776,7 +1777,7 @@ TEST_FUNCTION(mqtt_client_dowork_tickcounter_fails_succeeds)
     umock_c_reset_all_calls();
 
     EXPECTED_CALL(xio_dowork(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(tickcounter_get_current_ms(TEST_COUNTER_HANDLE, IGNORED_PTR_ARG)).IgnoreArgument(2).SetReturn(__LINE__);
+    STRICT_EXPECTED_CALL(tickcounter_get_current_ms(TEST_COUNTER_HANDLE, IGNORED_PTR_ARG)).IgnoreArgument(2).SetReturn(__FAILURE__);
 
     // act
     mqtt_client_dowork(mqttHandle);

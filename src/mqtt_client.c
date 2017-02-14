@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include <stdlib.h>
+#include "azure_c_shared_utility/optimize_size.h"
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/platform.h"
 #include "azure_c_shared_utility/tickcounter.h"
@@ -312,7 +313,7 @@ static int sendPacketItem(MQTT_CLIENT* mqtt_client, const unsigned char* data, s
     if (tickcounter_get_current_ms(mqtt_client->packetTickCntr, &mqtt_client->packetSendTimeMs) != 0)
     {
         LOG(AZ_LOG_ERROR, LOG_LINE, "Failure getting current ms tickcounter");
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {
@@ -320,7 +321,7 @@ static int sendPacketItem(MQTT_CLIENT* mqtt_client, const unsigned char* data, s
         if (result != 0)
         {
             LOG(AZ_LOG_ERROR, LOG_LINE, "%d: Failure sending control packet data", result);
-            result = __LINE__;
+            result = __FAILURE__;
         }
         else
         {
@@ -434,7 +435,7 @@ static int cloneMqttOptions(MQTT_CLIENT* mqtt_client, const MQTT_CLIENT_OPTIONS*
     {
         if (mallocAndStrcpy_s(&mqtt_client->mqttOptions.clientId, mqttOptions->clientId) != 0)
         {
-            result = __LINE__;
+            result = __FAILURE__;
             LOG(AZ_LOG_ERROR, LOG_LINE, "mallocAndStrcpy_s clientId");
         }
     }
@@ -442,7 +443,7 @@ static int cloneMqttOptions(MQTT_CLIENT* mqtt_client, const MQTT_CLIENT_OPTIONS*
     {
         if (mallocAndStrcpy_s(&mqtt_client->mqttOptions.willTopic, mqttOptions->willTopic) != 0)
         {
-            result = __LINE__;
+            result = __FAILURE__;
             LOG(AZ_LOG_ERROR, LOG_LINE, "mallocAndStrcpy_s willTopic");
         }
     }
@@ -451,7 +452,7 @@ static int cloneMqttOptions(MQTT_CLIENT* mqtt_client, const MQTT_CLIENT_OPTIONS*
         if (mallocAndStrcpy_s(&mqtt_client->mqttOptions.willMessage, mqttOptions->willMessage) != 0)
         {
             LOG(AZ_LOG_ERROR, LOG_LINE, "mallocAndStrcpy_s willMessage");
-            result = __LINE__;
+            result = __FAILURE__;
         }
     }
     if (result == 0 && mqttOptions->username != NULL)
@@ -459,7 +460,7 @@ static int cloneMqttOptions(MQTT_CLIENT* mqtt_client, const MQTT_CLIENT_OPTIONS*
         if (mallocAndStrcpy_s(&mqtt_client->mqttOptions.username, mqttOptions->username) != 0)
         {
             LOG(AZ_LOG_ERROR, LOG_LINE, "mallocAndStrcpy_s username");
-            result = __LINE__;
+            result = __FAILURE__;
         }
     }
     if (result == 0 && mqttOptions->password != NULL)
@@ -467,7 +468,7 @@ static int cloneMqttOptions(MQTT_CLIENT* mqtt_client, const MQTT_CLIENT_OPTIONS*
         if (mallocAndStrcpy_s(&mqtt_client->mqttOptions.password, mqttOptions->password) != 0)
         {
             LOG(AZ_LOG_ERROR, LOG_LINE, "mallocAndStrcpy_s password");
-            result = __LINE__;
+            result = __FAILURE__;
         }
     }
     if (result == 0)
@@ -864,7 +865,7 @@ int mqtt_client_connect(MQTT_CLIENT_HANDLE handle, XIO_HANDLE xioHandle, MQTT_CL
     if (handle == NULL || mqttOptions == NULL)
     {
         LOG(AZ_LOG_ERROR, LOG_LINE, "mqtt_client_connect: NULL argument (handle = %p, mqttOptions = %p)", handle, mqttOptions);
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {
@@ -873,7 +874,7 @@ int mqtt_client_connect(MQTT_CLIENT_HANDLE handle, XIO_HANDLE xioHandle, MQTT_CL
         {
             /*Codes_SRS_MQTT_CLIENT_07_007: [If any failure is encountered then mqtt_client_connect shall return a non-zero value.]*/
             LOG(AZ_LOG_ERROR, LOG_LINE, "Error: mqttcodec_connect failed");
-            result = __LINE__;
+            result = __FAILURE__;
         }
         else
         {
@@ -885,14 +886,14 @@ int mqtt_client_connect(MQTT_CLIENT_HANDLE handle, XIO_HANDLE xioHandle, MQTT_CL
             if (cloneMqttOptions(mqtt_client, mqttOptions) != 0)
             {
                 LOG(AZ_LOG_ERROR, LOG_LINE, "Error: Clone Mqtt Options failed");
-                result = __LINE__;
+                result = __FAILURE__;
             }
             /*Codes_SRS_MQTT_CLIENT_07_008: [mqtt_client_connect shall open the XIO_HANDLE by calling into the xio_open interface.]*/
             else if (xio_open(xioHandle, onOpenComplete, mqtt_client, onBytesReceived, mqtt_client, onIoError, mqtt_client) != 0)
             {
                 /*Codes_SRS_MQTT_CLIENT_07_007: [If any failure is encountered then mqtt_client_connect shall return a non-zero value.]*/
                 LOG(AZ_LOG_ERROR, LOG_LINE, "Error: io_open failed");
-                result = __LINE__;
+                result = __FAILURE__;
                 // Remove cloned options
                 clear_mqtt_options(mqtt_client);
             }
@@ -912,7 +913,7 @@ int mqtt_client_publish(MQTT_CLIENT_HANDLE handle, MQTT_MESSAGE_HANDLE msgHandle
     if (mqtt_client == NULL || msgHandle == NULL)
     {
         /*Codes_SRS_MQTT_CLIENT_07_019: [If one of the parameters handle or msgHandle is NULL then mqtt_client_publish shall return a non-zero value.]*/
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {
@@ -922,7 +923,7 @@ int mqtt_client_publish(MQTT_CLIENT_HANDLE handle, MQTT_MESSAGE_HANDLE msgHandle
         {
             /*Codes_SRS_MQTT_CLIENT_07_020: [If any failure is encountered then mqtt_client_unsubscribe shall return a non-zero value.]*/
             LOG(AZ_LOG_ERROR, LOG_LINE, "Error: mqttmessage_getApplicationMsg failed");
-            result = __LINE__;
+            result = __FAILURE__;
         }
         else
         {
@@ -938,7 +939,7 @@ int mqtt_client_publish(MQTT_CLIENT_HANDLE handle, MQTT_MESSAGE_HANDLE msgHandle
             {
                 /*Codes_SRS_MQTT_CLIENT_07_020: [If any failure is encountered then mqtt_client_unsubscribe shall return a non-zero value.]*/
                 LOG(AZ_LOG_ERROR, LOG_LINE, "Error: mqtt_codec_publish failed");
-                result = __LINE__;
+                result = __FAILURE__;
             }
             else
             {
@@ -950,7 +951,7 @@ int mqtt_client_publish(MQTT_CLIENT_HANDLE handle, MQTT_MESSAGE_HANDLE msgHandle
                 {
                     /*Codes_SRS_MQTT_CLIENT_07_020: [If any failure is encountered then mqtt_client_unsubscribe shall return a non-zero value.]*/
                     LOG(AZ_LOG_ERROR, LOG_LINE, "Error: mqtt_client_publish send failed");
-                    result = __LINE__;
+                    result = __FAILURE__;
                 }
                 else
                 {
@@ -975,7 +976,7 @@ int mqtt_client_subscribe(MQTT_CLIENT_HANDLE handle, uint16_t packetId, SUBSCRIB
     if (mqtt_client == NULL || subscribeList == NULL || count == 0)
     {
         /*Codes_SRS_MQTT_CLIENT_07_013: [If any of the parameters handle, subscribeList is NULL or count is 0 then mqtt_client_subscribe shall return a non-zero value.]*/
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {
@@ -986,7 +987,7 @@ int mqtt_client_subscribe(MQTT_CLIENT_HANDLE handle, uint16_t packetId, SUBSCRIB
         {
             /*Codes_SRS_MQTT_CLIENT_07_014: [If any failure is encountered then mqtt_client_subscribe shall return a non-zero value.]*/
             LOG(AZ_LOG_ERROR, LOG_LINE, "Error: mqtt_codec_subscribe failed");
-            result = __LINE__;
+            result = __FAILURE__;
         }
         else
         {
@@ -998,7 +999,7 @@ int mqtt_client_subscribe(MQTT_CLIENT_HANDLE handle, uint16_t packetId, SUBSCRIB
             {
                 /*Codes_SRS_MQTT_CLIENT_07_014: [If any failure is encountered then mqtt_client_subscribe shall return a non-zero value.]*/
                 LOG(AZ_LOG_ERROR, LOG_LINE, "Error: mqtt_client_subscribe send failed");
-                result = __LINE__;
+                result = __FAILURE__;
             }
             else
             {
@@ -1022,7 +1023,7 @@ int mqtt_client_unsubscribe(MQTT_CLIENT_HANDLE handle, uint16_t packetId, const 
     if (mqtt_client == NULL || unsubscribeList == NULL || count == 0)
     {
         /*Codes_SRS_MQTT_CLIENT_07_016: [If any of the parameters handle, unsubscribeList is NULL or count is 0 then mqtt_client_unsubscribe shall return a non-zero value.]*/
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {
@@ -1033,7 +1034,7 @@ int mqtt_client_unsubscribe(MQTT_CLIENT_HANDLE handle, uint16_t packetId, const 
         {
             /*Codes_SRS_MQTT_CLIENT_07_017: [If any failure is encountered then mqtt_client_unsubscribe shall return a non-zero value.]*/
             LOG(AZ_LOG_ERROR, LOG_LINE, "Error: mqtt_codec_unsubscribe failed");
-            result = __LINE__;
+            result = __FAILURE__;
         }
         else
         {
@@ -1045,7 +1046,7 @@ int mqtt_client_unsubscribe(MQTT_CLIENT_HANDLE handle, uint16_t packetId, const 
             {
                 /*Codes_SRS_MQTT_CLIENT_07_017: [If any failure is encountered then mqtt_client_unsubscribe shall return a non-zero value.].]*/
                 LOG(AZ_LOG_ERROR, LOG_LINE, "Error: mqtt_client_unsubscribe send failed");
-                result = __LINE__;
+                result = __FAILURE__;
             }
             else
             {
@@ -1069,7 +1070,7 @@ int mqtt_client_disconnect(MQTT_CLIENT_HANDLE handle)
     if (mqtt_client == NULL)
     {
         /*Codes_SRS_MQTT_CLIENT_07_010: [If the parameters handle is NULL then mqtt_client_disconnect shall return a non-zero value.]*/
-        result = __LINE__;
+        result = __FAILURE__;
     }
     else
     {
@@ -1079,7 +1080,7 @@ int mqtt_client_disconnect(MQTT_CLIENT_HANDLE handle)
             /*Codes_SRS_MQTT_CLIENT_07_011: [If any failure is encountered then mqtt_client_disconnect shall return a non-zero value.]*/
             LOG(AZ_LOG_ERROR, LOG_LINE, "Error: mqtt_client_disconnect failed");
             mqtt_client->packetState = PACKET_TYPE_ERROR;
-            result = __LINE__;
+            result = __FAILURE__;
         }
         else
         {
@@ -1091,7 +1092,7 @@ int mqtt_client_disconnect(MQTT_CLIENT_HANDLE handle)
             {
                 /*Codes_SRS_MQTT_CLIENT_07_011: [If any failure is encountered then mqtt_client_disconnect shall return a non-zero value.]*/
                 LOG(AZ_LOG_ERROR, LOG_LINE, "Error: mqtt_client_disconnect send failed");
-                result = __LINE__;
+                result = __FAILURE__;
             }
             else
             {
