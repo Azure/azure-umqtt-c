@@ -9,7 +9,7 @@ endif()
 
 project(umqtt)
 
-set(UMQTT_VERSION 1.0.30)
+set(UMQTT_VERSION 1.0.32)
 
 # Build with -fPIC always
 set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
