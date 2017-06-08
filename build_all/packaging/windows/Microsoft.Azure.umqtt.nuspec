@@ -1,7 +1,7 @@
 <?xml version="1.0"?><package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
     <metadata>
         <id>Microsoft.Azure.umqtt</id>
-        <version>1.0.36</version>
+        <version>1.0.37</version>
         <title>Microsoft Azure umqtt</title>
         <authors>Microsoft Corp</authors>
         <owners>Azure-IoT</owners>
@@ -14,7 +14,7 @@
         <copyright>Copyright 2016</copyright>
         <tags>Microsoft Azure C Native x86 x64 native umqtt package</tags>
         <dependencies>
-            <dependency id="Microsoft.Azure.C.SharedUtility" version="1.0.36"/>
+            <dependency id="Microsoft.Azure.C.SharedUtility" version="1.0.37"/>
         </dependencies>
     </metadata>
     <files>
