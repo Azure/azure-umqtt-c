@@ -230,4 +230,4 @@ else()
 		DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azure_uamqp_c) 
 	install(TARGETS ${install_staticlibs} 
 		ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
-endif()endif() 
+endif()
