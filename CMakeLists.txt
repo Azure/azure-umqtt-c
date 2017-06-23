@@ -222,4 +222,12 @@ if(${use_installed_dependencies})
         DESTINATION
             ${package_location}
     )
-endif() 
+else()
+	set(install_staticlibs
+		umqtt
+	)
+	install(FILES ${source_h_files}
+		DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azure_uamqp_c) 
+	install(TARGETS ${install_staticlibs} 
+		ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
+endif()endif() 
