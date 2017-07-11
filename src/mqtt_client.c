@@ -913,6 +913,7 @@ int mqtt_client_publish(MQTT_CLIENT_HANDLE handle, MQTT_MESSAGE_HANDLE msgHandle
     if (mqtt_client == NULL || msgHandle == NULL)
     {
         /*Codes_SRS_MQTT_CLIENT_07_019: [If one of the parameters handle or msgHandle is NULL then mqtt_client_publish shall return a non-zero value.]*/
+        LogError("Invalid parameter specified mqtt_client: %p, msgHandle: %p", mqtt_client, msgHandle);
         result = __FAILURE__;
     }
     else
@@ -973,9 +974,10 @@ int mqtt_client_subscribe(MQTT_CLIENT_HANDLE handle, uint16_t packetId, SUBSCRIB
 {
     int result;
     MQTT_CLIENT* mqtt_client = (MQTT_CLIENT*)handle;
-    if (mqtt_client == NULL || subscribeList == NULL || count == 0)
+    if (mqtt_client == NULL || subscribeList == NULL || count == 0 || packetId == 0)
     {
         /*Codes_SRS_MQTT_CLIENT_07_013: [If any of the parameters handle, subscribeList is NULL or count is 0 then mqtt_client_subscribe shall return a non-zero value.]*/
+        LogError("Invalid parameter specified mqtt_client: %p, subscribeList: %p, count: %d, packetId: %d", mqtt_client, subscribeList, count, packetId);
         result = __FAILURE__;
     }
     else
@@ -1020,9 +1022,10 @@ int mqtt_client_unsubscribe(MQTT_CLIENT_HANDLE handle, uint16_t packetId, const 
 {
     int result;
     MQTT_CLIENT* mqtt_client = (MQTT_CLIENT*)handle;
-    if (mqtt_client == NULL || unsubscribeList == NULL || count == 0)
+    if (mqtt_client == NULL || unsubscribeList == NULL || count == 0 || packetId == 0)
     {
         /*Codes_SRS_MQTT_CLIENT_07_016: [If any of the parameters handle, unsubscribeList is NULL or count is 0 then mqtt_client_unsubscribe shall return a non-zero value.]*/
+        LogError("Invalid parameter specified mqtt_client: %p, unsubscribeList: %p, count: %d, packetId: %d", mqtt_client, unsubscribeList, count, packetId);
         result = __FAILURE__;
     }
     else

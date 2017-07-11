@@ -163,6 +163,8 @@ add_library(umqtt ${source_c_files} ${source_h_files})
 
 set(SHARED_UTIL_ADAPTER_FOLDER "${CMAKE_CURRENT_LIST_DIR}/c-utility/adapters")
 
+set_platform_files(${CMAKE_CURRENT_LIST_DIR}/c-utility)
+
 target_link_libraries(umqtt aziotsharedutil)
 
 if (NOT ${ARCHITECTURE} STREQUAL "ARM")

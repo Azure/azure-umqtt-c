@@ -1136,6 +1136,28 @@ TEST_FUNCTION(mqtt_client_subscribe_count_0_fail)
     mqtt_client_deinit(mqttHandle);
 }
 
+/* Tests_SRS_MQTT_CLIENT_07_013: [If any of the parameters handle, subscribeList is NULL or count is 0 then mqtt_client_subscribe shall return a non-zero value.]*/
+TEST_FUNCTION(mqtt_client_subscribe_packet_id_0_fail)
+{
+    // arrange
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, TestErrorCallback, NULL);
+    umock_c_reset_all_calls();
+
+    // Arrange
+
+    umock_c_reset_all_calls();
+
+    // act
+    int result = mqtt_client_subscribe(mqttHandle, 0, TEST_SUBSCRIBE_PAYLOAD, 2);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    mqtt_client_deinit(mqttHandle);
+}
+
 /*Tests_SRS_MQTT_CLIENT_07_015: [On success mqtt_client_subscribe shall send the MQTT SUBCRIBE packet to the endpoint.]*/
 TEST_FUNCTION(mqtt_client_subscribe_succeeds)
 {
@@ -1245,6 +1267,24 @@ TEST_FUNCTION(mqtt_client_unsubscribe_count_0_succeeds)
 
     // act
     int result = mqtt_client_unsubscribe(mqttHandle, TEST_PACKET_ID, TEST_UNSUBSCRIPTION_TOPIC, 0);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    mqtt_client_deinit(mqttHandle);
+}
+
+/*Tests_SRS_MQTT_CLIENT_07_016: [If any of the parameters handle, unsubscribeList is NULL or count is 0 then mqtt_client_unsubscribe shall return a non-zero value.]*/
+TEST_FUNCTION(mqtt_client_unsubscribe_packet_id_0_succeeds)
+{
+    // arrange
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, TestErrorCallback, NULL);
+    umock_c_reset_all_calls();
+
+    // act
+    int result = mqtt_client_unsubscribe(mqttHandle, 0, TEST_UNSUBSCRIPTION_TOPIC, 2);
 
     // assert
     ASSERT_ARE_NOT_EQUAL(int, 0, result);
