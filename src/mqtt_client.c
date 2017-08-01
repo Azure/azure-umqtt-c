@@ -416,16 +416,35 @@ static void onIoError(void* context)
 
 static void clear_mqtt_options(MQTT_CLIENT* mqtt_client)
 {
-    free(mqtt_client->mqttOptions.clientId);
-    mqtt_client->mqttOptions.clientId = NULL;
-    free(mqtt_client->mqttOptions.willTopic);
-    mqtt_client->mqttOptions.willTopic = NULL;
-    free(mqtt_client->mqttOptions.willMessage);
-    mqtt_client->mqttOptions.willMessage = NULL;
-    free(mqtt_client->mqttOptions.username);
-    mqtt_client->mqttOptions.username = NULL;
-    free(mqtt_client->mqttOptions.password);
-    mqtt_client->mqttOptions.password = NULL;
+    if (mqtt_client->mqttOptions.clientId != NULL)
+    {
+        free(mqtt_client->mqttOptions.clientId);
+        mqtt_client->mqttOptions.clientId = NULL;
+    }
+
+    if (mqtt_client->mqttOptions.willTopic != NULL)
+    {
+        free(mqtt_client->mqttOptions.willTopic);
+        mqtt_client->mqttOptions.willTopic = NULL;
+    }
+
+    if (mqtt_client->mqttOptions.willMessage != NULL)
+    {
+        free(mqtt_client->mqttOptions.willMessage);
+        mqtt_client->mqttOptions.willMessage = NULL;
+    }
+
+    if (mqtt_client->mqttOptions.username != NULL)
+    {
+        free(mqtt_client->mqttOptions.username);
+        mqtt_client->mqttOptions.username = NULL;
+    }
+
+    if (mqtt_client->mqttOptions.password != NULL)
+    {
+        free(mqtt_client->mqttOptions.password);
+        mqtt_client->mqttOptions.password = NULL;
+    }
 }
 
 static int cloneMqttOptions(MQTT_CLIENT* mqtt_client, const MQTT_CLIENT_OPTIONS* mqttOptions)
@@ -434,98 +453,98 @@ static int cloneMqttOptions(MQTT_CLIENT* mqtt_client, const MQTT_CLIENT_OPTIONS*
 
     if (mqttOptions->clientId != NULL)
     {
-		char* clientId;
+        char* clientId;
 
-		if (mallocAndStrcpy_s(&clientId, mqttOptions->clientId) != 0)
+        if (mallocAndStrcpy_s(&clientId, mqttOptions->clientId) != 0)
         {
             result = __FAILURE__;
             LOG(AZ_LOG_ERROR, LOG_LINE, "mallocAndStrcpy_s clientId");
         }
-		else
-		{
-			if (mqtt_client->mqttOptions.clientId != NULL)
-			{
-				free(mqtt_client->mqttOptions.clientId);
-			}
+        else
+        {
+            if (mqtt_client->mqttOptions.clientId != NULL)
+            {
+                free(mqtt_client->mqttOptions.clientId);
+            }
 
-			mqtt_client->mqttOptions.clientId = clientId;
-		}
+            mqtt_client->mqttOptions.clientId = clientId;
+        }
     }
     if (result == 0 && mqttOptions->willTopic != NULL)
     {
-		char* willTopic;
+        char* willTopic;
 
         if (mallocAndStrcpy_s(&willTopic, mqttOptions->willTopic) != 0)
         {
             result = __FAILURE__;
             LOG(AZ_LOG_ERROR, LOG_LINE, "mallocAndStrcpy_s willTopic");
         }
-		else
-		{
-			if (mqtt_client->mqttOptions.willTopic != NULL)
-			{
-				free(mqtt_client->mqttOptions.willTopic);
-			}
+        else
+        {
+            if (mqtt_client->mqttOptions.willTopic != NULL)
+            {
+                free(mqtt_client->mqttOptions.willTopic);
+            }
 
-			mqtt_client->mqttOptions.willTopic = willTopic;
-		}
+            mqtt_client->mqttOptions.willTopic = willTopic;
+        }
     }
     if (result == 0 && mqttOptions->willMessage != NULL)
     {
-		char* willMessage;
+        char* willMessage;
 
         if (mallocAndStrcpy_s(&willMessage, mqttOptions->willMessage) != 0)
         {
             LOG(AZ_LOG_ERROR, LOG_LINE, "mallocAndStrcpy_s willMessage");
             result = __FAILURE__;
         }
-		else
-		{
-			if (mqtt_client->mqttOptions.willMessage != NULL)
-			{
-				free(mqtt_client->mqttOptions.willMessage);
-			}
+        else
+        {
+            if (mqtt_client->mqttOptions.willMessage != NULL)
+            {
+                free(mqtt_client->mqttOptions.willMessage);
+            }
 
-			mqtt_client->mqttOptions.willMessage = willMessage;
-		}
+            mqtt_client->mqttOptions.willMessage = willMessage;
+        }
     }
     if (result == 0 && mqttOptions->username != NULL)
     {
-		char* username;
+        char* username;
 
         if (mallocAndStrcpy_s(&username, mqttOptions->username) != 0)
         {
             LOG(AZ_LOG_ERROR, LOG_LINE, "mallocAndStrcpy_s username");
             result = __FAILURE__;
         }
-		else
-		{
-			if (mqtt_client->mqttOptions.username != NULL)
-			{
-				free(mqtt_client->mqttOptions.username);
-			}
+        else
+        {
+            if (mqtt_client->mqttOptions.username != NULL)
+            {
+                free(mqtt_client->mqttOptions.username);
+            }
 
-			mqtt_client->mqttOptions.username = username;
-		}
+            mqtt_client->mqttOptions.username = username;
+        }
     }
     if (result == 0 && mqttOptions->password != NULL)
     {
-		char* password;
+        char* password;
 
         if (mallocAndStrcpy_s(&password, mqttOptions->password) != 0)
         {
             LOG(AZ_LOG_ERROR, LOG_LINE, "mallocAndStrcpy_s password");
             result = __FAILURE__;
         }
-		else
-		{
-			if (mqtt_client->mqttOptions.password != NULL)
-			{
-				free(mqtt_client->mqttOptions.password);
-			}
+        else
+        {
+            if (mqtt_client->mqttOptions.password != NULL)
+            {
+                free(mqtt_client->mqttOptions.password);
+            }
 
-			mqtt_client->mqttOptions.password = password;
-		}
+            mqtt_client->mqttOptions.password = password;
+        }
     }
     if (result == 0)
     {
@@ -910,6 +929,7 @@ void mqtt_client_deinit(MQTT_CLIENT_HANDLE handle)
         MQTT_CLIENT* mqtt_client = (MQTT_CLIENT*)handle;
         tickcounter_destroy(mqtt_client->packetTickCntr);
         mqtt_codec_destroy(mqtt_client->codec_handle);
+        clear_mqtt_options(mqtt_client);
         free(mqtt_client);
     }
 }
