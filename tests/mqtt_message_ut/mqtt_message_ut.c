@@ -166,6 +166,37 @@ TEST_FUNCTION(mqttmessage_create_succeed)
     mqttmessage_destroy(handle);
 }
 
+/* Tests_SRS_MQTTMESSAGE_07_028: [If any memory allocation fails mqttmessage_create_in_place shall free any allocated memory and return NULL.] */
+TEST_FUNCTION(mqttmessage_create_in_place_topic_name_name_fail)
+{
+    // arrange
+
+    // act
+    MQTT_MESSAGE_HANDLE handle = mqttmessage_create_in_place(TEST_PACKET_ID, NULL, DELIVER_AT_MOST_ONCE, TEST_MESSAGE, TEST_MSG_LEN);
+
+    // assert
+    ASSERT_IS_NULL(handle);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+/* Tests_SRS_MQTTMESSAGE_07_027: [mqttmessage_create_in_place shall use the a pointer to topicName or appMsg .] */
+/* Tests_SRS_MQTTMESSAGE_07_029: [ Upon success, mqttmessage_create_in_place shall return a NON-NULL MQTT_MESSAGE_HANDLE value.] */
+/* Tests_SRS_MQTTMESSAGE_07_026: [If the parameters topicName is NULL then mqttmessage_create_in_place shall return NULL.].] */
+TEST_FUNCTION(mqttmessage_create_in_place_succeed)
+{
+    // arrange
+    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+
+    // act
+    MQTT_MESSAGE_HANDLE handle = mqttmessage_create_in_place(TEST_PACKET_ID, TEST_TOPIC_NAME, DELIVER_AT_MOST_ONCE, TEST_MESSAGE, TEST_MSG_LEN);
+
+    // assert
+    ASSERT_IS_NOT_NULL(handle);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    mqttmessage_destroy(handle);
+}
+
 /* Test_SRS_MQTTMESSAGE_07_006: [mqttmessage_destroyMessage shall free all resources associated with the MQTT_MESSAGE_HANDLE value] */
 TEST_FUNCTION(mqttmessage_destroy_succeed)
 {
@@ -175,6 +206,21 @@ TEST_FUNCTION(mqttmessage_destroy_succeed)
 
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+
+    // act
+    mqttmessage_destroy(handle);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
+TEST_FUNCTION(mqttmessage_destroy_inplace_succeed)
+{
+    // arrange
+    MQTT_MESSAGE_HANDLE handle = mqttmessage_create_in_place(TEST_PACKET_ID, TEST_TOPIC_NAME, DELIVER_AT_MOST_ONCE, TEST_MESSAGE, TEST_MSG_LEN);
+    umock_c_reset_all_calls();
+
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
