@@ -845,11 +845,13 @@ static void recvCompleteCallback(void* context, CONTROL_PACKET_TYPE packet, int 
                         log_incoming_trace(mqtt_client, trace_log);
                         STRING_delete(trace_log);
                     }
+#ifdef UMQTT_PINGRESP_CALLBACK
+                    // Let library user decide whether to forward ping response to operation callback and do not break existing implementations
                     if (mqtt_client->fnOperationCallback)
                     {
-                        /*Codes_SRS_MQTT_CLIENT_20_001: [If the actionResult parameter is of type PINGRESP_TYPE then the msgInfo value shall be NULL.]*/
                         mqtt_client->fnOperationCallback(mqtt_client, MQTT_CLIENT_ON_PING_RESPONSE, NULL, mqtt_client->ctx);
                     }
+#endif // UMQTT_PINGRESP_CALLBACK
                     break;
                 default:
                     break;
