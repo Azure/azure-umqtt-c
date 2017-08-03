@@ -158,6 +158,10 @@ ELSE()
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")
 ENDIF(WIN32)
 
+if(${memory_trace})
+    add_definitions(-DGB_MEASURE_MEMORY_FOR_THIS -DGB_DEBUG_ALLOC)
+endif()
+
 #this is the product (a library)
 add_library(umqtt ${source_c_files} ${source_h_files})
 
@@ -225,12 +229,12 @@ if(${use_installed_dependencies})
             ${package_location}
     )
 else()
-	set(install_staticlibs
-		umqtt
-	)
-	install(FILES ${source_h_files}
-		DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azure_umqtt_c) 
-	install(TARGETS ${install_staticlibs} 
-		LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-		ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
+    set(install_staticlibs
+        umqtt
+    )
+    install(FILES ${source_h_files}
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/azure_umqtt_c) 
+    install(TARGETS ${install_staticlibs} 
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
 endif()
