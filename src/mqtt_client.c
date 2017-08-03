@@ -250,7 +250,7 @@ static void log_outgoing_trace(MQTT_CLIENT* mqtt_client, STRING_HANDLE trace_log
     }
 }
 
-static void logOutgoingingRawTrace(MQTT_CLIENT* mqtt_client, const uint8_t* data, size_t length)
+static void logOutgoingRawTrace(MQTT_CLIENT* mqtt_client, const uint8_t* data, size_t length)
 {
     if (mqtt_client != NULL && data != NULL && length > 0 && mqtt_client->rawBytesTrace)
     {
@@ -325,7 +325,7 @@ static int sendPacketItem(MQTT_CLIENT* mqtt_client, const unsigned char* data, s
         }
         else
         {
-            logOutgoingingRawTrace(mqtt_client, (const uint8_t*)data, length);
+            logOutgoingRawTrace(mqtt_client, (const uint8_t*)data, length);
         }
     }
     return result;
@@ -825,7 +825,6 @@ static void recvCompleteCallback(void* context, CONTROL_PACKET_TYPE packet, int 
 
                         /*Codes_SRS_MQTT_CLIENT_07_031: [If the actionResult parameter is of type UNSUBACK_TYPE then the msgInfo value shall be a UNSUBSCRIBE_ACK structure.]*/
                         UNSUBSCRIBE_ACK unsuback = { 0 };
-                        iterator += VARIABLE_HEADER_OFFSET;
                         unsuback.packetId = byteutil_read_uint16(&iterator, len);
 
                         if (mqtt_client->logTrace)
@@ -840,12 +839,16 @@ static void recvCompleteCallback(void* context, CONTROL_PACKET_TYPE packet, int 
                 }
                 case PINGRESP_TYPE:
                     mqtt_client->timeSincePing = 0;
-                    // Ping responses do not get forwarded
                     if (mqtt_client->logTrace)
                     {
                         STRING_HANDLE trace_log = STRING_construct_sprintf("PINGRESP");
                         log_incoming_trace(mqtt_client, trace_log);
                         STRING_delete(trace_log);
+                    }
+                    if (mqtt_client->fnOperationCallback)
+                    {
+                        /*Codes_SRS_MQTT_CLIENT_20_001: [If the actionResult parameter is of type PINGRESP_TYPE then the msgInfo value shall be NULL.]*/
+                        mqtt_client->fnOperationCallback(mqtt_client, MQTT_CLIENT_ON_PING_RESPONSE, NULL, mqtt_client->ctx);
                     }
                     break;
                 default:
