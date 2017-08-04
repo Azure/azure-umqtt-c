@@ -2453,7 +2453,7 @@ TEST_FUNCTION(mqtt_client_recvCompleteCallback_SUBACK_succeeds)
 TEST_FUNCTION(mqtt_client_recvCompleteCallback_UNSUBACK_succeeds)
 {
     // arrange
-    unsigned char UNSUBSCRIBE_ACK_RESP[] = { 0xB0, 0x02, 0x12, 0x34 };
+    unsigned char UNSUBSCRIBE_ACK_RESP[] = { 0x12, 0x34 };
     size_t length = sizeof(UNSUBSCRIBE_ACK_RESP) / sizeof(UNSUBSCRIBE_ACK_RESP[0]);
     TEST_COMPLETE_DATA_INSTANCE testData;
     UNSUBSCRIBE_ACK unsuback = { 0 };
