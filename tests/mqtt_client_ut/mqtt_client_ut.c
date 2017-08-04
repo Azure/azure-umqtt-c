@@ -615,12 +615,17 @@ static void TestOpCallback(MQTT_CLIENT_HANDLE handle, MQTT_CLIENT_EVENT_RESULT a
         }
         case MQTT_CLIENT_ON_DISCONNECT:
         {
-            if (msgInfo != NULL)
+            if (msgInfo == NULL)
             {
-                if (msgInfo == NULL)
-                {
-                    g_operationCallbackInvoked = true;
-                }
+                g_operationCallbackInvoked = true;
+            }
+            break;
+        }
+        case MQTT_CLIENT_ON_PING_RESPONSE:
+        {
+            if (msgInfo == NULL)
+            {
+                g_operationCallbackInvoked = true;
             }
             break;
         }
@@ -2453,7 +2458,7 @@ TEST_FUNCTION(mqtt_client_recvCompleteCallback_SUBACK_succeeds)
 TEST_FUNCTION(mqtt_client_recvCompleteCallback_UNSUBACK_succeeds)
 {
     // arrange
-    unsigned char UNSUBSCRIBE_ACK_RESP[] = { 0xB0, 0x02, 0x12, 0x34 };
+    unsigned char UNSUBSCRIBE_ACK_RESP[] = { 0x12, 0x34 };
     size_t length = sizeof(UNSUBSCRIBE_ACK_RESP) / sizeof(UNSUBSCRIBE_ACK_RESP[0]);
     TEST_COMPLETE_DATA_INSTANCE testData;
     UNSUBSCRIBE_ACK unsuback = { 0 };
