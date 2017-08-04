@@ -615,12 +615,17 @@ static void TestOpCallback(MQTT_CLIENT_HANDLE handle, MQTT_CLIENT_EVENT_RESULT a
         }
         case MQTT_CLIENT_ON_DISCONNECT:
         {
-            if (msgInfo != NULL)
+            if (msgInfo == NULL)
             {
-                if (msgInfo == NULL)
-                {
-                    g_operationCallbackInvoked = true;
-                }
+                g_operationCallbackInvoked = true;
+            }
+            break;
+        }
+        case MQTT_CLIENT_ON_PING_RESPONSE:
+        {
+            if (msgInfo == NULL)
+            {
+                g_operationCallbackInvoked = true;
             }
             break;
         }
