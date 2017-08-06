@@ -26,7 +26,7 @@ MQTT_MESSAGE_HANDLE mqttmessage_create_in_place(uint16_t packetId, const char* t
 {
     /* Codes_SRS_MQTTMESSAGE_07_026: [If the parameters topicName is NULL then mqttmessage_create_in_place shall return NULL.].] */
     MQTT_MESSAGE* result;
-    if (topicName == NULL || packetId == 0)
+    if (topicName == NULL)
     {
         LogError("Invalid Parameter topicName: %p, packetId: %d.", topicName, packetId);
         result = NULL;
