@@ -143,6 +143,7 @@ MQTT_MESSAGE_HANDLE mqttmessage_clone(MQTT_MESSAGE_HANDLE handle)
     if (handle == NULL)
     {
         /* Codes_SRS_MQTTMESSAGE_07_007: [If handle parameter is NULL then mqttmessage_clone shall return NULL.] */
+        LogError("Invalid Parameter handle: %p.", handle);
         result = NULL;
     }
     else
@@ -165,6 +166,7 @@ uint16_t mqttmessage_getPacketId(MQTT_MESSAGE_HANDLE handle)
     if (handle == NULL)
     {
         /* Codes_SRS_MQTTMESSAGE_07_010: [If handle is NULL then mqttmessage_getPacketId shall return 0.] */
+        LogError("Invalid Parameter handle: %p.", handle);
         result = 0;
     }
     else
@@ -182,6 +184,7 @@ const char* mqttmessage_getTopicName(MQTT_MESSAGE_HANDLE handle)
     if (handle == NULL)
     {
         /* Codes_SRS_MQTTMESSAGE_07_012: [If handle is NULL then mqttmessage_getTopicName shall return a NULL string.] */
+        LogError("Invalid Parameter handle: %p.", handle);
         result = NULL;
     }
     else
@@ -206,6 +209,7 @@ QOS_VALUE mqttmessage_getQosType(MQTT_MESSAGE_HANDLE handle)
     if (handle == NULL)
     {
         /* Codes_SRS_MQTTMESSAGE_07_014: [If handle is NULL then mqttmessage_getQosType shall return the default DELIVER_AT_MOST_ONCE value.] */
+        LogError("Invalid Parameter handle: %p.", handle);
         result = DELIVER_AT_MOST_ONCE;
     }
     else
@@ -223,6 +227,7 @@ bool mqttmessage_getIsDuplicateMsg(MQTT_MESSAGE_HANDLE handle)
     if (handle == NULL)
     {
         /* Codes_SRS_MQTTMESSAGE_07_016: [If handle is NULL then mqttmessage_getIsDuplicateMsg shall return false.] */
+        LogError("Invalid Parameter handle: %p.", handle);
         result = false;
     }
     else
@@ -240,6 +245,7 @@ bool mqttmessage_getIsRetained(MQTT_MESSAGE_HANDLE handle)
     if (handle == NULL)
     {
         /* Codes_SRS_MQTTMESSAGE_07_018: [If handle is NULL then mqttmessage_getIsRetained shall return false.] */
+        LogError("Invalid Parameter handle: %p.", handle);
         result = false;
     }
     else
@@ -257,6 +263,7 @@ int mqttmessage_setIsDuplicateMsg(MQTT_MESSAGE_HANDLE handle, bool duplicateMsg)
     /* Codes_SRS_MQTTMESSAGE_07_022: [If handle is NULL then mqttmessage_setIsDuplicateMsg shall return a non-zero value.] */
     if (handle == NULL)
     {
+        LogError("Invalid Parameter handle: %p.", handle);
         result = __FAILURE__;
     }
     else
@@ -275,6 +282,7 @@ int mqttmessage_setIsRetained(MQTT_MESSAGE_HANDLE handle, bool retainMsg)
     /* Codes_SRS_MQTTMESSAGE_07_024: [If handle is NULL then mqttmessage_setIsRetained shall return a non-zero value.] */
     if (handle == NULL)
     {
+        LogError("Invalid Parameter handle: %p.", handle);
         result = __FAILURE__;
     }
     else
@@ -293,23 +301,20 @@ const APP_PAYLOAD* mqttmessage_getApplicationMsg(MQTT_MESSAGE_HANDLE handle)
     if (handle == NULL)
     {
         /* Codes_SRS_MQTTMESSAGE_07_020: [If handle is NULL or if msgLen is 0 then mqttmessage_getApplicationMsg shall return NULL.] */
+        LogError("Invalid Parameter handle: %p.", handle);
         result = NULL;
     }
     else
     {
         /* Codes_SRS_MQTTMESSAGE_07_021: [mqttmessage_getApplicationMsg shall return the applicationMsg value contained in MQTT_MESSAGE_HANDLE handle and the length of the appMsg in the msgLen parameter.] */
         MQTT_MESSAGE* msgInfo = (MQTT_MESSAGE*)handle;
-        if (msgInfo->appPayload.length > 0)
-        {
-            result = &msgInfo->appPayload;
-        }
-        else if (msgInfo->const_payload.length > 0)
+        if (msgInfo->const_payload.length > 0)
         {
             result = &msgInfo->const_payload;
         }
         else
         {
-            result = NULL;
+            result = &msgInfo->appPayload;
         }
     }
     return result;
