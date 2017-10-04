@@ -541,7 +541,7 @@ static int prepareheaderDataInfo(MQTTCODEC_INSTANCE* codecData, uint8_t remainLe
     {
         result = 0;
         codecData->storeRemainLen[codecData->remainLenIndex++] = remainLen;
-        if (remainLen < 0x7f)
+        if (remainLen <= 0x7f)
         {
             int multiplier = 1;
             int totalLen = 0;

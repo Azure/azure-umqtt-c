@@ -1459,6 +1459,51 @@ TEST_FUNCTION(mqtt_codec_bytesReceived_connack_auth_reject_succeed)
 
 /* Codes_SRS_MQTT_CODEC_07_033: [mqtt_codec_bytesReceived constructs a sequence of bytes into the corresponding MQTT packets and on success returns zero.] */
 /* Codes_SRS_MQTT_CODEC_07_034: [Upon a constructing a complete MQTT packet mqtt_codec_bytesReceived shall call the ON_PACKET_COMPLETE_CALLBACK function.] */
+TEST_FUNCTION(mqtt_codec_bytesReceived_publish_2_succeed)
+{
+    g_curr_packet_type = PUBLISH_TYPE;
+
+    // arrange
+    unsigned char PUBLISH_RESP_1[] = { 0x30, 0x7f, 0x00, 0x04, 0x6d, 0x73, 0x67, 0x42, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41 };
+    unsigned char PUBLISH_RESP_2[] = { 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41 };
+    unsigned char PUBLISH_RESP_3[] = { 0x41 };
+
+    unsigned char PUBLISH_RESULT[] = { 0x30, 0x7f, 0x00, 0x04, 0x6d, 0x73, 0x67, 0x42, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41 };
+    size_t length = sizeof(PUBLISH_RESULT) / sizeof(PUBLISH_RESULT[0]);
+
+    TEST_COMPLETE_DATA_INSTANCE testData = { 0 };
+    testData.dataHeader = PUBLISH_RESULT + FIXED_HEADER_SIZE;
+    testData.Length = length - FIXED_HEADER_SIZE;
+
+    MQTTCODEC_HANDLE handle = mqtt_codec_create(TestOnCompleteCallback, &testData);
+
+    umock_c_reset_all_calls();
+
+    EXPECTED_CALL(BUFFER_new());
+    EXPECTED_CALL(BUFFER_pre_build(IGNORED_PTR_ARG, IGNORED_NUM_ARG));
+    for (size_t index = 0; index < testData.Length; index++)
+    {
+        EXPECTED_CALL(BUFFER_u_char(IGNORED_PTR_ARG));
+        EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG));
+    }
+    EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG));
+
+
+    // act
+    mqtt_codec_bytesReceived(handle, PUBLISH_RESP_1, sizeof(PUBLISH_RESP_1) / sizeof(PUBLISH_RESP_1[0]));
+    mqtt_codec_bytesReceived(handle, PUBLISH_RESP_2, sizeof(PUBLISH_RESP_2) / sizeof(PUBLISH_RESP_2[0]));
+    mqtt_codec_bytesReceived(handle, PUBLISH_RESP_3, sizeof(PUBLISH_RESP_3) / sizeof(PUBLISH_RESP_3[0]));
+
+    // assert
+    ASSERT_IS_TRUE(g_callbackInvoked);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    mqtt_codec_destroy(handle);
+}
+
+/* Codes_SRS_MQTT_CODEC_07_033: [mqtt_codec_bytesReceived constructs a sequence of bytes into the corresponding MQTT packets and on success returns zero.] */
+/* Codes_SRS_MQTT_CODEC_07_034: [Upon a constructing a complete MQTT packet mqtt_codec_bytesReceived shall call the ON_PACKET_COMPLETE_CALLBACK function.] */
 TEST_FUNCTION(mqtt_codec_bytesReceived_puback_succeed)
 {
     // arrange
@@ -1550,8 +1595,9 @@ TEST_FUNCTION(mqtt_codec_bytesReceived_publish_long_message_succeed)
         0x25,  0x35,  0x42,  0x53,  0x79,  0x73,  0x74,  0x65,  0x6d,  0x2e,  0x42,  0x79,  0x74,  0x65,  0x25,  0x35,  0x44,  0x00,  0x0e,  0x4d,
         0x4c,  0x42
     };
-
     size_t length = sizeof(PUBLISH) / sizeof(PUBLISH[0]);
+
+    // Need to add 1 because the size if two bytes instead of 1
     TEST_COMPLETE_DATA_INSTANCE testData = { 0 };
     testData.dataHeader = PUBLISH + (FIXED_HEADER_SIZE + 1);
     testData.Length = length - (FIXED_HEADER_SIZE + 1);
@@ -1618,6 +1664,46 @@ TEST_FUNCTION(mqtt_codec_bytesReceived_publish_succeed)
         // Send 1 byte at a time
         mqtt_codec_bytesReceived(handle, PUBLISH + index, 1);
     }
+
+    // assert
+    ASSERT_IS_TRUE(g_callbackInvoked);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    mqtt_codec_destroy(handle);
+}
+
+/* Codes_SRS_MQTT_CODEC_07_033: [mqtt_codec_bytesReceived constructs a sequence of bytes into the corresponding MQTT packets and on success returns zero.] */
+/* Codes_SRS_MQTT_CODEC_07_034: [Upon a constructing a complete MQTT packet mqtt_codec_bytesReceived shall call the ON_PACKET_COMPLETE_CALLBACK function.] */
+TEST_FUNCTION(mqtt_codec_bytesReceived_publish_full_succeed)
+{
+    // arrange
+    size_t i;
+    g_curr_packet_type = PUBLISH_TYPE;
+
+    //                            1    2     3     4     T     o     p     i     c     10    11    d     a     t     a     sp    M     s     g
+    unsigned char PUBLISH[] = { 0x3F, 0x11, 0x00, 0x06, 0x54, 0x6f, 0x70, 0x69, 0x63, 0x12, 0x34, 0x64, 0x61, 0x74, 0x61, 0x20, 0x4d, 0x73, 0x67 };
+    size_t length = sizeof(PUBLISH) / sizeof(PUBLISH[0]);
+
+    TEST_COMPLETE_DATA_INSTANCE testData = { 0 };
+    testData.dataHeader = PUBLISH + FIXED_HEADER_SIZE;
+    testData.Length = length - FIXED_HEADER_SIZE;
+
+    MQTTCODEC_HANDLE handle = mqtt_codec_create(TestOnCompleteCallback, &testData);
+
+    umock_c_reset_all_calls();
+
+    EXPECTED_CALL(BUFFER_new());
+    EXPECTED_CALL(BUFFER_pre_build(IGNORED_PTR_ARG, IGNORED_NUM_ARG));
+    for (i = 0; i < testData.Length; i++)
+    {
+        EXPECTED_CALL(BUFFER_u_char(IGNORED_PTR_ARG));
+        EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG));
+    }
+    EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG));
+
+    // act
+    mqtt_codec_bytesReceived(handle, PUBLISH, length);
 
     // assert
     ASSERT_IS_TRUE(g_callbackInvoked);
