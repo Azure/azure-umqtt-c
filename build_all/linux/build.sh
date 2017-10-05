@@ -17,7 +17,7 @@ usage ()
     echo "options"
     echo " -cl, --compileoption <value> specify a compile option to be passed to gcc"
     echo " Example: -cl -O1 -cl ..."
-	echo "-rv, --run_valgrind will execute ctest with valgrind"
+    echo "-rv, --run_valgrind will execute ctest with valgrind"
     echo "--run-unittests do not build or run unit tests"
     echo ""
     exit 1
@@ -37,7 +37,7 @@ process_args ()
       else
           case "$arg" in
               "-cl" | "--compileoption" ) save_next_arg=1;;
-			  "-rv" | "--run_valgrind" ) run_valgrind=1;;
+              "-rv" | "--run_valgrind" ) run_valgrind=1;;
               "--run-unittests" ) run_unittests=ON;;
               * ) usage;;
           esac
@@ -55,12 +55,12 @@ make --jobs=$(nproc)
 
 if [[ $run_valgrind == 1 ]] ;
 then
-	#use doctored openssl
-	export LD_LIBRARY_PATH=/usr/local/ssl/lib
-	ctest -j $(nproc) --output-on-failure
-	export LD_LIBRARY_PATH=
+    #use doctored openssl
+    export LD_LIBRARY_PATH=/usr/local/ssl/lib
+    ctest -j $(nproc) --output-on-failure
+    export LD_LIBRARY_PATH=
 else
-	ctest -j $(nproc) -C "Debug" --output-on-failure
+    ctest -j $(nproc) -C "Debug" --output-on-failure
 fi
 
 popd

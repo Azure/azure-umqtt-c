@@ -3,6 +3,6 @@
 
 cmake_minimum_required(VERSION 2.8.11)
 
-set(shared_util_base_path ../../c-utility)
+set(shared_util_base_path ../../deps/c-utility)
 set(mbed_project_base "azure_umqtt_c" CACHE STRING "The item being built")
 include (${shared_util_base_path}/tools/mbed_build_scripts/mbedbldtemplate.txt)

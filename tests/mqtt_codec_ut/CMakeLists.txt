@@ -12,7 +12,7 @@ ${theseTestsName}.c
 
 set(${theseTestsName}_c_files
 ../../src/mqtt_codec.c
-${SHARED_UTIL_REAL_TEST_FOLDER}/real_buffer.c
+../../deps/c-utility/tests/real_test_files/real_buffer.c
 )
 
 set(${theseTestsName}_h_files

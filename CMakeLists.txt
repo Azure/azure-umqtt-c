@@ -38,6 +38,13 @@ option(compileOption_C "passes a string to the command line of the C compiler" O
 option(compileOption_CXX "passes a string to the command line of the C++ compiler" OFF)
 option(use_installed_dependencies "set use_installed_dependencies to ON to use installed packages instead of building dependencies from submodules" OFF)
 
+#do not add or build any tests of the dependencies
+set(original_run_e2e_tests ${run_e2e_tests})
+set(original_run_unittests ${run_unittests})
+
+set(run_e2e_tests OFF)
+set(run_unittests OFF)
+
 #Use solution folders. 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
@@ -73,6 +80,9 @@ endif()
 message(STATUS "MQTT Target architecture: ${ARCHITECTURE}") 
 
 include("dependencies.cmake")
+
+set(run_e2e_tests ${original_run_e2e_tests})
+set(run_unittests ${original_run_unittests})
 
 enable_testing()
 
@@ -165,9 +175,9 @@ endif()
 #this is the product (a library)
 add_library(umqtt ${source_c_files} ${source_h_files})
 
-set(SHARED_UTIL_ADAPTER_FOLDER "${CMAKE_CURRENT_LIST_DIR}/c-utility/adapters")
+set(SHARED_UTIL_ADAPTER_FOLDER "${CMAKE_CURRENT_LIST_DIR}/deps/c-utility/adapters")
 
-set_platform_files(${CMAKE_CURRENT_LIST_DIR}/c-utility)
+set_platform_files(${CMAKE_CURRENT_LIST_DIR}/deps/c-utility)
 
 target_link_libraries(umqtt aziotsharedutil)
 
