@@ -1380,6 +1380,67 @@ TEST_FUNCTION(mqtt_codec_bytesReceived_buffer_Len_0_fails)
     mqtt_codec_destroy(handle);
 }
 
+/* Codes_SRS_MQTT_CODEC_07_035: [ If any error is encountered then the packet state will be marked as error and mqtt_codec_bytesReceived shall return a non-zero value. ] */
+TEST_FUNCTION(mqtt_codec_bytesReceived_buffer_BUFFER_pre_build_fails)
+{
+    // arrange
+    int result;
+    g_curr_packet_type = UNSUBACK_TYPE;
+
+    unsigned char UNSUBACK_RESP[] = { 0xB0, 0x5, 0x12, 0x34, 0x01, 0x80, 0x02 };
+    size_t length = sizeof(UNSUBACK_RESP) / sizeof(UNSUBACK_RESP[0]);
+
+    TEST_COMPLETE_DATA_INSTANCE testData = { 0 };
+    testData.dataHeader = UNSUBACK_RESP + FIXED_HEADER_SIZE;
+    testData.Length = length - FIXED_HEADER_SIZE;
+    MQTTCODEC_HANDLE handle = mqtt_codec_create(TestOnCompleteCallback, &testData);
+
+    umock_c_reset_all_calls();
+
+    EXPECTED_CALL(BUFFER_new());
+    EXPECTED_CALL(BUFFER_pre_build(IGNORED_PTR_ARG, IGNORED_NUM_ARG).SetReturn(__FAILURE__));
+
+    // act
+    result = mqtt_codec_bytesReceived(handle, UNSUBACK_RESP, length);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, result, 0);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    mqtt_codec_destroy(handle);
+}
+
+/* Codes_SRS_MQTT_CODEC_07_035: [ If any error is encountered then the packet state will be marked as error and mqtt_codec_bytesReceived shall return a non-zero value. ] */
+TEST_FUNCTION(mqtt_codec_bytesReceived_buffer_BUFFER_new_fails)
+{
+    // arrange
+    int result;
+    g_curr_packet_type = UNSUBACK_TYPE;
+
+    unsigned char UNSUBACK_RESP[] = { 0xB0, 0x5, 0x12, 0x34, 0x01, 0x80, 0x02 };
+    size_t length = sizeof(UNSUBACK_RESP) / sizeof(UNSUBACK_RESP[0]);
+
+    TEST_COMPLETE_DATA_INSTANCE testData = { 0 };
+    testData.dataHeader = UNSUBACK_RESP + FIXED_HEADER_SIZE;
+    testData.Length = length - FIXED_HEADER_SIZE;
+    MQTTCODEC_HANDLE handle = mqtt_codec_create(TestOnCompleteCallback, &testData);
+
+    umock_c_reset_all_calls();
+
+    EXPECTED_CALL(BUFFER_new().SetReturn(NULL));
+
+    // act
+    result = mqtt_codec_bytesReceived(handle, UNSUBACK_RESP, length);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, result, 0);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    mqtt_codec_destroy(handle);
+}
+
 /* Codes_SRS_MQTT_CODEC_07_033: [mqtt_codec_bytesReceived constructs a sequence of bytes into the corresponding MQTT packets and on success returns zero.] */
 /* Codes_SRS_MQTT_CODEC_07_034: [Upon a constructing a complete MQTT packet mqtt_codec_bytesReceived shall call the ON_PACKET_COMPLETE_CALLBACK function.] */
 TEST_FUNCTION(mqtt_codec_bytesReceived_connack_succeed)
