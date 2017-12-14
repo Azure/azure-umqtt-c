@@ -9,7 +9,7 @@ endif()
 
 project(umqtt)
 
-set(UMQTT_VERSION 1.0.48)
+set(UMQTT_VERSION 1.0.49)
 
 # Include the common build rules for the C SDK
 include(deps/c-utility/configs/azure_iot_build_rules.cmake)
