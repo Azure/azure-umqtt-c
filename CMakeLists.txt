@@ -11,6 +11,9 @@ project(umqtt)
 
 set(UMQTT_VERSION 1.0.48)
 
+set(GENERIC_LIB_VERSION ${UMQTT_VERSION})
+string(SUBSTRING ${UMQTT_VERSION} 0 1 GENERIC_LIB_SOVERSION)
+
 # Include the common build rules for the C SDK
 include(deps/c-utility/configs/azure_iot_build_rules.cmake)
 
@@ -71,6 +74,13 @@ set(SHARED_UTIL_ADAPTER_FOLDER "${CMAKE_CURRENT_LIST_DIR}/deps/c-utility/adapter
 set_platform_files(${CMAKE_CURRENT_LIST_DIR}/deps/c-utility)
 
 target_link_libraries(umqtt aziotsharedutil)
+if (NOT WIN32)
+    set_target_properties(umqtt
+        PROPERTIES
+        VERSION ${GENERIC_LIB_VERSION}
+        SOVERSION ${GENERIC_LIB_SOVERSION}
+    )
+endif()
 
 if (NOT ${ARCHITECTURE} STREQUAL "ARM")
     if (NOT ${skip_samples})
