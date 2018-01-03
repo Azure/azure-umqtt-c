@@ -16,7 +16,6 @@
 #include "azure_umqtt_c/mqtt_codec.h"
 #include <inttypes.h>
 
-#define KEEP_ALIVE_BUFFER_SEC           10
 #define VARIABLE_HEADER_OFFSET          2
 #define RETAIN_FLAG_MASK                0x1
 #define QOS_LEAST_ONCE_FLAG_MASK        0x2
@@ -1223,7 +1222,7 @@ void mqtt_client_dowork(MQTT_CLIENT_HANDLE handle)
                     mqtt_client->packetSendTimeMs = 0;
                     mqtt_client->packetState = UNKNOWN_TYPE;
                 }
-                else if ((((current_ms - mqtt_client->packetSendTimeMs) / 1000) + KEEP_ALIVE_BUFFER_SEC) > mqtt_client->keepAliveInterval)
+                else if (((current_ms - mqtt_client->packetSendTimeMs) / 1000) >= mqtt_client->keepAliveInterval)
                 {
                     /*Codes_SRS_MQTT_CLIENT_07_026: [if keepAliveInternal is > 0 and the send time is greater than the MQTT KeepAliveInterval then it shall construct an MQTT PINGREQ packet.]*/
                     BUFFER_HANDLE pingPacket = mqtt_codec_ping();

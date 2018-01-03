@@ -1,6 +1,5 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
-
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -18,6 +17,7 @@ static const char* APP_NAME_A = "This is the app msg A.";
 
 static uint16_t PACKET_ID_VALUE = 11;
 static bool g_continue = true;
+static bool g_close_complete = true;
 
 #define PORT_NUM_UNENCRYPTED        1883
 #define PORT_NUM_ENCRYPTED          8883
@@ -60,7 +60,8 @@ static void OnCloseComplete(void* context)
 {
     (void)context;
 
-    (void)printf("%d: On Close Connection failed\r\n", __LINE__);
+    (void)printf("On Close Connection called\r\n");
+    g_close_complete = false;
 }
 
 static void OnOperationComplete(MQTT_CLIENT_HANDLE handle, MQTT_CLIENT_EVENT_RESULT actionResult, const void* msgInfo, void* callbackCtx)
@@ -131,6 +132,8 @@ static void OnOperationComplete(MQTT_CLIENT_HANDLE handle, MQTT_CLIENT_EVENT_RES
         {
             break;
         }
+        case MQTT_CLIENT_ON_PING_RESPONSE:
+            break;
         default:
         {
             (void)printf("unexpected value received for enumeration (%d)\n", (int)actionResult);
@@ -170,6 +173,8 @@ void mqtt_client_sample_run()
         }
         else
         {
+            mqtt_client_set_trace(mqttHandle, false, false);
+
             MQTT_CLIENT_OPTIONS options = { 0 };
             options.clientId = "azureiotclient";
             options.willMessage = NULL;
@@ -200,13 +205,16 @@ void mqtt_client_sample_run()
                     } while (g_continue);
                 }
                 xio_close(xio, OnCloseComplete, NULL);
+
+                // Wait for the close connection gets called
+                do
+                {
+                    mqtt_client_dowork(mqttHandle);
+                } while (g_close_complete);
+                xio_destroy(xio);
             }
             mqtt_client_deinit(mqttHandle);
         }
         platform_deinit();
     }
-
-#ifdef _CRT_DBG_MAP_ALLOC
-    _CrtDumpMemoryLeaks();
-#endif
 }
