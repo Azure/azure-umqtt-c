@@ -115,7 +115,7 @@ typedef struct TEST_COMPLETE_DATA_INSTANCE_TAG
 TEST_MUTEX_HANDLE test_serialize_mutex;
 
 #define TEST_CONTEXT ((const void*)0x4242)
-#define MAX_CLOSE_RETRIES               10
+#define MAX_CLOSE_RETRIES               2
 #define CLOSE_SLEEP_VALUE               2
 
 #ifdef __cplusplus
@@ -675,6 +675,18 @@ static void SetupMqttLibOptions(MQTT_CLIENT_OPTIONS* options, const char* client
     options->messageRetain = messageRetain;
 }
 
+static void make_connack(MQTT_CLIENT_HANDLE mqttHandle, MQTT_CLIENT_OPTIONS* mqttOptions)
+{
+    (void)mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, mqttOptions);
+
+    unsigned char CONNACK_RESP[] = { 0x1, 0x0 };
+    size_t length = sizeof(CONNACK_RESP) / sizeof(CONNACK_RESP[0]);
+    BUFFER_HANDLE connack_handle = TEST_BUFFER_HANDLE;
+    STRICT_EXPECTED_CALL(BUFFER_u_char(TEST_BUFFER_HANDLE)).SetReturn(CONNACK_RESP);
+    STRICT_EXPECTED_CALL(BUFFER_length(TEST_BUFFER_HANDLE)).SetReturn(length);
+    g_packetComplete(mqttHandle, CONNACK_TYPE, 0, connack_handle);
+}
+
 /* mqttclient_connect */
 
 /*Tests_SRS_MQTT_CLIENT_07_003: [mqttclient_init shall allocate MQTTCLIENT_DATA_INSTANCE and return the MQTTCLIENT_HANDLE on success.]*/
@@ -1004,17 +1016,20 @@ TEST_FUNCTION(mqtt_client_on_bytes_received_bytesReceived_fail_succeeds)
     // Arrange
     MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
     SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, TEST_WILL_MSG, TEST_WILL_TOPIC, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
-    (void)mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
+    make_connack(mqttHandle, &mqttOptions);
+    g_openComplete(g_onCompleteCtx, IO_OPEN_OK);
+
     umock_c_reset_all_calls();
 
     EXPECTED_CALL(mqtt_codec_bytesReceived(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG))
         .SetReturn(__FAILURE__);
-    STRICT_EXPECTED_CALL(xio_close(TEST_IO_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
-        .IgnoreArgument_on_io_close_complete()
-        .IgnoreArgument_callback_context();
+    STRICT_EXPECTED_CALL(xio_close(TEST_IO_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
 
-    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(ThreadAPI_Sleep(CLOSE_SLEEP_VALUE));
+    for (size_t index = 0; index < MAX_CLOSE_RETRIES; index++)
+    {
+        STRICT_EXPECTED_CALL(xio_dowork(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(ThreadAPI_Sleep(CLOSE_SLEEP_VALUE));
+    }
 
     // act
     g_bytesRecv(g_bytesRecvCtx, TEST_BUFFER_U_CHAR, 1);
@@ -1074,13 +1089,6 @@ TEST_FUNCTION(mqtt_client_connect_completes_IO_OPEN_ERROR_succeeds)
     (void)mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(xio_close(TEST_IO_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
-        .IgnoreArgument_on_io_close_complete()
-        .IgnoreArgument_callback_context();
-
-    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(ThreadAPI_Sleep(CLOSE_SLEEP_VALUE));
-
     // act
     ASSERT_IS_NOT_NULL(g_openComplete);
     ASSERT_IS_NOT_NULL(g_bytesRecv);
@@ -1102,16 +1110,17 @@ TEST_FUNCTION(mqtt_client_ioerror_succeeds)
 
     MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
     SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, TEST_WILL_MSG, TEST_WILL_TOPIC, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
-
-    (void)mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
+    make_connack(mqttHandle, &mqttOptions);
+    g_openComplete(g_onCompleteCtx, IO_OPEN_OK);
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(xio_close(TEST_IO_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
-        .IgnoreArgument_on_io_close_complete()
-        .IgnoreArgument_callback_context();
+    STRICT_EXPECTED_CALL(xio_close(TEST_IO_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
 
-    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(ThreadAPI_Sleep(CLOSE_SLEEP_VALUE));
+    for (size_t index = 0; index < MAX_CLOSE_RETRIES; index++)
+    {
+        STRICT_EXPECTED_CALL(xio_dowork(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(ThreadAPI_Sleep(CLOSE_SLEEP_VALUE));
+    }
 
     // act
     g_ioError(g_ioErrorCtx);
@@ -1572,6 +1581,7 @@ TEST_FUNCTION(mqtt_client_disconnect_fail)
 
     MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
     MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, TestErrorCallback, NULL);
+    make_connack(mqttHandle, &mqttOptions);
     umock_c_reset_all_calls();
 
     setup_mqtt_client_disconnect_mocks(&mqttOptions);
@@ -1612,6 +1622,7 @@ TEST_FUNCTION(mqtt_client_disconnect_succeeds)
     MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
 
     MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, TestErrorCallback, NULL);
+    make_connack(mqttHandle, &mqttOptions);
     umock_c_reset_all_calls();
 
     setup_mqtt_client_disconnect_mocks(&mqttOptions);
@@ -1634,6 +1645,7 @@ TEST_FUNCTION(mqtt_client_disconnect_callback_succeeds)
     MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
 
     MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, TestErrorCallback, NULL);
+    make_connack(mqttHandle, &mqttOptions);
     umock_c_reset_all_calls();
 
     setup_mqtt_client_disconnect_mocks(&mqttOptions);
@@ -1652,7 +1664,9 @@ TEST_FUNCTION(mqtt_client_disconnect_callback_succeeds)
 TEST_FUNCTION(mqtt_client_disconnect_send_complete_SEND_OK_succeeds)
 {
     // arrange
+    MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
     MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, TestErrorCallback, NULL);
+    make_connack(mqttHandle, &mqttOptions);
     (void)mqtt_client_disconnect(mqttHandle, NULL, NULL);
     umock_c_reset_all_calls();
 
@@ -1673,6 +1687,12 @@ TEST_FUNCTION(mqtt_client_disconnect_send_complete_SEND_ERROR_succeeds)
 {
     // arrange
     MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, TestErrorCallback, NULL);
+
+    MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
+    SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, TEST_WILL_MSG, TEST_WILL_TOPIC, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
+
+    make_connack(mqttHandle, &mqttOptions);
+
     (void)mqtt_client_disconnect(mqttHandle, NULL, NULL);
     umock_c_reset_all_calls();
 
@@ -1682,6 +1702,7 @@ TEST_FUNCTION(mqtt_client_disconnect_send_complete_SEND_ERROR_succeeds)
 
     // assert
     ASSERT_IS_TRUE(g_errorCallbackInvoked);
+
     // cleanup
     mqtt_client_deinit(mqttHandle);
 }
@@ -2298,11 +2319,6 @@ TEST_FUNCTION(mqtt_client_recvCompleteCallback_PUBLISH_RECEIVE_fails)
     STRICT_EXPECTED_CALL(BUFFER_length(TEST_BUFFER_HANDLE)).SetReturn(length);
     STRICT_EXPECTED_CALL(BUFFER_u_char(TEST_BUFFER_HANDLE)).SetReturn(PUBLISH_ACK_RESP);
     EXPECTED_CALL(mqtt_codec_publishRelease(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(xio_close(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
-        .IgnoreArgument_on_io_close_complete()
-        .IgnoreArgument_callback_context();
-    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(ThreadAPI_Sleep(CLOSE_SLEEP_VALUE));
 
     // act
     g_mqtt_codec_publish_func_fail = true;
@@ -2368,18 +2384,21 @@ TEST_FUNCTION(mqtt_client_recvCompleteCallback_PUBLISH_RELEASE_fails)
     testData.msgInfo = &puback;
 
     MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, (void*)&testData, TestErrorCallback, NULL);
+    MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
+    make_connack(mqttHandle, &mqttOptions);
+    g_openComplete(g_onCompleteCtx, IO_OPEN_OK);
     umock_c_reset_all_calls();
 
     BUFFER_HANDLE packet_handle = TEST_BUFFER_HANDLE;
     STRICT_EXPECTED_CALL(BUFFER_length(TEST_BUFFER_HANDLE)).SetReturn(length);
     STRICT_EXPECTED_CALL(BUFFER_u_char(TEST_BUFFER_HANDLE)).SetReturn(PUBLISH_ACK_RESP);
     EXPECTED_CALL(mqtt_codec_publishComplete(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(xio_close(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
-        .IgnoreArgument_on_io_close_complete()
-        .IgnoreArgument_callback_context();
-
-    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(ThreadAPI_Sleep(CLOSE_SLEEP_VALUE));
+    STRICT_EXPECTED_CALL(xio_close(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    for (size_t index = 0; index < MAX_CLOSE_RETRIES; index++)
+    {
+        STRICT_EXPECTED_CALL(xio_dowork(IGNORED_PTR_ARG));
+        STRICT_EXPECTED_CALL(ThreadAPI_Sleep(CLOSE_SLEEP_VALUE));
+    }
 
     // act
     g_mqtt_codec_publish_func_fail = true;
