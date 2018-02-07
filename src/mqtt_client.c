@@ -26,8 +26,8 @@
 #define DEFAULT_MAX_PING_RESPONSE_TIME  80  // % of time to send pings
 #define MAX_CLOSE_RETRIES               2
 
-static const char* TRUE_CONST = "true";
-static const char* FALSE_CONST = "false";
+static const char* const TRUE_CONST = "true";
+static const char* const FALSE_CONST = "false";
 
 DEFINE_ENUM_STRINGS(QOS_VALUE, QOS_VALUE_VALUES);
 

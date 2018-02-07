@@ -44,8 +44,8 @@
     CODEC_STATE_VAR_HEADER,     \
     CODEC_STATE_PAYLOAD
 
-static const char* TRUE_CONST = "true";
-static const char* FALSE_CONST = "false";
+static const char* const TRUE_CONST = "true";
+static const char* const FALSE_CONST = "false";
 
 DEFINE_ENUM(CODEC_STATE_RESULT, CODEC_STATE_VALUES);
 

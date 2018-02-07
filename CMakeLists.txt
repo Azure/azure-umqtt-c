@@ -25,6 +25,10 @@ option(run_e2e_tests "set run_e2e_tests to ON to run e2e tests (default is OFF)"
 option(skip_samples "set skip_samples to ON to skip building samples (default is OFF)[if possible, they are always built]" OFF)
 option(use_installed_dependencies "set use_installed_dependencies to ON to use installed packages instead of building dependencies from submodules" OFF)
 
+if(${no_logging})
+    add_definitions(-DNO_LOGGING)
+endif()
+
 #do not add or build any tests of the dependencies
 set(original_run_e2e_tests ${run_e2e_tests})
 set(original_run_unittests ${run_unittests})
