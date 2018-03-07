@@ -483,7 +483,7 @@ static int constructConnPayload(BUFFER_HANDLE ctrlPacket, const MQTT_CLIENT_OPTI
                     }
                     packet[CONN_FLAG_BYTE_OFFSET] |= WILL_FLAG_FLAG;
                     byteutil_writeUTF(&iterator, mqttOptions->willTopic, (uint16_t)willTopicLen);
-                    packet[CONN_FLAG_BYTE_OFFSET] |= mqttOptions->qualityOfServiceValue;
+                    packet[CONN_FLAG_BYTE_OFFSET] |= (mqttOptions->qualityOfServiceValue << 3);
                     if (mqttOptions->messageRetain)
                     {
                         packet[CONN_FLAG_BYTE_OFFSET] |= WILL_RETAIN_FLAG;

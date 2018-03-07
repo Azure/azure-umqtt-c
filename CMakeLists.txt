@@ -38,6 +38,14 @@ set(run_unittests OFF)
 
 include("dependencies.cmake")
 
+if (${original_run_e2e_tests} OR ${original_run_unittests})
+    set(SHARED_UTIL_REAL_TEST_FOLDER ${CMAKE_CURRENT_LIST_DIR}/deps/c-utility/tests/real_test_files CACHE INTERNAL "this is what needs to be included when doing test sources" FORCE)
+    add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/deps/c-utility/testtools)
+endif()
+
+set(use_cppunittest ON)
+set_platform_files(${CMAKE_CURRENT_LIST_DIR}/deps/c-utility)
+
 set(run_e2e_tests ${original_run_e2e_tests})
 set(run_unittests ${original_run_unittests})
 
