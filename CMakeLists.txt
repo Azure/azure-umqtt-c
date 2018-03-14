@@ -80,6 +80,7 @@ endif()
 
 #this is the product (a library)
 add_library(umqtt ${source_c_files} ${source_h_files})
+setTargetBuildProperties(umqtt)
 
 set(SHARED_UTIL_ADAPTER_FOLDER "${CMAKE_CURRENT_LIST_DIR}/deps/c-utility/adapters")
 
