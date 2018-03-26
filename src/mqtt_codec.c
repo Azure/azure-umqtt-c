@@ -84,7 +84,7 @@ static const char* retrieve_qos_value(QOS_VALUE value)
     }
 }
 
-void byteutil_writeByte(uint8_t** buffer, uint8_t value)
+static void byteutil_writeByte(uint8_t** buffer, uint8_t value)
 {
     if (buffer != NULL)
     {
@@ -93,7 +93,7 @@ void byteutil_writeByte(uint8_t** buffer, uint8_t value)
     }
 }
 
-void byteutil_writeInt(uint8_t** buffer, uint16_t value)
+static void byteutil_writeInt(uint8_t** buffer, uint16_t value)
 {
     if (buffer != NULL)
     {
@@ -104,7 +104,7 @@ void byteutil_writeInt(uint8_t** buffer, uint16_t value)
     }
 }
 
-void byteutil_writeUTF(uint8_t** buffer, const char* stringData, uint16_t len)
+static void byteutil_writeUTF(uint8_t** buffer, const char* stringData, uint16_t len)
 {
     if (buffer != NULL)
     {
@@ -114,7 +114,7 @@ void byteutil_writeUTF(uint8_t** buffer, const char* stringData, uint16_t len)
     }
 }
 
-CONTROL_PACKET_TYPE processControlPacketType(uint8_t pktByte, int* flags)
+static CONTROL_PACKET_TYPE processControlPacketType(uint8_t pktByte, int* flags)
 {
     CONTROL_PACKET_TYPE result;
     result = PACKET_TYPE_BYTE(pktByte);
