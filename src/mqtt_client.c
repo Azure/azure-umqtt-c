@@ -207,6 +207,7 @@ static void sendComplete(void* context, IO_SEND_RESULT send_result)
     }
 }
 
+#ifndef NO_LOGGING
 static const char* retrievePacketType(CONTROL_PACKET_TYPE packet)
 {
     switch (packet&CONNECT_PACKET_MASK)
@@ -230,6 +231,7 @@ static const char* retrievePacketType(CONTROL_PACKET_TYPE packet)
             return "UNKNOWN";
     }
 }
+#endif // NO_LOGGING
 
 static void getLogTime(char* timeResult, size_t len)
 {
@@ -601,7 +603,10 @@ static void recvCompleteCallback(void* context, CONTROL_PACKET_TYPE packet, int 
                         /*Codes_SRS_MQTT_CLIENT_07_028: [If the actionResult parameter is of type CONNECT_ACK then the msgInfo value shall be a CONNECT_ACK structure.]*/
                         CONNECT_ACK connack = { 0 };
                         connack.isSessionPresent = (byteutil_readByte(&iterator) == 0x1) ? true : false;
-                        connack.returnCode = byteutil_readByte(&iterator);
+                        uint8_t rc = byteutil_readByte(&iterator);
+                        connack.returnCode =
+                          (rc < ((uint8_t)CONN_REFUSED_UNKNOWN)) ?
+                            (CONNECT_RETURN_CODE)rc : CONN_REFUSED_UNKNOWN;
 
                         if (mqtt_client->logTrace)
                         {
@@ -634,7 +639,7 @@ static void recvCompleteCallback(void* context, CONTROL_PACKET_TYPE packet, int 
 
                         if (mqtt_client->logTrace)
                         {
-                            trace_log = STRING_construct_sprintf("PUBLISH | IS_DUP: %s | RETAIN: %d | QOS: %s", isDuplicateMsg ? TRUE_CONST : FALSE_CONST, 
+                            trace_log = STRING_construct_sprintf("PUBLISH | IS_DUP: %s | RETAIN: %d | QOS: %s", isDuplicateMsg ? TRUE_CONST : FALSE_CONST,
                                 isRetainMsg ? 1 : 0, ENUM_TO_STRING(QOS_VALUE, qosValue) );
                         }
 
@@ -811,7 +816,10 @@ static void recvCompleteCallback(void* context, CONTROL_PACKET_TYPE packet, int 
                         {
                             while (remainLen > 0)
                             {
-                                suback.qosReturn[suback.qosCount++] = byteutil_readByte(&iterator);
+                                uint8_t qosRet = byteutil_readByte(&iterator);
+                                suback.qosReturn[suback.qosCount++] =
+                                  (qosRet <= ((uint8_t)DELIVER_EXACTLY_ONCE)) ?
+                                    (QOS_VALUE)qosRet :  DELIVER_FAILURE;
                                 remainLen--;
                                 if (mqtt_client->logTrace)
                                 {
@@ -863,7 +871,7 @@ static void recvCompleteCallback(void* context, CONTROL_PACKET_TYPE packet, int 
                         log_incoming_trace(mqtt_client, trace_log);
                         STRING_delete(trace_log);
                     }
-                    // Forward ping response to operation callback 
+                    // Forward ping response to operation callback
                     if (mqtt_client->fnOperationCallback)
                     {
                         mqtt_client->fnOperationCallback(mqtt_client, MQTT_CLIENT_ON_PING_RESPONSE, NULL, mqtt_client->ctx);

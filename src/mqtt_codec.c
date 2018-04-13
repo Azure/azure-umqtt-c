@@ -13,7 +13,7 @@
 #include <inttypes.h>
 
 #define PAYLOAD_OFFSET                      5
-#define PACKET_TYPE_BYTE(p)                 ((uint8_t)(((uint8_t)(p)) & 0xf0))
+#define PACKET_TYPE_BYTE(p)                 (CONTROL_PACKET_TYPE)((uint8_t)(((uint8_t)(p)) & 0xf0))
 #define FLAG_VALUE_BYTE(p)                  ((uint8_t)(((uint8_t)(p)) & 0xf))
 
 #define USERNAME_FLAG                       0x80
