@@ -1210,6 +1210,7 @@ int mqtt_client_disconnect(MQTT_CLIENT_HANDLE handle, ON_MQTT_DISCONNECTED_CALLB
 
             close_connection(mqtt_client);
             clear_mqtt_options(mqtt_client);
+            mqtt_client->xioHandle = NULL;
             result = 0;
         }
     }
