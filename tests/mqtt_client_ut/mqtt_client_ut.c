@@ -1920,7 +1920,7 @@ TEST_FUNCTION(mqtt_client_dowork_tickcounter_fails_succeeds)
 }
 
 /*Tests_SRS_MQTT_CLIENT_18_001: [If the client is disconnected, mqtt_client_dowork shall do nothing.]*/
-TEST_FUNCTION(mqtt_client_dowork_does_nothing_if_disconnected)
+TEST_FUNCTION(mqtt_client_dowork_does_nothing_if_disconnected_1)
 {
     // arrange
     MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, TestErrorCallback, NULL);
@@ -1955,6 +1955,25 @@ TEST_FUNCTION(mqtt_client_dowork_does_nothing_if_disconnected)
     mqtt_client_deinit(mqttHandle);
 }
 
+/* Tests_SRS_MQTT_CLIENT_18_001: [ If the client is disconnected, mqtt_client_dowork shall do nothing. ] */
+TEST_FUNCTION(mqtt_client_dowork_does_nothing_if_disconnected_2)
+{
+    // arrange
+    MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
+
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, TestErrorCallback, NULL);
+    (void)mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
+    umock_c_reset_all_calls();
+
+    // act
+    int result = mqtt_client_disconnect(mqttHandle, NULL, NULL);
+    mqtt_client_dowork(mqttHandle);
+
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    mqtt_client_deinit(mqttHandle);
+}
 
 
 /*Test_SRS_MQTT_CLIENT_07_027: [The callbackCtx parameter shall be an unmodified pointer that was passed to the mqtt_client_init function.]*/
