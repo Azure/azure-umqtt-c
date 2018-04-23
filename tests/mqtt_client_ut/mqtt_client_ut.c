@@ -1965,10 +1965,13 @@ TEST_FUNCTION(mqtt_client_dowork_does_nothing_if_disconnected_2)
     (void)mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
     umock_c_reset_all_calls();
 
+    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_PTR_ARG));
+
     // act
     int result = mqtt_client_disconnect(mqttHandle, NULL, NULL);
     mqtt_client_dowork(mqttHandle);
 
+    ASSERT_ARE_EQUAL(int, 0, result);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
