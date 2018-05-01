@@ -85,7 +85,6 @@ static void close_connection(MQTT_CLIENT* mqtt_client)
                 ThreadAPI_Sleep(2);
             } while (mqtt_client->clientConnected && counter < MAX_CLOSE_RETRIES);
         }
-        mqtt_client->xioHandle = NULL;
     }
     else
     {
@@ -94,6 +93,7 @@ static void close_connection(MQTT_CLIENT* mqtt_client)
             mqtt_client->disconnect_cb(mqtt_client->disconnect_ctx);
         }
     }
+    mqtt_client->xioHandle = NULL;
 }
 
 static void set_error_callback(MQTT_CLIENT* mqtt_client, MQTT_CLIENT_EVENT_ERROR error_type)

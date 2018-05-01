@@ -25,9 +25,9 @@ option(run_e2e_tests "set run_e2e_tests to ON to run e2e tests (default is OFF)"
 option(skip_samples "set skip_samples to ON to skip building samples (default is OFF)[if possible, they are always built]" OFF)
 option(use_installed_dependencies "set use_installed_dependencies to ON to use installed packages instead of building dependencies from submodules" OFF)
 
-if(${no_logging})
+if (${no_logging})
     add_definitions(-DNO_LOGGING)
-endif()
+endif ()
 
 #do not add or build any tests of the dependencies
 set(original_run_e2e_tests ${run_e2e_tests})
@@ -41,7 +41,7 @@ include("dependencies.cmake")
 if (${original_run_e2e_tests} OR ${original_run_unittests})
     set(SHARED_UTIL_REAL_TEST_FOLDER ${CMAKE_CURRENT_LIST_DIR}/deps/c-utility/tests/real_test_files CACHE INTERNAL "this is what needs to be included when doing test sources" FORCE)
     add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/deps/c-utility/testtools)
-endif()
+endif ()
 
 set(use_cppunittest ON)
 set_platform_files(${CMAKE_CURRENT_LIST_DIR}/deps/c-utility)
@@ -51,17 +51,17 @@ set(run_unittests ${original_run_unittests})
 
 #these are the C source files
 set(source_c_files
-./src/mqtt_client.c
-./src/mqtt_codec.c
-./src/mqtt_message.c
+    ./src/mqtt_client.c
+    ./src/mqtt_codec.c
+    ./src/mqtt_message.c
 )
 
 #these are the C headers
 set(source_h_files
-./inc/azure_umqtt_c/mqtt_client.h
-./inc/azure_umqtt_c/mqtt_codec.h
-./inc/azure_umqtt_c/mqttconst.h
-./inc/azure_umqtt_c/mqtt_message.h
+    ./inc/azure_umqtt_c/mqtt_client.h
+    ./inc/azure_umqtt_c/mqtt_codec.h
+    ./inc/azure_umqtt_c/mqttconst.h
+    ./inc/azure_umqtt_c/mqtt_message.h
 )
 
 #the following "set" statetement exports across the project a global variable called COMMON_INC_FOLDER that expands to whatever needs to included when using COMMON library
@@ -70,13 +70,13 @@ set(MQTT_SRC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/src CACHE INTERNAL "this is what n
 include_directories(${MQTT_INC_FOLDER} ${SHARED_UTIL_INC_FOLDER})
 
 get_directory_property(hasParent PARENT_DIRECTORY)
-if(hasParent)
+if (hasParent)
     set(AZURE_MQTT_BUILT "1C283849-1933-4197-B9AC" PARENT_SCOPE)
-endif()
+endif ()
 
-if(${memory_trace})
+if (${memory_trace})
     add_definitions(-DGB_MEASURE_MEMORY_FOR_THIS -DGB_DEBUG_ALLOC)
-endif()
+endif ()
 
 #this is the product (a library)
 add_library(umqtt ${source_c_files} ${source_h_files})
@@ -93,23 +93,23 @@ if (NOT WIN32)
         VERSION ${GENERIC_LIB_VERSION}
         SOVERSION ${GENERIC_LIB_SOVERSION}
     )
-endif()
+endif ()
 
 if (NOT ${ARCHITECTURE} STREQUAL "ARM")
     if (NOT ${skip_samples})
         add_subdirectory(samples)
-    endif()
-endif()
+    endif ()
+endif ()
 
 if (${run_unittests})
     include("dependencies-test.cmake")
     add_subdirectory(tests)
-endif()
+endif ()
 
 # Set CMAKE_INSTALL_LIBDIR if not defined
 include(GNUInstallDirs)
 
-if(${use_installed_dependencies})
+if (${use_installed_dependencies})
     # Install umqtt
     set(package_location "cmake")
 
@@ -152,7 +152,7 @@ if(${use_installed_dependencies})
         DESTINATION
             ${package_location}
     )
-else()
+else ()
     set(install_staticlibs
         umqtt
     )
@@ -161,4 +161,4 @@ else()
     install(TARGETS ${install_staticlibs} 
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
-endif()
+endif ()
