@@ -4,6 +4,12 @@
 #ifndef MQTT_CLIENT_H
 #define MQTT_CLIENT_H
 
+#include "azure_c_shared_utility/xio.h"
+#include "azure_c_shared_utility/macro_utils.h"
+#include "azure_umqtt_c/mqttconst.h"
+#include "azure_umqtt_c/mqtt_message.h"
+#include "azure_c_shared_utility/umock_c_prod.h"
+
 #ifdef __cplusplus
 #include <cstdint>
 extern "C" {
@@ -11,11 +17,6 @@ extern "C" {
 #include <stdint.h>
 #endif // __cplusplus
 
-#include "azure_c_shared_utility/xio.h"
-#include "azure_c_shared_utility/macro_utils.h"
-#include "azure_umqtt_c/mqttconst.h"
-#include "azure_umqtt_c/mqtt_message.h"
-#include "azure_c_shared_utility/umock_c_prod.h"
 
 typedef struct MQTT_CLIENT_TAG* MQTT_CLIENT_HANDLE;
 

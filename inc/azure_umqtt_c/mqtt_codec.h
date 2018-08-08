@@ -4,6 +4,12 @@
 #ifndef MQTT_CODEC_H
 #define MQTT_CODEC_H
 
+#include "azure_c_shared_utility/xio.h"
+#include "azure_c_shared_utility/buffer_.h"
+#include "azure_c_shared_utility/umock_c_prod.h"
+#include "azure_umqtt_c/mqttconst.h"
+#include "azure_c_shared_utility/strings.h"
+
 #ifdef __cplusplus
 #include <cstdint>
 #include <cstddef>
@@ -13,12 +19,6 @@ extern "C" {
 #include <stdbool.h>
 #include <stddef.h>
 #endif // __cplusplus
-
-#include "azure_c_shared_utility/xio.h"
-#include "azure_c_shared_utility/buffer_.h"
-#include "azure_c_shared_utility/umock_c_prod.h"
-#include "azure_umqtt_c/mqttconst.h"
-#include "azure_c_shared_utility/strings.h"
 
 typedef struct MQTTCODEC_INSTANCE_TAG* MQTTCODEC_HANDLE;
 

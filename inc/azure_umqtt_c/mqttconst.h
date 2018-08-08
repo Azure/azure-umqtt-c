@@ -4,6 +4,8 @@
 #ifndef MQTTCONST_H
 #define MQTTCONST_H
 
+#include "azure_c_shared_utility/crt_abstractions.h"
+
 #ifdef __cplusplus
 #include <cstddef>
 #include <cstdint>
@@ -12,8 +14,6 @@ extern "C" {
 #include <stddef.h>
 #include <stdint.h>
 #endif /* __cplusplus */
-
-#include "azure_c_shared_utility/crt_abstractions.h"
 
 #define CONTROL_PACKET_TYPE_VALUES \
     CONNECT_TYPE = 0x10, \
