@@ -2017,6 +2017,36 @@ TEST_FUNCTION(mqtt_client_recvCompleteCallback_context_NULL_fails)
     mqtt_client_deinit(mqttHandle);
 }
 
+TEST_FUNCTION(mqtt_client_recvCompleteCallback_context_and_handle_NULL_fails)
+{
+    // arrange
+    unsigned char CONNACK_RESP[] = { 0x1, 0x0 };
+    size_t length = sizeof(CONNACK_RESP) / sizeof(CONNACK_RESP[0]);
+    TEST_COMPLETE_DATA_INSTANCE testData;
+
+
+    CONNECT_ACK connack = { 0 };
+    connack.isSessionPresent = true;
+    connack.returnCode = CONNECTION_ACCEPTED;
+    testData.actionResult = MQTT_CLIENT_ON_CONNACK;
+    testData.msgInfo = &connack;
+
+    STRICT_EXPECTED_CALL(BUFFER_u_char(TEST_BUFFER_HANDLE)).SetReturn(CONNACK_RESP);
+    STRICT_EXPECTED_CALL(BUFFER_length(TEST_BUFFER_HANDLE)).SetReturn(length);
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, (void*)&testData, TestErrorCallback, NULL);
+    umock_c_reset_all_calls();
+
+    // act
+    g_packetComplete(NULL, PINGRESP_TYPE, 0, NULL);
+
+    // assert
+    ASSERT_IS_FALSE(g_operationCallbackInvoked);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    mqtt_client_deinit(mqttHandle);
+}
+
 /*Test_SRS_MQTT_CLIENT_07_027: [The callbackCtx parameter shall be an unmodified pointer that was passed to the mqtt_client_init function.]*/
 TEST_FUNCTION(mqtt_client_recvCompleteCallback_BUFFER_HANDLE_NULL_fails)
 {

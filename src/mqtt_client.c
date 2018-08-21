@@ -586,11 +586,15 @@ static void recvCompleteCallback(void* context, CONTROL_PACKET_TYPE packet, int 
     MQTT_CLIENT* mqtt_client = (MQTT_CLIENT*)context;
     if ((mqtt_client != NULL && headerData != NULL) || packet == PINGRESP_TYPE)
     {
-        size_t len = BUFFER_length(headerData);
-        uint8_t* iterator = BUFFER_u_char(headerData);
+        size_t len = 0;
+        uint8_t* iterator = NULL;
 
+        if (headerData != NULL)
+        {
+            len = BUFFER_length(headerData);
+            iterator = BUFFER_u_char(headerData);
+        }
         logIncomingRawTrace(mqtt_client, packet, (uint8_t)flags, iterator, len);
-
         if ((iterator != NULL && len > 0) || packet == PINGRESP_TYPE)
         {
             switch (packet)
@@ -865,17 +869,24 @@ static void recvCompleteCallback(void* context, CONTROL_PACKET_TYPE packet, int 
                     break;
                 }
                 case PINGRESP_TYPE:
-                    mqtt_client->timeSincePing = 0;
-                    if (mqtt_client->logTrace)
+                    if (mqtt_client != NULL)
                     {
-                        STRING_HANDLE trace_log = STRING_construct_sprintf("PINGRESP");
-                        log_incoming_trace(mqtt_client, trace_log);
-                        STRING_delete(trace_log);
+                        mqtt_client->timeSincePing = 0;
+                        if (mqtt_client->logTrace)
+                        {
+                            STRING_HANDLE trace_log = STRING_construct_sprintf("PINGRESP");
+                            log_incoming_trace(mqtt_client, trace_log);
+                            STRING_delete(trace_log);
+                        }
+                        // Forward ping response to operation callback
+                        if (mqtt_client->fnOperationCallback)
+                        {
+                            mqtt_client->fnOperationCallback(mqtt_client, MQTT_CLIENT_ON_PING_RESPONSE, NULL, mqtt_client->ctx);
+                        }
                     }
-                    // Forward ping response to operation callback
-                    if (mqtt_client->fnOperationCallback)
+                    else
                     {
-                        mqtt_client->fnOperationCallback(mqtt_client, MQTT_CLIENT_ON_PING_RESPONSE, NULL, mqtt_client->ctx);
+                        LOG(AZ_LOG_ERROR, LOG_LINE, "MQTT client value NULL");
                     }
                     break;
                 default:
