@@ -732,7 +732,7 @@ TEST_FUNCTION(mqtt_client_init_fail)
         umock_c_negative_tests_fail_call(index);
 
         char tmp_msg[128];
-        sprintf(tmp_msg, "IoTHubClient_LL_SendReportedState failure in test %zu/%zu", index, count);
+        sprintf(tmp_msg, "IoTHubClient_LL_SendReportedState failure in test %lu/%lu", index, count);
 
         // act
         MQTT_CLIENT_HANDLE result = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, TestErrorCallback, NULL);
@@ -889,7 +889,7 @@ TEST_FUNCTION(mqtt_client_connect_fails)
         umock_c_negative_tests_fail_call(index);
 
         char tmp_msg[64];
-        sprintf(tmp_msg, "mqtt_client_connect failure in test %zu/%zu", index, count);
+        sprintf(tmp_msg, "mqtt_client_connect failure in test %lu/%lu", index, count);
 
         int result = mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
         if (result == 0)
@@ -1271,7 +1271,7 @@ TEST_FUNCTION(mqtt_client_subscribe_fails)
         umock_c_negative_tests_fail_call(index);
 
         char tmp_msg[64];
-        sprintf(tmp_msg, "mqtt_client_subscribe failure in test %zu/%zu", index, count);
+        sprintf(tmp_msg, "mqtt_client_subscribe failure in test %lu/%lu", index, count);
 
         int result = mqtt_client_subscribe(mqttHandle, TEST_PACKET_ID, TEST_SUBSCRIBE_PAYLOAD, 2);
 
@@ -1410,7 +1410,7 @@ TEST_FUNCTION(mqtt_client_unsubscribe_fail)
         umock_c_negative_tests_fail_call(index);
 
         char tmp_msg[64];
-        sprintf(tmp_msg, "mqtt_client_unsubscribe failure in test %zu/%zu", index, count);
+        sprintf(tmp_msg, "mqtt_client_unsubscribe failure in test %lu/%lu", index, count);
 
         int result = mqtt_client_unsubscribe(mqttHandle, TEST_PACKET_ID, TEST_UNSUBSCRIPTION_TOPIC, 2);
 
@@ -1607,7 +1607,7 @@ TEST_FUNCTION(mqtt_client_disconnect_fail)
         umock_c_negative_tests_fail_call(index);
 
         char tmp_msg[64];
-        sprintf(tmp_msg, "mqtt_client_disconnect failure in test %zu/%zu", index, count);
+        sprintf(tmp_msg, "mqtt_client_disconnect failure in test %lu/%lu", index, count);
 
         int result = mqtt_client_disconnect(mqttHandle, NULL, NULL);
 
@@ -2200,7 +2200,7 @@ TEST_FUNCTION(mqtt_client_recvCompleteCallback_PUBLISH_EXACTLY_ONCE_fail)
         umock_c_negative_tests_fail_call(index);
 
         char tmp_msg[64];
-        sprintf(tmp_msg, "IoTHubClient_LL_Create failure in test %zu/%zu", index, count);
+        sprintf(tmp_msg, "IoTHubClient_LL_Create failure in test %lu/%lu", index, count);
         g_packetComplete(mqttHandle, PUBLISH_TYPE, flag, publish_handle);
 
         if (index == 2 || index == 3 || index == 4 || index == 5 || index == 6)
