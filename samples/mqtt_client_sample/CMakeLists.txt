@@ -28,7 +28,7 @@ include_directories(.)
 add_executable(mqtt_client_sample ${mqtt_client_sample_c_files} ${mqtt_client_sample_h_files})
 
 if (WIN32)
-    target_link_libraries(mqtt_client_sample 
+    target_link_libraries(mqtt_client_sample
         aziotsharedutil
         umqtt
         secur32
@@ -42,7 +42,7 @@ if (WIN32)
         target_link_libraries(mqtt_client_sample $ENV{WolfSSLDir}/Debug/wolfssl.lib)
     endif()
 else()
-    target_link_libraries(mqtt_client_sample 
+    target_link_libraries(mqtt_client_sample
         aziotsharedutil
         pthread
         umqtt)

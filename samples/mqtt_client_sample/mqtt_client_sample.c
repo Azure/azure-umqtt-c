@@ -104,7 +104,7 @@ static void OnOperationComplete(MQTT_CLIENT_HANDLE handle, MQTT_CLIENT_EVENT_RES
                 }
                 mqttmessage_destroy(msg);
             }
-            // Now send a message that will get 
+            // Now send a message that will get
             break;
         }
         case MQTT_CLIENT_ON_PUBLISH_ACK:

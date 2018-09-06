@@ -1352,7 +1352,7 @@ TEST_FUNCTION(mqtt_codec_bytesReceived_buffer_NULL_fails)
 
     // act
     mqtt_codec_bytesReceived(handle, NULL, 1);
-    
+
     // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
