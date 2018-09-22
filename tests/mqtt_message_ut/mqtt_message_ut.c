@@ -51,7 +51,6 @@ extern "C" {
 
 #include "azure_c_shared_utility/crt_abstractions.h"
 #include "azure_c_shared_utility/gballoc.h"
-#include "azure_c_shared_utility/map.h"
 #include "azure_c_shared_utility/string_token.h"
 
 #undef ENABLE_MOCKS
@@ -69,19 +68,6 @@ extern "C" {
     extern const char* real_StringToken_GetDelimiter(STRING_TOKEN_HANDLE token);
     extern int real_StringToken_Split(const char* source, size_t length, const char** delimiters, size_t n_delims, bool include_empty, char*** tokens, size_t* token_count);
     extern void real_StringToken_Destroy(STRING_TOKEN_HANDLE token);
-
-
-    extern MAP_HANDLE real_Map_Create(MAP_FILTER_CALLBACK mapFilterFunc);
-    extern void real_Map_Destroy(MAP_HANDLE handle);
-    extern MAP_HANDLE real_Map_Clone(MAP_HANDLE handle);
-    extern MAP_RESULT real_Map_Add(MAP_HANDLE handle, const char* key, const char* value);
-    extern MAP_RESULT real_Map_AddOrUpdate(MAP_HANDLE handle, const char* key, const char* value);
-    extern MAP_RESULT real_Map_Delete(MAP_HANDLE handle, const char* key);
-    extern MAP_RESULT real_Map_ContainsKey(MAP_HANDLE handle, const char* key, bool* keyExists);
-    extern MAP_RESULT real_Map_ContainsValue(MAP_HANDLE handle, const char* value, bool* valueExists);
-    extern const char* real_Map_GetValueFromKey(MAP_HANDLE handle, const char* key);
-    extern MAP_RESULT real_Map_GetInternals(MAP_HANDLE handle, const char*const** keys, const char*const** values, size_t* count);
-    extern STRING_HANDLE real_Map_ToJSON(MAP_HANDLE handle);
 
 #ifdef __cplusplus
 }
@@ -127,8 +113,6 @@ TEST_SUITE_INITIALIZE(suite_init)
 
     REGISTER_UMOCK_ALIAS_TYPE(BUFFER_HANDLE, void*);
     REGISTER_UMOCK_ALIAS_TYPE(STRING_TOKEN_HANDLE, void*);
-    REGISTER_UMOCK_ALIAS_TYPE(MAP_HANDLE, void*);
-    REGISTER_UMOCK_ALIAS_TYPE(MAP_FILTER_CALLBACK, void*);
 
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_free, my_gballoc_free);
@@ -141,26 +125,12 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_GLOBAL_MOCK_HOOK(StringToken_Split, real_StringToken_Split);
     REGISTER_GLOBAL_MOCK_HOOK(StringToken_Destroy, real_StringToken_Destroy);
 
-    REGISTER_GLOBAL_MOCK_HOOK(Map_Create, real_Map_Create);
-    REGISTER_GLOBAL_MOCK_HOOK(Map_Destroy, real_Map_Destroy);
-    REGISTER_GLOBAL_MOCK_HOOK(Map_Clone, real_Map_Clone);
-    REGISTER_GLOBAL_MOCK_HOOK(Map_Add, real_Map_Add);
-    REGISTER_GLOBAL_MOCK_HOOK(Map_AddOrUpdate, real_Map_AddOrUpdate);
-    REGISTER_GLOBAL_MOCK_HOOK(Map_Delete, real_Map_Delete);
-    REGISTER_GLOBAL_MOCK_HOOK(Map_ContainsKey, real_Map_ContainsKey);
-    REGISTER_GLOBAL_MOCK_HOOK(Map_ContainsValue, real_Map_ContainsValue);
-    REGISTER_GLOBAL_MOCK_HOOK(Map_GetValueFromKey, real_Map_GetValueFromKey);
-    REGISTER_GLOBAL_MOCK_HOOK(Map_GetInternals, real_Map_GetInternals);
-    REGISTER_GLOBAL_MOCK_HOOK(Map_ToJSON, real_Map_ToJSON);
-
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(StringToken_GetFirst, NULL);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(StringToken_GetNext, false);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(StringToken_GetDelimiter, NULL);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(StringToken_GetValue, NULL);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(StringToken_GetLength, 0);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(StringToken_Split, 1);
-    REGISTER_GLOBAL_MOCK_FAIL_RETURN(Map_Create, NULL);
-    REGISTER_GLOBAL_MOCK_FAIL_RETURN(Map_Add, MAP_ERROR);
     REGISTER_GLOBAL_MOCK_RETURN(mallocAndStrcpy_s, 0);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(mallocAndStrcpy_s, 1);
 
@@ -644,11 +614,7 @@ TEST_FUNCTION(mqttmessage_getTopicLevels_succeed)
 
     handle = mqttmessage_create(TEST_PACKET_ID, TEST_TOPIC_NAME, DELIVER_AT_MOST_ONCE, TEST_MESSAGE, TEST_MSG_LEN);
 
-    STRICT_EXPECTED_CALL(StringToken_GetFirst(IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, 1));
-    STRICT_EXPECTED_CALL(StringToken_GetValue(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(StringToken_GetLength(IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(StringToken_Split(IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, 1, false, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(StringToken_Destroy(IGNORED_PTR_ARG));
 
     // act
     result = mqttmessage_getTopicLevels(handle, &levels, &count);
@@ -656,10 +622,11 @@ TEST_FUNCTION(mqttmessage_getTopicLevels_succeed)
     // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
     ASSERT_ARE_EQUAL(int, 0, result);
-    ASSERT_ARE_EQUAL(size_t, 3, count);
+    ASSERT_ARE_EQUAL(size_t, 4, count);
     ASSERT_ARE_EQUAL(char_ptr, "$subTopic1", levels[0]);
     ASSERT_ARE_EQUAL(char_ptr, "subTopic2", levels[1]);
     ASSERT_ARE_EQUAL(char_ptr, "subTopic3", levels[2]);
+    ASSERT_ARE_EQUAL(char_ptr, "?$prop1=value1&$prop2=value2", levels[3]);
 
     // cleanup
     mqttmessage_destroy(handle);
@@ -691,9 +658,6 @@ TEST_FUNCTION(mqttmessage_getTopicLevels_negative_tests)
     handle = mqttmessage_create(TEST_PACKET_ID, TEST_TOPIC_NAME, DELIVER_AT_MOST_ONCE, TEST_MESSAGE, TEST_MSG_LEN);
 
     umock_c_reset_all_calls();
-    STRICT_EXPECTED_CALL(StringToken_GetFirst(IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, 1));
-    STRICT_EXPECTED_CALL(StringToken_GetValue(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(StringToken_GetLength(IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(StringToken_Split(IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, 1, false, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
     umock_c_negative_tests_snapshot();
 
@@ -712,153 +676,6 @@ TEST_FUNCTION(mqttmessage_getTopicLevels_negative_tests)
         // assert
         sprintf(error_msg, "On failed call %zu", i);
         ASSERT_ARE_NOT_EQUAL_WITH_MSG(int, 0, result, error_msg);
-    }
-
-    // cleanup
-    mqttmessage_destroy(handle);
-    umock_c_negative_tests_deinit();
-}
-
-// Tests_SRS_MQTTMESSAGE_09_006: [ If `handle` is NULL the function shall return NULL. ]
-TEST_FUNCTION(mqttmessage_getProperties_NULL_)
-{
-    // arrange
-    MAP_HANDLE result;
-
-    umock_c_reset_all_calls();
-
-    // act
-    result = mqttmessage_getProperties(NULL);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_IS_NULL(result);
-
-    // cleanup
-}
-
-// Tests_SRS_MQTTMESSAGE_09_007: [ A MAP_HANDLE (aka `map`) shall be created to store the properties keys and values ]
-// Tests_SRS_MQTTMESSAGE_09_009: [ The property bag (if present in the topic name) shall be split by key value pairs using "&" as separator ]
-// Tests_SRS_MQTTMESSAGE_09_010: [ Each key/value pair shall be split using "=" as separator and stored in `map` ]
-// Tests_SRS_MQTTMESSAGE_09_012: [ If no failures occur the function shall return `map`. ]
-TEST_FUNCTION(mqttmessage_getProperties_succeed)
-{
-    // arrange
-    MQTT_MESSAGE_HANDLE handle;
-    MAP_HANDLE result;
-
-    umock_c_reset_all_calls();
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_TOPIC_NAME))
-        .IgnoreArgument(1);
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-
-    handle = mqttmessage_create(TEST_PACKET_ID, TEST_TOPIC_NAME, DELIVER_AT_MOST_ONCE, TEST_MESSAGE, TEST_MSG_LEN);
-
-    STRICT_EXPECTED_CALL(Map_Create(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(StringToken_GetFirst(IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, 1));
-    STRICT_EXPECTED_CALL(StringToken_GetValue(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(StringToken_GetLength(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(StringToken_Split(IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, 1, false, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(Map_Add(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, IGNORED_PTR_ARG)); // Map_Add
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, IGNORED_PTR_ARG)); // Map_Add
-    STRICT_EXPECTED_CALL(free(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(free(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(free(IGNORED_PTR_ARG));
-    
-    STRICT_EXPECTED_CALL(StringToken_GetNext(IGNORED_PTR_ARG, IGNORED_PTR_ARG, 1));
-    STRICT_EXPECTED_CALL(StringToken_GetValue(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(StringToken_GetLength(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(StringToken_Split(IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, 1, false, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(Map_Add(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, IGNORED_PTR_ARG)); // Map_Add
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, IGNORED_PTR_ARG)); // Map_Add
-    STRICT_EXPECTED_CALL(free(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(free(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(free(IGNORED_PTR_ARG));
-
-    STRICT_EXPECTED_CALL(StringToken_GetNext(IGNORED_PTR_ARG, IGNORED_PTR_ARG, 1));
-    STRICT_EXPECTED_CALL(StringToken_Destroy(IGNORED_PTR_ARG));
-
-    // act
-    result = mqttmessage_getProperties(handle);
-
-    // assert
-    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
-    ASSERT_IS_NOT_NULL(result);
-
-    // cleanup
-    mqttmessage_destroy(handle);
-    Map_Destroy(result);
-}
-
-// Tests_SRS_MQTTMESSAGE_09_008: [ If `map` fails to be created the function shall return NULL. ]
-// Tests_SRS_MQTTMESSAGE_09_011: [ If any failure occurs the function shall destroy `map` and return NULL. ]
-TEST_FUNCTION(mqttmessage_getProperties_negative_tests)
-{
-    // arrange
-    MQTT_MESSAGE_HANDLE handle;
-    size_t i;
-
-    ASSERT_ARE_EQUAL(int, 0, umock_c_negative_tests_init());
-
-    umock_c_reset_all_calls();
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_TOPIC_NAME))
-        .IgnoreArgument(1);
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-
-    handle = mqttmessage_create(TEST_PACKET_ID, TEST_TOPIC_NAME, DELIVER_AT_MOST_ONCE, TEST_MESSAGE, TEST_MSG_LEN);
-
-    umock_c_reset_all_calls();
-    STRICT_EXPECTED_CALL(Map_Create(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(StringToken_GetFirst(IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, 1)); // 1
-    STRICT_EXPECTED_CALL(StringToken_GetValue(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(StringToken_GetLength(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(StringToken_Split(IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, 1, false, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(Map_Add(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, IGNORED_PTR_ARG)); // Map_Add
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, IGNORED_PTR_ARG)); // Map_Add
-    STRICT_EXPECTED_CALL(free(IGNORED_PTR_ARG)); // 8
-    STRICT_EXPECTED_CALL(free(IGNORED_PTR_ARG)); // 9
-    STRICT_EXPECTED_CALL(free(IGNORED_PTR_ARG)); // 10
-
-    STRICT_EXPECTED_CALL(StringToken_GetNext(IGNORED_PTR_ARG, IGNORED_PTR_ARG, 1)); // 11
-    STRICT_EXPECTED_CALL(StringToken_GetValue(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(StringToken_GetLength(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(StringToken_Split(IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, 1, false, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(Map_Add(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, IGNORED_PTR_ARG)); // Map_Add
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, IGNORED_PTR_ARG)); // Map_Add
-    STRICT_EXPECTED_CALL(free(IGNORED_PTR_ARG)); // 18
-    STRICT_EXPECTED_CALL(free(IGNORED_PTR_ARG)); // 19
-    STRICT_EXPECTED_CALL(free(IGNORED_PTR_ARG)); // 20
-
-    STRICT_EXPECTED_CALL(StringToken_GetNext(IGNORED_PTR_ARG, IGNORED_PTR_ARG, 1)); // 21
-    STRICT_EXPECTED_CALL(StringToken_Destroy(IGNORED_PTR_ARG)); //22
-    umock_c_negative_tests_snapshot();
-
-    for (i = 0; i < umock_c_negative_tests_call_count(); i++)
-    {
-        char temp_str[128];
-        MAP_HANDLE result;
-
-        if (i == 1 || i == 11 || i == 8 || i == 9 || i == 10 || i >= 18)
-        {
-            continue;
-        }
-
-        umock_c_negative_tests_reset();
-        umock_c_negative_tests_fail_call(i);
-
-        (void)sprintf(temp_str, "On failed call %zu", i);
-
-        // act
-        result = mqttmessage_getProperties(handle);
-
-        // assert
-        ASSERT_IS_NULL_WITH_MSG(result, temp_str);
     }
 
     // cleanup

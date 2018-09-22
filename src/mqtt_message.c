@@ -219,140 +219,25 @@ int mqttmessage_getTopicLevels(MQTT_MESSAGE_HANDLE handle, char*** levels, size_
     else
     {
         MQTT_MESSAGE* msgInfo = (MQTT_MESSAGE*)handle;
-        const char* delimiters[2];
-        STRING_TOKEN_HANDLE token;
+        const char* delimiters[1];
 
-        delimiters[0] = "?";
-        delimiters[1] = "/";
+        delimiters[0] = "/";
+
         // Codes_SRS_MQTTMESSAGE_09_002: [ The topic name, excluding the property bag, shall be split into individual tokens using "/" as separator ]
-        token = StringToken_GetFirst(msgInfo->topicName, strlen(msgInfo->topicName), delimiters, 1);
-
-        if (token == NULL)
+        // Codes_SRS_MQTTMESSAGE_09_004: [ The split tokens shall be stored in `levels` and its count in `count` ]
+        if (StringToken_Split(msgInfo->topicName, strlen(msgInfo->topicName), delimiters, 1, false, levels, count) != 0)
         {
             // Codes_SRS_MQTTMESSAGE_09_003: [ If splitting fails the function shall return a non-zero value. ]
-            LogError("Failed getting topic levels");
+            LogError("Failed splitting topic levels");
             result = __FAILURE__;
         }
         else
         {
-            const char* tokenValue;
-            size_t tokenLength;
-
-            tokenValue = StringToken_GetValue(token);
-            tokenLength = StringToken_GetLength(token);
-
-            // Codes_SRS_MQTTMESSAGE_09_002: [ The topic name, excluding the property bag, shall be split into individual tokens using "/" as separator ]
-            // Codes_SRS_MQTTMESSAGE_09_004: [ The split tokens shall be stored in `levels` and its count in `count` ]
-            if (StringToken_Split(tokenValue, tokenLength, delimiters + 1, 1, false, levels, count) != 0)
-            {
-                // Codes_SRS_MQTTMESSAGE_09_003: [ If splitting fails the function shall return a non-zero value. ]
-                LogError("Failed splitting topic levels");
-                result = __FAILURE__;
-            }
-            else
-            {
-                // Codes_SRS_MQTTMESSAGE_09_005: [ If no failures occur the function shall return zero. ]
-                result = 0;
-            }
-
-            StringToken_Destroy(token);
+            // Codes_SRS_MQTTMESSAGE_09_005: [ If no failures occur the function shall return zero. ]
+            result = 0;
         }
     }
 
-    return result;
-}
-
-MAP_HANDLE mqttmessage_getProperties(MQTT_MESSAGE_HANDLE handle)
-{
-    MAP_HANDLE result;
-
-    // Codes_SRS_MQTTMESSAGE_09_006: [ If `handle` is NULL the function shall return NULL. ]
-    if (handle == NULL)
-    {
-        LogError("Invalid Parameter handle: %p", handle);
-        result = NULL;
-    }
-    // Codes_SRS_MQTTMESSAGE_09_007: [ A MAP_HANDLE (aka `map`) shall be created to store the properties keys and values ]
-    else if ((result = Map_Create(NULL)) == NULL)
-    {
-        // Codes_SRS_MQTTMESSAGE_09_008: [ If `map` fails to be created the function shall return NULL. ]
-        LogError("Failed creating MAP_HANDLE");
-    }
-    else
-    {
-        MQTT_MESSAGE* msgInfo = (MQTT_MESSAGE*)handle;
-        char* propertiesStart = strstr(msgInfo->topicName, "?");
-
-        // Codes_SRS_MQTTMESSAGE_09_009: [ The property bag (if present in the topic name) shall be split by key value pairs using "&" as separator ]
-        if (propertiesStart != NULL)
-        {
-            size_t n_propDelims = 1;
-            const char* propDelims[1];
-            const char* keyValueDelims[1];
-            STRING_TOKEN_HANDLE propToken;
-
-            propDelims[0] = "&";
-            keyValueDelims[0] = "=";
-
-            propertiesStart++;
-
-            propToken = StringToken_GetFirst(propertiesStart, strlen(propertiesStart), propDelims, n_propDelims);
-
-            while (propToken != NULL)
-            {
-                const char* property;
-                size_t propertyLength;
-                char** keyValueSet;
-                size_t keyValueSetCount = 0;
-
-                property = StringToken_GetValue(propToken);
-                propertyLength = StringToken_GetLength(propToken);
-
-                // Codes_SRS_MQTTMESSAGE_09_010: [ Each key/value pair shall be split using "=" as separator and stored in `map` ]
-                if (StringToken_Split(property, propertyLength, keyValueDelims, 1, false, &keyValueSet, &keyValueSetCount) != 0)
-                {
-                    // Codes_SRS_MQTTMESSAGE_09_011: [ If any failure occurs the function shall destroy `map` and return NULL. ]
-                    LogError("Failed to split property key and value");
-                    Map_Destroy(result);
-                    result = NULL;
-                    break;
-                }
-                else
-                {
-                    if (keyValueSetCount != 2)
-                    {
-                        // Codes_SRS_MQTTMESSAGE_09_011: [ If any failure occurs the function shall destroy `map` and return NULL. ]
-                        LogError("Unexpected key value set count (%lu)", (unsigned long)keyValueSetCount);
-                        Map_Destroy(result);
-                        result = NULL;
-                        break;
-                    }
-                    else if (Map_Add(result, keyValueSet[0], keyValueSet[1]) != MAP_OK)
-                    {
-                        // Codes_SRS_MQTTMESSAGE_09_011: [ If any failure occurs the function shall destroy `map` and return NULL. ]
-                        LogError("Failed to add property key and value");
-                        Map_Destroy(result);
-                        result = NULL;
-                        break;
-                    }
-
-                    while (keyValueSetCount > 0)
-                    {
-                        free(keyValueSet[--keyValueSetCount]);
-                    }
-                    free(keyValueSet);
-                }
-
-                if (!StringToken_GetNext(propToken, propDelims, n_propDelims))
-                {
-                    StringToken_Destroy(propToken);
-                    propToken = NULL;
-                }
-            }
-        }
-    }
-
-    // Codes_SRS_MQTTMESSAGE_09_012: [ If no failures occur the function shall return `map`. ]
     return result;
 }
 

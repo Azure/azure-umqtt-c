@@ -23,7 +23,6 @@ extern int mqttmessage_setIsDuplicateMsg(MQTT_MESSAGE_HANDLE handle, bool duplic
 extern int mqttmessage_setIsRetained(MQTT_MESSAGE_HANDLE handle, bool retainMsg);
 extern const BYTE* mqttmessage_getApplicationMsg(MQTT_MESSAGE_HANDLE handle, size_t* msgLen);
 extern int mqttmessage_getTopicLevels(MQTT_MESSAGE_HANDLE handle, char*** levels, size_t* count);
-extern MAP_HANDLE mqttmessage_getProperties(MQTT_MESSAGE_HANDLE handle);
 ```
 
 ## mqttmessage_create_in_place
@@ -167,25 +166,4 @@ extern int mqttmessage_getTopicLevels(MQTT_MESSAGE_HANDLE handle, char*** levels
 **SRS_MQTTMESSAGE_09_004: [** The split tokens shall be stored in `levels` and its count in `count` **]**
 
 **SRS_MQTTMESSAGE_09_005: [** If no failures occur the function shall return zero. **]**
-
-
-
-## mqttmessage_getProperties
-```c
-extern MAP_HANDLE mqttmessage_getProperties(MQTT_MESSAGE_HANDLE handle);
-```
-
-**SRS_MQTTMESSAGE_09_006: [** If `handle` is NULL the function shall return NULL. **]**
-
-**SRS_MQTTMESSAGE_09_007: [** A MAP_HANDLE (aka `map`) shall be created to store the properties keys and values **]**
-
-**SRS_MQTTMESSAGE_09_008: [** If `map` fails to be created the function shall return NULL. **]**
-
-**SRS_MQTTMESSAGE_09_009: [** The property bag (if present in the topic name) shall be split by key value pairs using "&" as separator **]**
-
-**SRS_MQTTMESSAGE_09_010: [** Each key/value pair shall be split using "=" as separator and stored in `map` **]**
-
-**SRS_MQTTMESSAGE_09_011: [** If any failure occurs the function shall destroy `map` and return NULL. **]**
-
-**SRS_MQTTMESSAGE_09_012: [** If no failures occur the function shall return `map`. **]**
 
