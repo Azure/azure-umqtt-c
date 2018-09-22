@@ -13,7 +13,6 @@ ${theseTestsName}.c
 set(${theseTestsName}_c_files
 ../../src/mqtt_message.c
 ../../deps/c-utility/tests/real_test_files/real_string_token.c
-../../deps/c-utility/tests/real_test_files/real_map.c
 )
 
 set(${theseTestsName}_h_files
