@@ -12,6 +12,10 @@
 #include "azure_umqtt_c/mqtt_codec.h"
 #include <inttypes.h>
 
+
+bool verboseInfoOnUnderflow = false;
+
+
 #define PAYLOAD_OFFSET                      5
 #define PACKET_TYPE_BYTE(p)                 (CONTROL_PACKET_TYPE)((uint8_t)(((uint8_t)(p)) & 0xf0))
 #define FLAG_VALUE_BYTE(p)                  ((uint8_t)(((uint8_t)(p)) & 0xf))
@@ -555,6 +559,8 @@ static int prepareheaderDataInfo(MQTTCODEC_INSTANCE* codecData, uint8_t remainLe
 
                 if (multiplier > 128 * 128 * 128)
                 {
+                    LogError("Multiplier %d is too large", multiplier);
+                    totalLen = 0;
                     result = __FAILURE__;
                     break;
                 }
@@ -599,6 +605,23 @@ static void completePacketData(MQTTCODEC_INSTANCE* codecData)
         if (codecData->packetComplete != NULL)
         {
             codecData->packetComplete(codecData->callContext, codecData->currPacket, codecData->headerFlags, codecData->headerData);
+        }
+
+        if (verboseInfoOnUnderflow == true)
+        {
+        /*
+            CODEC_STATE_RESULT codecState;
+    size_t bufferOffset;
+    int headerFlags;
+    BUFFER_HANDLE headerData;
+    ON_PACKET_COMPLETE_CALLBACK packetComplete;
+    void* callContext;
+    uint8_t storeRemainLen[4];
+    size_t remainLenIndex;
+    */
+            LOG(AZ_LOG_ERROR, LOG_LINE, "codecData->currPacket=%d, bufferOffset=%d, headerFlags=%d, remainLenIndex=%d, storeRemainLen[0]=%d, storeRemainLen[1]=%d,storeRemainLen[2]=%d,storeRemainLen[3]=%d",
+                                         (int)codecData->currPacket, codecData->bufferOffset, codecData->headerFlags, codecData->remainLenIndex, codecData->storeRemainLen[0], 
+                                         codecData->storeRemainLen[1], codecData->storeRemainLen[2], codecData->storeRemainLen[3]);
         }
 
         // Clean up data
@@ -1085,7 +1108,7 @@ int mqtt_codec_bytesReceived(MQTTCODEC_HANDLE handle, const unsigned char* buffe
                         codec_Data->currPacket = PACKET_TYPE_ERROR;
                         result = __FAILURE__;
                     }
-                    if (codec_Data->currPacket == PINGRESP_TYPE)
+                    else if (codec_Data->currPacket == PINGRESP_TYPE)
                     {
                         /* Codes_SRS_MQTT_CODEC_07_034: [Upon a constructing a complete MQTT packet mqtt_codec_bytesReceived shall call the ON_PACKET_COMPLETE_CALLBACK function.] */
                         completePacketData(codec_Data);
@@ -1118,6 +1141,11 @@ int mqtt_codec_bytesReceived(MQTTCODEC_HANDLE handle, const unsigned char* buffe
                         {
                             /* Codes_SRS_MQTT_CODEC_07_034: [Upon a constructing a complete MQTT packet mqtt_codec_bytesReceived shall call the ON_PACKET_COMPLETE_CALLBACK function.] */
                             completePacketData(codec_Data);
+                            if (verboseInfoOnUnderflow)
+                            {
+                                LOG(AZ_LOG_ERROR, LOG_LINE, "totalLen=%zu, codec_Data->bufferOffset=%zu", totalLen, codec_Data->bufferOffset);
+                                verboseInfoOnUnderflow = false;
+                            }
                         }
                     }
                 }

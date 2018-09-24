@@ -29,6 +29,8 @@
 static const char* const TRUE_CONST = "true";
 static const char* const FALSE_CONST = "false";
 
+extern bool verboseInfoOnUnderflow;
+
 DEFINE_ENUM_STRINGS(QOS_VALUE, QOS_VALUE_VALUES);
 
 typedef struct MQTT_CLIENT_TAG
@@ -682,6 +684,14 @@ static void recvCompleteCallback(void* context, CONTROL_PACKET_TYPE packet, int 
                             if (msgHandle == NULL)
                             {
                                 LOG(AZ_LOG_ERROR, LOG_LINE, "failure in mqttmessage_create");
+                                LOG(AZ_LOG_ERROR, LOG_LINE, "Beginning underflow custom logging");
+                                LOG(AZ_LOG_ERROR, LOG_LINE, "length = %zu, iterator = %zu, initialPos = %zu, len = %d", length, iterator, initialPos, len);
+                                mqtt_client->rawBytesTrace = true;
+                                logIncomingRawTrace(mqtt_client, packet, (uint8_t)flags, iterator, len);
+                                mqtt_client->rawBytesTrace = false;
+                                verboseInfoOnUnderflow = true; // caller will later reset
+
+                                
                                 set_error_callback(mqtt_client, MQTT_CLIENT_MEMORY_ERROR);
                                 if (trace_log != NULL) {
                                     STRING_delete(trace_log);
