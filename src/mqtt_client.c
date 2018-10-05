@@ -284,7 +284,7 @@ static void logOutgoingRawTrace(MQTT_CLIENT* mqtt_client, const uint8_t* data, s
         {
             LOG(AZ_LOG_TRACE, 0, "0x%02x ", data[index]);
         }
-        LOG(AZ_LOG_TRACE, LOG_LINE, "");
+        LOG(AZ_LOG_TRACE, LOG_LINE, " ");
     }
 }
 
@@ -310,19 +310,19 @@ static void logIncomingRawTrace(MQTT_CLIENT* mqtt_client, CONTROL_PACKET_TYPE pa
             char tmBuffer[TIME_MAX_BUFFER];
             getLogTime(tmBuffer, TIME_MAX_BUFFER);
 
-            LOG(AZ_LOG_TRACE, 0, "<- %s %s: 0x%02x 0x%02x ", tmBuffer, retrievePacketType((CONTROL_PACKET_TYPE)packet), (unsigned char)(packet | flags), length);
+            LOG(AZ_LOG_TRACE, 0, "<- %s %s: 0x%02x 0x%02x ", tmBuffer, retrievePacketType((CONTROL_PACKET_TYPE)packet), (unsigned int)(packet | flags), (unsigned int)length);
             size_t index = 0;
             for (index = 0; index < length; index++)
             {
                 LOG(AZ_LOG_TRACE, 0, "0x%02x ", data[index]);
             }
-            LOG(AZ_LOG_TRACE, LOG_LINE, "");
+            LOG(AZ_LOG_TRACE, LOG_LINE, " ");
         }
         else if (packet == PINGRESP_TYPE)
         {
             char tmBuffer[TIME_MAX_BUFFER];
             getLogTime(tmBuffer, TIME_MAX_BUFFER);
-            LOG(AZ_LOG_TRACE, LOG_LINE, "<- %s %s: 0x%02x 0x%02x ", tmBuffer, retrievePacketType((CONTROL_PACKET_TYPE)packet), (unsigned char)(packet | flags), length);
+            LOG(AZ_LOG_TRACE, LOG_LINE, "<- %s %s: 0x%02x 0x%02x ", tmBuffer, retrievePacketType((CONTROL_PACKET_TYPE)packet), (unsigned int)(packet | flags), (unsigned int)length);
         }
     }
 }
@@ -1082,7 +1082,7 @@ int mqtt_client_subscribe(MQTT_CLIENT_HANDLE handle, uint16_t packetId, SUBSCRIB
     if (mqtt_client == NULL || subscribeList == NULL || count == 0 || packetId == 0)
     {
         /*Codes_SRS_MQTT_CLIENT_07_013: [If any of the parameters handle, subscribeList is NULL or count is 0 then mqtt_client_subscribe shall return a non-zero value.]*/
-        LogError("Invalid parameter specified mqtt_client: %p, subscribeList: %p, count: %d, packetId: %d", mqtt_client, subscribeList, count, packetId);
+        LogError("Invalid parameter specified mqtt_client: %p, subscribeList: %p, count: %lu, packetId: %d", mqtt_client, subscribeList, (unsigned long)count, packetId);
         result = __FAILURE__;
     }
     else
@@ -1130,7 +1130,7 @@ int mqtt_client_unsubscribe(MQTT_CLIENT_HANDLE handle, uint16_t packetId, const 
     if (mqtt_client == NULL || unsubscribeList == NULL || count == 0 || packetId == 0)
     {
         /*Codes_SRS_MQTT_CLIENT_07_016: [If any of the parameters handle, unsubscribeList is NULL or count is 0 then mqtt_client_unsubscribe shall return a non-zero value.]*/
-        LogError("Invalid parameter specified mqtt_client: %p, unsubscribeList: %p, count: %d, packetId: %d", mqtt_client, unsubscribeList, count, packetId);
+        LogError("Invalid parameter specified mqtt_client: %p, unsubscribeList: %p, count: %lu, packetId: %d", mqtt_client, unsubscribeList, (unsigned long)count, packetId);
         result = __FAILURE__;
     }
     else
