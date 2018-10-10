@@ -898,7 +898,7 @@ TEST_FUNCTION(mqtt_client_connect_fails)
         }
 
         // assert
-        ASSERT_ARE_NOT_EQUAL_WITH_MSG(int, 0, result, tmp_msg);
+        ASSERT_ARE_NOT_EQUAL(int, 0, result, tmp_msg);
     }
 
     // cleanup
@@ -1276,7 +1276,7 @@ TEST_FUNCTION(mqtt_client_subscribe_fails)
         int result = mqtt_client_subscribe(mqttHandle, TEST_PACKET_ID, TEST_SUBSCRIBE_PAYLOAD, 2);
 
         // assert
-        ASSERT_ARE_NOT_EQUAL_WITH_MSG(int, 0, result, tmp_msg);
+        ASSERT_ARE_NOT_EQUAL(int, 0, result, tmp_msg);
     }
 
     // cleanup
@@ -1415,7 +1415,7 @@ TEST_FUNCTION(mqtt_client_unsubscribe_fail)
         int result = mqtt_client_unsubscribe(mqttHandle, TEST_PACKET_ID, TEST_UNSUBSCRIPTION_TOPIC, 2);
 
         // assert
-        ASSERT_ARE_NOT_EQUAL_WITH_MSG(int, 0, result, tmp_msg);
+        ASSERT_ARE_NOT_EQUAL(int, 0, result, tmp_msg);
     }
 
     // cleanup
@@ -1612,7 +1612,7 @@ TEST_FUNCTION(mqtt_client_disconnect_fail)
         int result = mqtt_client_disconnect(mqttHandle, NULL, NULL);
 
         // assert
-        ASSERT_ARE_NOT_EQUAL_WITH_MSG(int, 0, result, tmp_msg);
+        ASSERT_ARE_NOT_EQUAL(int, 0, result, tmp_msg);
     }
 
     // cleanup
