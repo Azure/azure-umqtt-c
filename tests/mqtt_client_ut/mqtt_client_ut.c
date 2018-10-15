@@ -185,6 +185,37 @@ extern "C" {
         return buffer_result;
     }
 
+    static MQTT_MESSAGE_HANDLE my_mqttmessage_create(uint16_t packetId, const char* topicName, QOS_VALUE qosValue, const uint8_t* appMsg, size_t appMsgLength)
+    {
+        (void)packetId;
+        (void)topicName;
+        (void)qosValue;
+        (void)appMsg;
+        (void)appMsgLength;
+        return (MQTT_MESSAGE_HANDLE)my_gballoc_malloc(1);
+    }
+
+    static MQTT_MESSAGE_HANDLE my_mqttmessage_create_in_place(uint16_t packetId, const char* topicName, QOS_VALUE qosValue, const uint8_t* appMsg, size_t appMsgLength)
+    {
+        (void)packetId;
+        (void)topicName;
+        (void)qosValue;
+        (void)appMsg;
+        (void)appMsgLength;
+        return (MQTT_MESSAGE_HANDLE)my_gballoc_malloc(1);
+    }
+
+    static MQTT_MESSAGE_HANDLE my_mqttmessage_clone(MQTT_MESSAGE_HANDLE handle)
+    {
+        (void)handle;
+        return (MQTT_MESSAGE_HANDLE)my_gballoc_malloc(1);
+    }
+
+    static void my_mqttmessage_destroy(MQTT_MESSAGE_HANDLE handle)
+    {
+        my_gballoc_free(handle);
+    }
+
     static STRING_HANDLE my_STRING_new(void)
     {
         return (STRING_HANDLE)my_gballoc_malloc(1);
@@ -318,9 +349,12 @@ TEST_SUITE_INITIALIZE(suite_init)
 
     REGISTER_GLOBAL_MOCK_RETURN(BUFFER_u_char, (unsigned char*)TEST_BUFFER_U_CHAR);
     REGISTER_GLOBAL_MOCK_RETURN(BUFFER_length, 11);
-    REGISTER_GLOBAL_MOCK_RETURN(mqttmessage_create, TEST_MESSAGE_HANDLE);
+
+    REGISTER_GLOBAL_MOCK_HOOK(mqttmessage_create, my_mqttmessage_create);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(mqttmessage_create, NULL);
-    REGISTER_GLOBAL_MOCK_RETURN(mqttmessage_clone, TEST_MESSAGE_HANDLE);
+    REGISTER_GLOBAL_MOCK_HOOK(mqttmessage_create_in_place, my_mqttmessage_create_in_place);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(mqttmessage_create_in_place, NULL);
+    REGISTER_GLOBAL_MOCK_HOOK(mqttmessage_clone, my_mqttmessage_clone);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(mqttmessage_clone, NULL);
     REGISTER_GLOBAL_MOCK_RETURN(mqttmessage_getPacketId, TEST_PACKET_ID);
     REGISTER_GLOBAL_MOCK_RETURN(mqttmessage_getTopicName, TEST_TOPIC_NAME);
@@ -332,6 +366,7 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_GLOBAL_MOCK_RETURN(mqttmessage_setIsRetained, 0);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(mqttmessage_setIsRetained, __FAILURE__);
     REGISTER_GLOBAL_MOCK_RETURN(mqttmessage_getApplicationMsg, &TEST_APP_PAYLOAD);
+    REGISTER_GLOBAL_MOCK_HOOK(mqttmessage_destroy, my_mqttmessage_destroy);
 
     REGISTER_GLOBAL_MOCK_RETURN(mallocAndStrcpy_s, 0);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(mallocAndStrcpy_s, __FAILURE__);
@@ -391,18 +426,16 @@ static void setup_publish_callback_mocks(unsigned char* PUBLISH_RESP, size_t len
     STRICT_EXPECTED_CALL(BUFFER_length(TEST_BUFFER_HANDLE)).SetReturn(length);
     STRICT_EXPECTED_CALL(BUFFER_u_char(TEST_BUFFER_HANDLE)).SetReturn(PUBLISH_RESP);
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(mqttmessage_create(TEST_PACKET_ID, IGNORED_PTR_ARG, qos_value, IGNORED_PTR_ARG, TEST_APP_PAYLOAD.length))
-        .IgnoreArgument(2)
-        .IgnoreArgument(4);
-    STRICT_EXPECTED_CALL(mqttmessage_setIsDuplicateMsg(TEST_MESSAGE_HANDLE, true));
-    STRICT_EXPECTED_CALL(mqttmessage_setIsRetained(TEST_MESSAGE_HANDLE, true));
+    STRICT_EXPECTED_CALL(mqttmessage_create_in_place(TEST_PACKET_ID, IGNORED_PTR_ARG, qos_value, IGNORED_PTR_ARG, TEST_APP_PAYLOAD.length));
+    STRICT_EXPECTED_CALL(mqttmessage_setIsDuplicateMsg(IGNORED_PTR_ARG, true));
+    STRICT_EXPECTED_CALL(mqttmessage_setIsRetained(IGNORED_PTR_ARG, true));
     STRICT_EXPECTED_CALL(mqtt_codec_publishReceived(TEST_PACKET_ID));
     EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG)).SetReturn(length);
     EXPECTED_CALL(BUFFER_u_char(IGNORED_PTR_ARG)).SetReturn(PUBLISH_RESP);
     STRICT_EXPECTED_CALL(tickcounter_get_current_ms(TEST_COUNTER_HANDLE, IGNORED_PTR_ARG)).IgnoreArgument(2);
     EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
     EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(mqttmessage_destroy(TEST_MESSAGE_HANDLE));
+    STRICT_EXPECTED_CALL(mqttmessage_destroy(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 }
 
@@ -2229,18 +2262,16 @@ TEST_FUNCTION(mqtt_client_recvCompleteCallback_PUBLISH_AT_LEAST_ONCE_succeeds)
     STRICT_EXPECTED_CALL(BUFFER_length(TEST_BUFFER_HANDLE)).SetReturn(length);
     STRICT_EXPECTED_CALL(BUFFER_u_char(TEST_BUFFER_HANDLE)).SetReturn(PUBLISH_RESP);
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(mqttmessage_create(TEST_PACKET_ID, IGNORED_PTR_ARG, DELIVER_AT_LEAST_ONCE, IGNORED_PTR_ARG, TEST_APP_PAYLOAD.length))
-        .IgnoreArgument(2)
-        .IgnoreArgument(4);
-    STRICT_EXPECTED_CALL(mqttmessage_setIsDuplicateMsg(TEST_MESSAGE_HANDLE, true));
-    STRICT_EXPECTED_CALL(mqttmessage_setIsRetained(TEST_MESSAGE_HANDLE, false));
+    STRICT_EXPECTED_CALL(mqttmessage_create_in_place(TEST_PACKET_ID, IGNORED_PTR_ARG, DELIVER_AT_LEAST_ONCE, IGNORED_PTR_ARG, TEST_APP_PAYLOAD.length));
+    STRICT_EXPECTED_CALL(mqttmessage_setIsDuplicateMsg(IGNORED_PTR_ARG, true));
+    STRICT_EXPECTED_CALL(mqttmessage_setIsRetained(IGNORED_PTR_ARG, false));
     STRICT_EXPECTED_CALL(mqtt_codec_publishAck(TEST_PACKET_ID));
     EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG));
     EXPECTED_CALL(BUFFER_u_char(IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(tickcounter_get_current_ms(TEST_COUNTER_HANDLE, IGNORED_PTR_ARG)).IgnoreArgument(2);
     EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
     EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(mqttmessage_destroy(TEST_MESSAGE_HANDLE));
+    STRICT_EXPECTED_CALL(mqttmessage_destroy(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
@@ -2270,12 +2301,10 @@ TEST_FUNCTION(mqtt_client_recvCompleteCallback_PUBLISH_AT_MOST_ONCE_succeeds)
     STRICT_EXPECTED_CALL(BUFFER_length(TEST_BUFFER_HANDLE)).SetReturn(length);
     STRICT_EXPECTED_CALL(BUFFER_u_char(TEST_BUFFER_HANDLE)).SetReturn(PUBLISH_VALUE);
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(mqttmessage_create(0, IGNORED_PTR_ARG, DELIVER_AT_MOST_ONCE, IGNORED_PTR_ARG, 22))
-        .IgnoreArgument(2)
-        .IgnoreArgument(4);
-    STRICT_EXPECTED_CALL(mqttmessage_setIsDuplicateMsg(TEST_MESSAGE_HANDLE, false));
-    STRICT_EXPECTED_CALL(mqttmessage_setIsRetained(TEST_MESSAGE_HANDLE, false));
-    STRICT_EXPECTED_CALL(mqttmessage_destroy(TEST_MESSAGE_HANDLE));
+    STRICT_EXPECTED_CALL(mqttmessage_create_in_place(0, IGNORED_PTR_ARG, DELIVER_AT_MOST_ONCE, IGNORED_PTR_ARG, 22));
+    STRICT_EXPECTED_CALL(mqttmessage_setIsDuplicateMsg(IGNORED_PTR_ARG, false));
+    STRICT_EXPECTED_CALL(mqttmessage_setIsRetained(IGNORED_PTR_ARG, false));
+    STRICT_EXPECTED_CALL(mqttmessage_destroy(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
@@ -2640,12 +2669,14 @@ TEST_FUNCTION(mqtt_client_trace_CONNACK_succeeds)
     BUFFER_HANDLE connack_handle = TEST_BUFFER_HANDLE;
     STRICT_EXPECTED_CALL(BUFFER_length(TEST_BUFFER_HANDLE)).SetReturn(length);
     STRICT_EXPECTED_CALL(BUFFER_u_char(TEST_BUFFER_HANDLE)).SetReturn(CONNACK_RESP);
+#ifdef ENABLE_RAW_TRACE
     STRICT_EXPECTED_CALL(get_time(IGNORED_PTR_ARG));
+#endif
+#ifndef NO_LOGGING
     STRICT_EXPECTED_CALL(get_time(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
-        .IgnoreArgument_handle();
-    STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG))
-        .IgnoreArgument_handle();
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG));
+#endif
 
     g_packetComplete(mqttHandle, CONNACK_TYPE, 0, connack_handle);
 
@@ -2675,27 +2706,29 @@ TEST_FUNCTION(mqtt_client_trace_PUBLISH_succeeds)
     //setup_publish_callback_mocks(PUBLISH_RESP, length, DELIVER_EXACTLY_ONCE);
     STRICT_EXPECTED_CALL(BUFFER_length(TEST_BUFFER_HANDLE)).SetReturn(length);
     STRICT_EXPECTED_CALL(BUFFER_u_char(TEST_BUFFER_HANDLE)).SetReturn(PUBLISH_RESP);
+#ifdef ENABLE_RAW_TRACE
     STRICT_EXPECTED_CALL(get_time(IGNORED_PTR_ARG));
+#endif
 
     EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(mqttmessage_create(TEST_PACKET_ID, IGNORED_PTR_ARG, DELIVER_EXACTLY_ONCE, IGNORED_PTR_ARG, TEST_APP_PAYLOAD.length))
-        .IgnoreArgument(2)
-        .IgnoreArgument(4);
-    STRICT_EXPECTED_CALL(mqttmessage_setIsDuplicateMsg(TEST_MESSAGE_HANDLE, true));
-    STRICT_EXPECTED_CALL(mqttmessage_setIsRetained(TEST_MESSAGE_HANDLE, true));
+    STRICT_EXPECTED_CALL(mqttmessage_create_in_place(TEST_PACKET_ID, IGNORED_PTR_ARG, DELIVER_EXACTLY_ONCE, IGNORED_PTR_ARG, TEST_APP_PAYLOAD.length));
+    STRICT_EXPECTED_CALL(mqttmessage_setIsDuplicateMsg(IGNORED_PTR_ARG, true));
+    STRICT_EXPECTED_CALL(mqttmessage_setIsRetained(IGNORED_PTR_ARG, true));
+#ifndef NO_LOGGING
     STRICT_EXPECTED_CALL(get_time(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
-        .IgnoreArgument_handle();
-    STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG))
-        .IgnoreArgument_handle();
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG));
+#endif
     STRICT_EXPECTED_CALL(mqtt_codec_publishReceived(TEST_PACKET_ID)).SetReturn((BUFFER_HANDLE)0x111111);
     EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG)).SetReturn(length);
     EXPECTED_CALL(BUFFER_u_char(IGNORED_PTR_ARG)).SetReturn(PUBLISH_RESP);
     STRICT_EXPECTED_CALL(tickcounter_get_current_ms(TEST_COUNTER_HANDLE, IGNORED_PTR_ARG)).IgnoreArgument(2);
     EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+#ifdef ENABLE_RAW_TRACE
     STRICT_EXPECTED_CALL(get_time(IGNORED_PTR_ARG));
+#endif
     EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(mqttmessage_destroy(TEST_MESSAGE_HANDLE));
+    STRICT_EXPECTED_CALL(mqttmessage_destroy(IGNORED_PTR_ARG));
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     g_packetComplete(mqttHandle, PUBLISH_TYPE, flag, publish_handle);
@@ -2726,12 +2759,14 @@ TEST_FUNCTION(mqtt_client_trace_PUBLISH_ACK_succeeds)
     BUFFER_HANDLE packet_handle = TEST_BUFFER_HANDLE;
     STRICT_EXPECTED_CALL(BUFFER_length(TEST_BUFFER_HANDLE)).SetReturn(length);
     STRICT_EXPECTED_CALL(BUFFER_u_char(TEST_BUFFER_HANDLE)).SetReturn(PUBLISH_ACK_RESP);
+#ifdef ENABLE_RAW_TRACE
     STRICT_EXPECTED_CALL(get_time(IGNORED_PTR_ARG));
+#endif
+#ifndef NO_LOGGING
     STRICT_EXPECTED_CALL(get_time(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
-        .IgnoreArgument_handle();
-    STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG))
-        .IgnoreArgument_handle();
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG));
+#endif
 
     // act
     g_packetComplete(mqttHandle, PUBACK_TYPE, 0, packet_handle);
@@ -2763,16 +2798,16 @@ TEST_FUNCTION(mqtt_client_trace_SUBSCRIBE_ACK_succeeds)
     BUFFER_HANDLE packet_handle = TEST_BUFFER_HANDLE;
     STRICT_EXPECTED_CALL(BUFFER_length(TEST_BUFFER_HANDLE)).SetReturn(length);
     STRICT_EXPECTED_CALL(BUFFER_u_char(TEST_BUFFER_HANDLE)).SetReturn(SUBSCRIBE_ACK_RESP);
+#ifdef ENABLE_RAW_TRACE
     STRICT_EXPECTED_CALL(get_time(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG))
-        .IgnoreArgument_size();
+#endif
+    STRICT_EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+#ifndef NO_LOGGING
     STRICT_EXPECTED_CALL(get_time(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
-        .IgnoreArgument_handle();
-    STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG))
-        .IgnoreArgument_handle();
-    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG))
-        .IgnoreArgument_ptr();
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG));
+#endif
+    STRICT_EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
 
     // act
     g_packetComplete(mqttHandle, SUBACK_TYPE, 0, packet_handle);
@@ -2804,12 +2839,14 @@ TEST_FUNCTION(mqtt_client_trace_UNSUBSCRIBE_ACK_succeeds)
     BUFFER_HANDLE packet_handle = TEST_BUFFER_HANDLE;
     STRICT_EXPECTED_CALL(BUFFER_length(TEST_BUFFER_HANDLE)).SetReturn(length);
     STRICT_EXPECTED_CALL(BUFFER_u_char(TEST_BUFFER_HANDLE)).SetReturn(UNSUBSCRIBE_ACK_RESP);
+#ifdef ENABLE_RAW_TRACE
     STRICT_EXPECTED_CALL(get_time(IGNORED_PTR_ARG));
+#endif
+#ifndef NO_LOGGING
     STRICT_EXPECTED_CALL(get_time(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG))
-        .IgnoreArgument_handle();
-    STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG))
-        .IgnoreArgument_handle();
+    STRICT_EXPECTED_CALL(STRING_c_str(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG));
+#endif
 
     // act
     g_packetComplete(mqttHandle, UNSUBACK_TYPE, 0, packet_handle);
