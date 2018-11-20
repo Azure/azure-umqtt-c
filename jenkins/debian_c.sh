@@ -14,7 +14,7 @@ build_folder=$build_root"/cmake_debian"
 rm -r -f $build_folder
 mkdir -p $build_folder
 pushd $build_folder
-cmake .. -Drun_unittests:bool=ON
+cmake .. -Drun_unittests:bool=ON  -Drun_valgrind:BOOL=ON
 cmake --build . -- --jobs=$(nproc)
 ctest -C "debug" -V
 

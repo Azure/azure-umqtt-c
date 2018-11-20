@@ -1,8 +1,6 @@
 #Copyright (c) Microsoft. All rights reserved.
 #Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-#this is CMakeLists.txt for mqtt_client_sample
-
 set(mqtt_client_sample_c_files
     mqtt_client_sample.c
 )
@@ -26,6 +24,8 @@ ENDIF(WIN32)
 include_directories(.)
 
 add_executable(mqtt_client_sample ${mqtt_client_sample_c_files} ${mqtt_client_sample_h_files})
+
+compileTargetAsC99(mqtt_client_sample)
 
 if (WIN32)
     target_link_libraries(mqtt_client_sample

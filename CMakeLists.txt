@@ -25,6 +25,8 @@ option(run_e2e_tests "set run_e2e_tests to ON to run e2e tests (default is OFF)"
 option(skip_samples "set skip_samples to ON to skip building samples (default is OFF)[if possible, they are always built]" OFF)
 option(use_installed_dependencies "set use_installed_dependencies to ON to use installed packages instead of building dependencies from submodules" OFF)
 option(use_custom_heap "use externally defined heap functions instead of the malloc family" OFF)
+option(no_logging "disable logging" OFF)
+option(enable_raw_logging "Enables the ability to add raw logging" OFF)
 
 if(${use_custom_heap})
     add_definitions(-DGB_USE_CUSTOM_HEAP)
@@ -81,6 +83,10 @@ endif ()
 
 if (${memory_trace})
     add_definitions(-DGB_MEASURE_MEMORY_FOR_THIS -DGB_DEBUG_ALLOC)
+endif ()
+
+if (${enable_raw_logging})
+    add_definitions(-DENABLE_RAW_TRACE)
 endif ()
 
 #this is the product (a library)
@@ -167,3 +173,5 @@ else ()
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
 endif ()
+
+compileTargetAsC99(umqtt)
