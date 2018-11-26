@@ -226,22 +226,33 @@ int mqttmessage_getTopicLevels(MQTT_MESSAGE_HANDLE handle, char*** levels, size_
     else
     {
         MQTT_MESSAGE* msgInfo = (MQTT_MESSAGE*)handle;
-        const char* delimiters[1];
 
-        delimiters[0] = "/";
+        const char* topic_name = msgInfo->topicName != NULL ? msgInfo->topicName : msgInfo->const_topic_name;
 
-        // Codes_SRS_MQTTMESSAGE_09_002: [ The topic name, excluding the property bag, shall be split into individual tokens using "/" as separator ]
-        // Codes_SRS_MQTTMESSAGE_09_004: [ The split tokens shall be stored in `levels` and its count in `count` ]
-        if (StringToken_Split(msgInfo->topicName, strlen(msgInfo->topicName), delimiters, 1, false, levels, count) != 0)
+        if (topic_name == NULL)
         {
-            // Codes_SRS_MQTTMESSAGE_09_003: [ If splitting fails the function shall return a non-zero value. ]
-            LogError("Failed splitting topic levels");
+            LogError("Topic name is NULL");
             result = __FAILURE__;
         }
         else
         {
-            // Codes_SRS_MQTTMESSAGE_09_005: [ If no failures occur the function shall return zero. ]
-            result = 0;
+            const char* delimiters[1];
+
+            delimiters[0] = "/";
+
+            // Codes_SRS_MQTTMESSAGE_09_002: [ The topic name, excluding the property bag, shall be split into individual tokens using "/" as separator ]
+            // Codes_SRS_MQTTMESSAGE_09_004: [ The split tokens shall be stored in `levels` and its count in `count` ]
+            if (StringToken_Split(topic_name, strlen(topic_name), delimiters, 1, false, levels, count) != 0)
+            {
+                // Codes_SRS_MQTTMESSAGE_09_003: [ If splitting fails the function shall return a non-zero value. ]
+                LogError("Failed splitting topic levels");
+                result = __FAILURE__;
+            }
+            else
+            {
+                // Codes_SRS_MQTTMESSAGE_09_005: [ If no failures occur the function shall return zero. ]
+                result = 0;
+            }
         }
     }
 
