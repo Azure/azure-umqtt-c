@@ -819,7 +819,7 @@ BUFFER_HANDLE mqtt_codec_publish(QOS_VALUE qosValue, bool duplicateMsg, bool ser
                             (void)memcpy(iterator, msgBuffer, buffLen);
                             if (trace_log)
                             {
-                                STRING_sprintf(varible_header_log, " | PAYLOAD_LEN: %zu", buffLen);
+                                STRING_sprintf(varible_header_log, " | PAYLOAD_LEN: %d", (int)buffLen);
                             }
                         }
                     }
