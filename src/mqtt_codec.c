@@ -519,7 +519,7 @@ static int constructConnPayload(BUFFER_HANDLE ctrlPacket, const MQTT_CLIENT_OPTI
                 }
                 if (trace_log != NULL)
                 {
-                    (void)STRING_sprintf(trace_log, " %zu", packet[CONN_FLAG_BYTE_OFFSET]);
+                    (void)STRING_sprintf(trace_log, " %u", packet[CONN_FLAG_BYTE_OFFSET]);
                     (void)STRING_concat_with_STRING(trace_log, connect_payload_trace);
                     STRING_delete(connect_payload_trace);
                 }
