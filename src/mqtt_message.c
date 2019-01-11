@@ -111,7 +111,7 @@ MQTT_MESSAGE_HANDLE mqttmessage_create(uint16_t packetId, const char* topicName,
                     if (result->appPayload.message == NULL)
                     {
                         /* Codes_SRS_MQTTMESSAGE_07_003: [If any memory allocation fails mqttmessage_create shall free any allocated memory and return NULL.] */
-                        LogError("Failure allocating message value of %d", (int)appMsgLength);
+                        LogError("Failure allocating message value of %u", appMsgLength);
                         free(result->topicName);
                         free(result);
                         result = NULL;

@@ -664,7 +664,7 @@ static void ProcessPublishMessage(MQTT_CLIENT* mqtt_client, uint8_t* initialPos,
 #ifndef NO_LOGGING
                 if (mqtt_client->logTrace)
                 {
-                    STRING_sprintf(trace_log, " | PAYLOAD_LEN: %d", (int)numberOfBytesToBeRead);
+                    STRING_sprintf(trace_log, " | PAYLOAD_LEN: %u", numberOfBytesToBeRead);
                     log_incoming_trace(mqtt_client, trace_log);
                 }
 #endif
