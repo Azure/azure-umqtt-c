@@ -1000,6 +1000,7 @@ int mqtt_client_connect(MQTT_CLIENT_HANDLE handle, XIO_HANDLE xioHandle, MQTT_CL
             /*Codes_SRS_MQTT_CLIENT_07_007: [If any failure is encountered then mqtt_client_connect shall return a non-zero value.]*/
             LogError("Error: io_open failed");
             result = __FAILURE__;
+            mqtt_client->xioHandle = NULL;
             // Remove cloned options
             clear_mqtt_options(mqtt_client);
         }
