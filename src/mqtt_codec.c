@@ -47,7 +47,7 @@
 static const char* const TRUE_CONST = "true";
 static const char* const FALSE_CONST = "false";
 
-DEFINE_ENUM(CODEC_STATE_RESULT, CODEC_STATE_VALUES);
+MU_DEFINE_ENUM(CODEC_STATE_RESULT, CODEC_STATE_VALUES);
 
 typedef struct MQTTCODEC_INSTANCE_TAG
 {
@@ -130,7 +130,7 @@ static int addListItemsToUnsubscribePacket(BUFFER_HANDLE ctrlPacket, const char*
     int result = 0;
     if (payloadList == NULL || ctrlPacket == NULL)
     {
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -142,11 +142,11 @@ static int addListItemsToUnsubscribePacket(BUFFER_HANDLE ctrlPacket, const char*
             size_t topicLen = strlen(payloadList[index]);
             if (topicLen > USHRT_MAX)
             {
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else if (BUFFER_enlarge(ctrlPacket, topicLen + 2) != 0)
             {
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else
             {
@@ -168,7 +168,7 @@ static int addListItemsToSubscribePacket(BUFFER_HANDLE ctrlPacket, SUBSCRIBE_PAY
     int result = 0;
     if (payloadList == NULL || ctrlPacket == NULL)
     {
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -180,11 +180,11 @@ static int addListItemsToSubscribePacket(BUFFER_HANDLE ctrlPacket, SUBSCRIBE_PAY
             size_t topicLen = strlen(payloadList[index].subscribeTopic);
             if (topicLen > USHRT_MAX)
             {
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else if (BUFFER_enlarge(ctrlPacket, topicLen + 2 + 1) != 0)
             {
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else
             {
@@ -208,14 +208,14 @@ static int constructConnectVariableHeader(BUFFER_HANDLE ctrlPacket, const MQTT_C
     int result = 0;
     if (BUFFER_enlarge(ctrlPacket, CONNECT_VARIABLE_HEADER_SIZE) != 0)
     {
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
         uint8_t* iterator = BUFFER_u_char(ctrlPacket);
         if (iterator == NULL)
         {
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -253,18 +253,18 @@ static int constructPublishVariableHeader(BUFFER_HANDLE ctrlPacket, const PUBLIS
 
     if (topicLen > USHRT_MAX)
     {
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else if (BUFFER_enlarge(ctrlPacket, topicLen + idLen + spaceLen) != 0)
     {
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
         uint8_t* iterator = BUFFER_u_char(ctrlPacket);
         if (iterator == NULL)
         {
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -294,14 +294,14 @@ static int constructSubscibeTypeVariableHeader(BUFFER_HANDLE ctrlPacket, uint16_
     int result = 0;
     if (BUFFER_enlarge(ctrlPacket, 2) != 0)
     {
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
         uint8_t* iterator = BUFFER_u_char(ctrlPacket);
         if (iterator == NULL)
         {
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -348,7 +348,7 @@ static int constructFixedHeader(BUFFER_HANDLE ctrlPacket, CONTROL_PACKET_TYPE pa
     int result;
     if (ctrlPacket == NULL)
     {
-        return __FAILURE__;
+        return MU_FAILURE;
     }
     else
     {
@@ -372,12 +372,12 @@ static int constructFixedHeader(BUFFER_HANDLE ctrlPacket, CONTROL_PACKET_TYPE pa
         BUFFER_HANDLE fixedHeader = BUFFER_new();
         if (fixedHeader == NULL)
         {
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else if (BUFFER_pre_build(fixedHeader, index + 1) != 0)
         {
             BUFFER_delete(fixedHeader);
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -398,7 +398,7 @@ static int constructConnPayload(BUFFER_HANDLE ctrlPacket, const MQTT_CLIENT_OPTI
     int result = 0;
     if (mqttOptions == NULL || ctrlPacket == NULL)
     {
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -441,19 +441,19 @@ static int constructConnPayload(BUFFER_HANDLE ctrlPacket, const MQTT_CLIENT_OPTI
         // Validate the Username & Password
         if (clientLen > USHRT_MAX)
         {
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else if (usernameLen == 0 && passwordLen > 0)
         {
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else if ((willMessageLen > 0 && willTopicLen == 0) || (willTopicLen > 0 && willMessageLen == 0))
         {
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else if (BUFFER_enlarge(ctrlPacket, totalLen) != 0)
         {
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -466,7 +466,7 @@ static int constructConnPayload(BUFFER_HANDLE ctrlPacket, const MQTT_CLIENT_OPTI
             // TODO: Read on the Will Topic
             if (willMessageLen > USHRT_MAX || willTopicLen > USHRT_MAX || usernameLen > USHRT_MAX || passwordLen > USHRT_MAX)
             {
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else
             {
@@ -535,7 +535,7 @@ static int prepareheaderDataInfo(MQTTCODEC_INSTANCE* codecData, uint8_t remainLe
     int result;
     if (codecData == NULL)
     {
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -555,7 +555,7 @@ static int prepareheaderDataInfo(MQTTCODEC_INSTANCE* codecData, uint8_t remainLe
 
                 if (multiplier > 128 * 128 * 128)
                 {
-                    result = __FAILURE__;
+                    result = MU_FAILURE;
                     break;
                 }
             } while ((encodeByte & NEXT_128_CHUNK) != 0);
@@ -574,7 +574,7 @@ static int prepareheaderDataInfo(MQTTCODEC_INSTANCE* codecData, uint8_t remainLe
                 {
                     /* Codes_SRS_MQTT_CODEC_07_035: [ If any error is encountered then the packet state will be marked as error and mqtt_codec_bytesReceived shall return a non-zero value. ] */
                     LogError("Failed BUFFER_new");
-                    result = __FAILURE__;
+                    result = MU_FAILURE;
                 }
                 else
                 {
@@ -582,7 +582,7 @@ static int prepareheaderDataInfo(MQTTCODEC_INSTANCE* codecData, uint8_t remainLe
                     {
                         /* Codes_SRS_MQTT_CODEC_07_035: [ If any error is encountered then the packet state will be marked as error and mqtt_codec_bytesReceived shall return a non-zero value. ] */
                         LogError("Failed BUFFER_pre_build");
-                        result = __FAILURE__;
+                        result = MU_FAILURE;
                     }
 
                 }
@@ -1054,14 +1054,14 @@ int mqtt_codec_bytesReceived(MQTTCODEC_HANDLE handle, const unsigned char* buffe
     /* Codes_SRS_MQTT_CODEC_07_031: [If the parameters handle or buffer is NULL then mqtt_codec_bytesReceived shall return a non-zero value.] */
     if (codec_Data == NULL)
     {
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     /* Codes_SRS_MQTT_CODEC_07_031: [If the parameters handle or buffer is NULL then mqtt_codec_bytesReceived shall return a non-zero value.] */
     /* Codes_SRS_MQTT_CODEC_07_032: [If the parameters size is zero then mqtt_codec_bytesReceived shall return a non-zero value.] */
     else if (buffer == NULL || size == 0)
     {
         codec_Data->currPacket = PACKET_TYPE_ERROR;
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -1083,7 +1083,7 @@ int mqtt_codec_bytesReceived(MQTTCODEC_HANDLE handle, const unsigned char* buffe
                     {
                         /* Codes_SRS_MQTT_CODEC_07_035: [If any error is encountered then the packet state will be marked as error and mqtt_codec_bytesReceived shall return a non-zero value.] */
                         codec_Data->currPacket = PACKET_TYPE_ERROR;
-                        result = __FAILURE__;
+                        result = MU_FAILURE;
                     }
                     if (codec_Data->currPacket == PINGRESP_TYPE)
                     {
@@ -1105,7 +1105,7 @@ int mqtt_codec_bytesReceived(MQTTCODEC_HANDLE handle, const unsigned char* buffe
                     {
                         /* Codes_SRS_MQTT_CODEC_07_035: [If any error is encountered then the packet state will be marked as error and mqtt_codec_bytesReceived shall return a non-zero value.] */
                         codec_Data->currPacket = PACKET_TYPE_ERROR;
-                        result = __FAILURE__;
+                        result = MU_FAILURE;
                     }
                     else
                     {
@@ -1126,7 +1126,7 @@ int mqtt_codec_bytesReceived(MQTTCODEC_HANDLE handle, const unsigned char* buffe
             {
                 /* Codes_SRS_MQTT_CODEC_07_035: [If any error is encountered then the packet state will be marked as error and mqtt_codec_bytesReceived shall return a non-zero value.] */
                 codec_Data->currPacket = PACKET_TYPE_ERROR;
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
         }
     }
