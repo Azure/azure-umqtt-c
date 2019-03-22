@@ -25,7 +25,7 @@
 #define CONNECT_PACKET_MASK             0xf0
 #define TIME_MAX_BUFFER                 16
 #define DEFAULT_MAX_PING_RESPONSE_TIME  80  // % of time to send pings
-#define MAX_CLOSE_RETRIES               2
+#define MAX_CLOSE_RETRIES               20
 
 static const char* const TRUE_CONST = "true";
 static const char* const FALSE_CONST = "false";
@@ -86,6 +86,8 @@ static void close_connection(MQTT_CLIENT* mqtt_client)
                 ThreadAPI_Sleep(2);
             } while (mqtt_client->clientConnected && counter < MAX_CLOSE_RETRIES);
         }
+        // Clear the handle because we don't use it anymore
+        mqtt_client->xioHandle = NULL;
     }
     else
     {
@@ -1221,7 +1223,6 @@ int mqtt_client_disconnect(MQTT_CLIENT_HANDLE handle, ON_MQTT_DISCONNECTED_CALLB
                 BUFFER_delete(disconnectPacket);
             }
             clear_mqtt_options(mqtt_client);
-            mqtt_client->xioHandle = NULL;
         }
         else
         {
