@@ -119,7 +119,7 @@ typedef struct TEST_COMPLETE_DATA_INSTANCE_TAG
 TEST_MUTEX_HANDLE test_serialize_mutex;
 
 #define TEST_CONTEXT ((const void*)0x4242)
-#define MAX_CLOSE_RETRIES               2
+#define MAX_CLOSE_RETRIES               20
 #define CLOSE_SLEEP_VALUE               2
 
 #ifdef __cplusplus
@@ -1719,7 +1719,6 @@ TEST_FUNCTION(mqtt_client_disconnect_send_complete_SEND_OK_succeeds)
     mqtt_client_deinit(mqttHandle);
 }
 
-
 TEST_FUNCTION(mqtt_client_disconnect_send_complete_SEND_ERROR_succeeds)
 {
     // arrange
@@ -1828,9 +1827,7 @@ TEST_FUNCTION(mqtt_client_dowork_ping_No_ping_response_succeeds)
 
     EXPECTED_CALL(xio_dowork(IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(tickcounter_get_current_ms(TEST_COUNTER_HANDLE, IGNORED_PTR_ARG)).IgnoreArgument(2);
-    STRICT_EXPECTED_CALL(xio_close(TEST_IO_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
-        .IgnoreArgument_on_io_close_complete()
-        .IgnoreArgument_callback_context();
+    STRICT_EXPECTED_CALL(xio_close(TEST_IO_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
     for (size_t index = 0; index < MAX_CLOSE_RETRIES; index++)
     {
         STRICT_EXPECTED_CALL(xio_dowork(IGNORED_PTR_ARG));
@@ -1980,6 +1977,7 @@ TEST_FUNCTION(mqtt_client_dowork_does_nothing_if_disconnected_1)
 
     mqtt_client_disconnect(mqttHandle, NULL, NULL);
 
+    g_sendComplete(g_onSendCtx, IO_SEND_OK);
     umock_c_reset_all_calls();
 
     // act
