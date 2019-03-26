@@ -248,18 +248,15 @@ extern "C" {
         return 0;
     }
 
-
 #ifdef __cplusplus
 }
 #endif
 
-DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
+MU_DEFINE_ENUM_STRINGS(UMOCK_C_ERROR_CODE, UMOCK_C_ERROR_CODE_VALUES)
 
 static void on_umock_c_error(UMOCK_C_ERROR_CODE error_code)
 {
-    char temp_str[256];
-    (void)snprintf(temp_str, sizeof(temp_str), "umock_c reported error :%s", ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
-    ASSERT_FAIL(temp_str);
+    ASSERT_FAIL("umock_c reported error :%s", MU_ENUM_TO_STRING(UMOCK_C_ERROR_CODE, error_code));
 }
 
 BEGIN_TEST_SUITE(mqtt_client_ut)
@@ -309,12 +306,12 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_GLOBAL_MOCK_RETURN(mqtt_codec_create, NULL);
 
     REGISTER_GLOBAL_MOCK_HOOK(xio_open, my_xio_open);
-    REGISTER_GLOBAL_MOCK_FAIL_RETURN(xio_open, __FAILURE__);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(xio_open, MU_FAILURE);
     REGISTER_GLOBAL_MOCK_HOOK(xio_send, my_xio_send);
-    REGISTER_GLOBAL_MOCK_FAIL_RETURN(xio_send, __FAILURE__);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(xio_send, MU_FAILURE);
 
     REGISTER_GLOBAL_MOCK_HOOK(tickcounter_get_current_ms, my_tickcounter_get_current_ms);
-    REGISTER_GLOBAL_MOCK_FAIL_RETURN(tickcounter_get_current_ms, __FAILURE__);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(tickcounter_get_current_ms, MU_FAILURE);
 
     REGISTER_GLOBAL_MOCK_HOOK(mqtt_codec_publishRelease, my_mqtt_codec_publishRelease);
     REGISTER_GLOBAL_MOCK_HOOK(mqtt_codec_publishComplete, my_mqtt_codec_publishComplete);
@@ -337,12 +334,12 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_GLOBAL_MOCK_RETURN(mqtt_codec_publishReceived, TEST_BUFFER_HANDLE);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(mqtt_codec_publishReceived, NULL);
     REGISTER_GLOBAL_MOCK_RETURN(mqtt_codec_bytesReceived, 0);
-    REGISTER_GLOBAL_MOCK_FAIL_RETURN(mqtt_codec_bytesReceived, __FAILURE__);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(mqtt_codec_bytesReceived, MU_FAILURE);
     REGISTER_GLOBAL_MOCK_RETURN(xio_close, 0);
-    REGISTER_GLOBAL_MOCK_FAIL_RETURN(xio_close, __FAILURE__);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(xio_close, MU_FAILURE);
 
     REGISTER_GLOBAL_MOCK_RETURN(platform_init, 0);
-    REGISTER_GLOBAL_MOCK_FAIL_RETURN(platform_init, __FAILURE__);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(platform_init, MU_FAILURE);
 
     REGISTER_GLOBAL_MOCK_RETURN(tickcounter_create, TEST_COUNTER_HANDLE);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(tickcounter_create, NULL);
@@ -362,14 +359,14 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_GLOBAL_MOCK_RETURN(mqttmessage_getIsDuplicateMsg, true);
     REGISTER_GLOBAL_MOCK_RETURN(mqttmessage_getIsRetained, true);
     REGISTER_GLOBAL_MOCK_RETURN(mqttmessage_setIsDuplicateMsg, 0);
-    REGISTER_GLOBAL_MOCK_FAIL_RETURN(mqttmessage_setIsDuplicateMsg, __FAILURE__);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(mqttmessage_setIsDuplicateMsg, MU_FAILURE);
     REGISTER_GLOBAL_MOCK_RETURN(mqttmessage_setIsRetained, 0);
-    REGISTER_GLOBAL_MOCK_FAIL_RETURN(mqttmessage_setIsRetained, __FAILURE__);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(mqttmessage_setIsRetained, MU_FAILURE);
     REGISTER_GLOBAL_MOCK_RETURN(mqttmessage_getApplicationMsg, &TEST_APP_PAYLOAD);
     REGISTER_GLOBAL_MOCK_HOOK(mqttmessage_destroy, my_mqttmessage_destroy);
 
     REGISTER_GLOBAL_MOCK_RETURN(mallocAndStrcpy_s, 0);
-    REGISTER_GLOBAL_MOCK_FAIL_RETURN(mallocAndStrcpy_s, __FAILURE__);
+    REGISTER_GLOBAL_MOCK_FAIL_RETURN(mallocAndStrcpy_s, MU_FAILURE);
 }
 
 TEST_SUITE_CLEANUP(suite_cleanup)
@@ -414,7 +411,7 @@ static int should_skip_index(size_t current_index, const size_t skip_array[], si
     {
         if (current_index == skip_array[index])
         {
-            result = __FAILURE__;
+            result = MU_FAILURE;
             break;
         }
     }
@@ -516,58 +513,31 @@ static void setup_mqtt_client_connect_mocks(MQTT_CLIENT_OPTIONS* mqttOptions)
         STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, mqttOptions->password));
     }
 
-    STRICT_EXPECTED_CALL(xio_open(TEST_IO_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
-        .IgnoreArgument(2)
-        .IgnoreArgument(3)
-        .IgnoreArgument_on_bytes_received_context()
-        .IgnoreArgument_on_io_error_context()
-        .IgnoreArgument(4)
-        .IgnoreArgument(6);
+    STRICT_EXPECTED_CALL(xio_open(TEST_IO_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
     EXPECTED_CALL(mqtt_codec_connect(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(BUFFER_length(TEST_BUFFER_HANDLE));
     STRICT_EXPECTED_CALL(BUFFER_u_char(TEST_BUFFER_HANDLE));
-    STRICT_EXPECTED_CALL(tickcounter_get_current_ms(TEST_COUNTER_HANDLE, IGNORED_PTR_ARG))
-        .IgnoreArgument_current_ms();
+    STRICT_EXPECTED_CALL(tickcounter_get_current_ms(TEST_COUNTER_HANDLE, IGNORED_PTR_ARG));
     EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(BUFFER_delete(TEST_BUFFER_HANDLE));
 }
 
 static void setup_mqtt_client_connect_retry_mocks(MQTT_CLIENT_OPTIONS* mqttOptions)
 {
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_CLIENT_ID))
-        .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_WILL_MSG))
-        .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_USERNAME))
-        .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_PASSWORD))
-        .IgnoreArgument(1);
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_CLIENT_ID));
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_WILL_MSG));
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_USERNAME));
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_PASSWORD));
     STRICT_EXPECTED_CALL(xio_open(TEST_IO_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
-        .IgnoreArgument(2)
-        .IgnoreArgument(3)
-        .IgnoreArgument_on_bytes_received_context()
-        .IgnoreArgument_on_io_error_context()
-        .IgnoreArgument(4)
-        .IgnoreArgument(6)
-        .SetReturn(__FAILURE__);
+        .SetReturn(MU_FAILURE);
 
     setup_mqtt_clear_options_mocks(mqttOptions);
 
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_CLIENT_ID))
-        .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_WILL_MSG))
-        .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_USERNAME))
-        .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_PASSWORD))
-        .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(xio_open(TEST_IO_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
-        .IgnoreArgument(2)
-        .IgnoreArgument(3)
-        .IgnoreArgument_on_bytes_received_context()
-        .IgnoreArgument_on_io_error_context()
-        .IgnoreArgument(4)
-        .IgnoreArgument(6);
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_CLIENT_ID));
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_WILL_MSG));
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_USERNAME));
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_PASSWORD));
+    STRICT_EXPECTED_CALL(xio_open(TEST_IO_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
 }
 
 static void TestRecvCallback(MQTT_MESSAGE_HANDLE msgHandle, void* context)
@@ -764,14 +734,11 @@ TEST_FUNCTION(mqtt_client_init_fail)
         umock_c_negative_tests_reset();
         umock_c_negative_tests_fail_call(index);
 
-        char tmp_msg[128];
-        sprintf(tmp_msg, "IoTHubClient_LL_SendReportedState failure in test %zu/%zu", index, count);
-
         // act
         MQTT_CLIENT_HANDLE result = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, TestErrorCallback, NULL);
 
         // assert
-        ASSERT_IS_NULL(result);
+        ASSERT_IS_NULL(result, "IoTHubClient_LL_SendReportedState failure in test %zu/%zu", index, count);
     }
 
     // cleanup
@@ -894,23 +861,12 @@ TEST_FUNCTION(mqtt_client_connect_fails)
     SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, TEST_WILL_MSG, TEST_WILL_TOPIC, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_CLIENT_ID))
-        .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_WILL_TOPIC))
-        .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_WILL_MSG))
-        .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_USERNAME))
-        .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_PASSWORD))
-        .IgnoreArgument(1);
-    STRICT_EXPECTED_CALL(xio_open(TEST_IO_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
-        .IgnoreArgument(2)
-        .IgnoreArgument(3)
-        .IgnoreArgument_on_bytes_received_context()
-        .IgnoreArgument_on_io_error_context()
-        .IgnoreArgument(4)
-        .IgnoreArgument(6);
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_CLIENT_ID));
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_WILL_TOPIC));
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_WILL_MSG));
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_USERNAME));
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_PASSWORD));
+    STRICT_EXPECTED_CALL(xio_open(TEST_IO_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
 
     umock_c_negative_tests_snapshot();
 
@@ -921,9 +877,6 @@ TEST_FUNCTION(mqtt_client_connect_fails)
         umock_c_negative_tests_reset();
         umock_c_negative_tests_fail_call(index);
 
-        char tmp_msg[64];
-        sprintf(tmp_msg, "mqtt_client_connect failure in test %zu/%zu", index, count);
-
         int result = mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
         if (result == 0)
         {
@@ -931,7 +884,7 @@ TEST_FUNCTION(mqtt_client_connect_fails)
         }
 
         // assert
-        ASSERT_ARE_NOT_EQUAL(int, 0, result, tmp_msg);
+        ASSERT_ARE_NOT_EQUAL(int, 0, result, "mqtt_client_connect failure in test %zu/%zu", index, count);
     }
 
     // cleanup
@@ -1059,7 +1012,7 @@ TEST_FUNCTION(mqtt_client_on_bytes_received_bytesReceived_fail_succeeds)
     umock_c_reset_all_calls();
 
     EXPECTED_CALL(mqtt_codec_bytesReceived(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG))
-        .SetReturn(__FAILURE__);
+        .SetReturn(MU_FAILURE);
     STRICT_EXPECTED_CALL(xio_close(TEST_IO_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
 
     for (size_t index = 0; index < MAX_CLOSE_RETRIES; index++)
@@ -1089,9 +1042,7 @@ TEST_FUNCTION(mqtt_client_connect_multiple_completes_one_connect_succeeds)
     SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, TEST_WILL_MSG, NULL, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
 
     setup_mqtt_client_connect_mocks(&mqttOptions);
-    STRICT_EXPECTED_CALL(xio_close(TEST_IO_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG))
-        .IgnoreArgument_on_io_close_complete()
-        .IgnoreArgument_callback_context();
+    STRICT_EXPECTED_CALL(xio_close(TEST_IO_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
 
     STRICT_EXPECTED_CALL(xio_dowork(IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(ThreadAPI_Sleep(CLOSE_SLEEP_VALUE));
@@ -1303,13 +1254,10 @@ TEST_FUNCTION(mqtt_client_subscribe_fails)
         umock_c_negative_tests_reset();
         umock_c_negative_tests_fail_call(index);
 
-        char tmp_msg[64];
-        sprintf(tmp_msg, "mqtt_client_subscribe failure in test %zu/%zu", index, count);
-
         int result = mqtt_client_subscribe(mqttHandle, TEST_PACKET_ID, TEST_SUBSCRIBE_PAYLOAD, 2);
 
         // assert
-        ASSERT_ARE_NOT_EQUAL(int, 0, result, tmp_msg);
+        ASSERT_ARE_NOT_EQUAL(int, 0, result, "mqtt_client_subscribe failure in test %zu/%zu", index, count);
     }
 
     // cleanup
@@ -1442,13 +1390,10 @@ TEST_FUNCTION(mqtt_client_unsubscribe_fail)
         umock_c_negative_tests_reset();
         umock_c_negative_tests_fail_call(index);
 
-        char tmp_msg[64];
-        sprintf(tmp_msg, "mqtt_client_unsubscribe failure in test %zu/%zu", index, count);
-
         int result = mqtt_client_unsubscribe(mqttHandle, TEST_PACKET_ID, TEST_UNSUBSCRIPTION_TOPIC, 2);
 
         // assert
-        ASSERT_ARE_NOT_EQUAL(int, 0, result, tmp_msg);
+        ASSERT_ARE_NOT_EQUAL(int, 0, result, "mqtt_client_unsubscribe failure in test %zu/%zu", index, count);
     }
 
     // cleanup
@@ -1551,7 +1496,7 @@ TEST_FUNCTION(mqtt_client_publish_xio_send_fails)
     STRICT_EXPECTED_CALL(BUFFER_length(TEST_BUFFER_HANDLE));
     STRICT_EXPECTED_CALL(BUFFER_u_char(TEST_BUFFER_HANDLE));
     STRICT_EXPECTED_CALL(tickcounter_get_current_ms(TEST_COUNTER_HANDLE, IGNORED_PTR_ARG)).IgnoreArgument(2);
-    EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG)).SetReturn(__FAILURE__);
+    EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG)).SetReturn(MU_FAILURE);
     STRICT_EXPECTED_CALL(BUFFER_delete(TEST_BUFFER_HANDLE));
 
     // act
@@ -1577,7 +1522,6 @@ TEST_FUNCTION(mqtt_client_publish_succeeds)
     STRICT_EXPECTED_CALL(mqttmessage_getIsRetained(TEST_MESSAGE_HANDLE));
     STRICT_EXPECTED_CALL(mqttmessage_getPacketId(TEST_MESSAGE_HANDLE));
     STRICT_EXPECTED_CALL(mqttmessage_getTopicName(TEST_MESSAGE_HANDLE));
-
 
     EXPECTED_CALL(mqtt_codec_publish(DELIVER_AT_MOST_ONCE, true, true, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(BUFFER_length(TEST_BUFFER_HANDLE));
@@ -1639,13 +1583,10 @@ TEST_FUNCTION(mqtt_client_disconnect_fail)
         umock_c_negative_tests_reset();
         umock_c_negative_tests_fail_call(index);
 
-        char tmp_msg[64];
-        sprintf(tmp_msg, "mqtt_client_disconnect failure in test %zu/%zu", index, count);
-
         int result = mqtt_client_disconnect(mqttHandle, NULL, NULL);
 
         // assert
-        ASSERT_ARE_NOT_EQUAL(int, 0, result, tmp_msg);
+        ASSERT_ARE_NOT_EQUAL(int, 0, result, "mqtt_client_disconnect failure in test %zu/%zu", index, count);
     }
 
     // cleanup
@@ -1941,7 +1882,7 @@ TEST_FUNCTION(mqtt_client_dowork_tickcounter_fails_succeeds)
     umock_c_reset_all_calls();
 
     EXPECTED_CALL(xio_dowork(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(tickcounter_get_current_ms(TEST_COUNTER_HANDLE, IGNORED_PTR_ARG)).IgnoreArgument(2).SetReturn(__FAILURE__);
+    STRICT_EXPECTED_CALL(tickcounter_get_current_ms(TEST_COUNTER_HANDLE, IGNORED_PTR_ARG)).IgnoreArgument(2).SetReturn(MU_FAILURE);
 
     // act
     mqtt_client_dowork(mqttHandle);
@@ -2230,12 +2171,10 @@ TEST_FUNCTION(mqtt_client_recvCompleteCallback_PUBLISH_EXACTLY_ONCE_fail)
         umock_c_negative_tests_reset();
         umock_c_negative_tests_fail_call(index);
 
-        char tmp_msg[64];
-        sprintf(tmp_msg, "IoTHubClient_LL_Create failure in test %zu/%zu", index, count);
         g_packetComplete(mqttHandle, PUBLISH_TYPE, flag, publish_handle);
 
         if (index == 2 || index == 3 || index == 4 || index == 5 || index == 6)
-            ASSERT_IS_TRUE(g_errorCallbackInvoked);
+            ASSERT_IS_TRUE(g_errorCallbackInvoked, "IoTHubClient_LL_Create failure in test %zu/%zu", index, count);
     }
 
     // cleanup

@@ -7,6 +7,7 @@
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/string_token.h"
+#include "azure_c_shared_utility/macro_utils.h"
 
 typedef struct MQTT_MESSAGE_TAG
 {
@@ -221,7 +222,7 @@ int mqttmessage_getTopicLevels(MQTT_MESSAGE_HANDLE handle, char*** levels, size_
     if (handle == NULL || levels == NULL || count == NULL)
     {
         LogError("Invalid Parameter handle: %p, levels: %p, count: %p", handle, levels, count);
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -232,7 +233,7 @@ int mqttmessage_getTopicLevels(MQTT_MESSAGE_HANDLE handle, char*** levels, size_
         if (topic_name == NULL)
         {
             LogError("Topic name is NULL");
-            result = __FAILURE__;
+            result = MU_FAILURE;
         }
         else
         {
@@ -246,7 +247,7 @@ int mqttmessage_getTopicLevels(MQTT_MESSAGE_HANDLE handle, char*** levels, size_
             {
                 // Codes_SRS_MQTTMESSAGE_09_003: [ If splitting fails the function shall return a non-zero value. ]
                 LogError("Failed splitting topic levels");
-                result = __FAILURE__;
+                result = MU_FAILURE;
             }
             else
             {
@@ -317,7 +318,7 @@ int mqttmessage_setIsDuplicateMsg(MQTT_MESSAGE_HANDLE handle, bool duplicateMsg)
     if (handle == NULL)
     {
         LogError("Invalid Parameter handle: %p.", handle);
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
@@ -335,7 +336,7 @@ int mqttmessage_setIsRetained(MQTT_MESSAGE_HANDLE handle, bool retainMsg)
     if (handle == NULL)
     {
         LogError("Invalid Parameter handle: %p.", handle);
-        result = __FAILURE__;
+        result = MU_FAILURE;
     }
     else
     {
