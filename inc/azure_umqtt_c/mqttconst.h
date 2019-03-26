@@ -5,6 +5,7 @@
 #define MQTTCONST_H
 
 #include "azure_c_shared_utility/crt_abstractions.h"
+#include "azure_c_shared_utility/macro_utils.h"
 
 #ifdef __cplusplus
 #include <cstddef>

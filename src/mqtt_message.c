@@ -7,6 +7,7 @@
 #include "azure_c_shared_utility/gballoc.h"
 #include "azure_c_shared_utility/xlogging.h"
 #include "azure_c_shared_utility/string_token.h"
+#include "azure_c_shared_utility/macro_utils.h"
 
 typedef struct MQTT_MESSAGE_TAG
 {
