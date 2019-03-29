@@ -14,9 +14,6 @@ FILE(READ ${CMAKE_CURRENT_LIST_DIR}/version.txt UMQTT_VERSION)
 set(GENERIC_LIB_VERSION ${UMQTT_VERSION})
 string(SUBSTRING ${UMQTT_VERSION} 0 1 GENERIC_LIB_SOVERSION)
 
-# Include the common build rules for the C SDK
-include(deps/c-utility/configs/azure_iot_build_rules.cmake)
-
 include(ExternalProject)
 
 #the following variables are project-wide and can be used with cmake-gui
@@ -45,8 +42,6 @@ set(run_e2e_tests OFF)
 set(run_int_tests OFF)
 set(run_unittests OFF)
 
-include("dependencies.cmake")
-
 if(NOT ${use_installed_dependencies})
     if ((NOT TARGET azure_macro_utils_c) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-macro-utils-c/CMakeLists.txt))
         add_subdirectory(deps/azure-macro-utils-c)
@@ -68,6 +63,8 @@ if(NOT ${use_installed_dependencies})
     endif()
 endif()
 
+include("dependencies.cmake")
+
 # Include the common build rules for C shared utility
 if(${use_installed_dependencies})
     include(deps/c-utility/configs/azure_iot_build_rules.cmake)
@@ -81,8 +78,6 @@ if (${original_run_e2e_tests} OR ${original_run_unittests})
     set(SHARED_UTIL_REAL_TEST_FOLDER ${SHARED_UTIL_FOLDER}/tests/real_test_files CACHE INTERNAL "this is what needs to be included when doing test sources" FORCE)
     add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/deps/c-utility/testtools)
 endif ()
-
-set(use_cppunittest ON)
 
 set(run_e2e_tests ${original_run_e2e_tests})
 set(run_int_tests ${original_run_int_tests})
