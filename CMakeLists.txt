@@ -45,6 +45,13 @@ set(run_unittests OFF)
 
 include("dependencies.cmake")
 
+if(NOT ${use_installed_dependencies})
+    if ((NOT TARGET azure_macro_utils_c) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-macro-utils-c/CMakeLists.txt))
+        add_subdirectory(deps/azure-macro-utils-c)
+        include_directories(deps/azure-macro-utils-c/inc)
+    endif()
+endif()
+
 if (${original_run_e2e_tests} OR ${original_run_unittests})
     set(SHARED_UTIL_REAL_TEST_FOLDER ${CMAKE_CURRENT_LIST_DIR}/deps/c-utility/tests/real_test_files CACHE INTERNAL "this is what needs to be included when doing test sources" FORCE)
     add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/deps/c-utility/testtools)
