@@ -50,7 +50,6 @@ include("dependencies.cmake")
 if(NOT ${use_installed_dependencies})
     if ((NOT TARGET azure_macro_utils_c) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-macro-utils-c/CMakeLists.txt))
         add_subdirectory(deps/azure-macro-utils-c)
-        include_directories(deps/azure-macro-utils-c/inc)
     endif()
 
     if(${original_run_e2e_tests} OR ${original_run_unittests})
@@ -107,7 +106,7 @@ set(source_h_files
 #the following "set" statetement exports across the project a global variable called COMMON_INC_FOLDER that expands to whatever needs to included when using COMMON library
 set(MQTT_INC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/inc CACHE INTERNAL "this is what needs to be included if using sharedLib lib" FORCE)
 set(MQTT_SRC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/src CACHE INTERNAL "this is what needs to be included when doing include sources" FORCE)
-include_directories(${MQTT_INC_FOLDER} ${SHARED_UTIL_INC_FOLDER})
+include_directories(${MQTT_INC_FOLDER} ${SHARED_UTIL_INC_FOLDER} ${MACRO_UTILS_INC_FOLDER})
 
 get_directory_property(hasParent PARENT_DIRECTORY)
 if (hasParent)
