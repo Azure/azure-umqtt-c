@@ -74,11 +74,6 @@ endif()
 
 set_platform_files(${SHARED_UTIL_FOLDER})
 
-if (${original_run_e2e_tests} OR ${original_run_unittests})
-    set(SHARED_UTIL_REAL_TEST_FOLDER ${SHARED_UTIL_FOLDER}/tests/real_test_files CACHE INTERNAL "this is what needs to be included when doing test sources" FORCE)
-    add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/deps/c-utility/testtools)
-endif ()
-
 set(run_e2e_tests ${original_run_e2e_tests})
 set(run_int_tests ${original_run_int_tests})
 set(run_unittests ${original_run_unittests})
@@ -120,9 +115,9 @@ endif ()
 add_library(umqtt ${source_c_files} ${source_h_files})
 setTargetBuildProperties(umqtt)
 
-set(SHARED_UTIL_ADAPTER_FOLDER "${CMAKE_CURRENT_LIST_DIR}/deps/c-utility/adapters")
+set(SHARED_UTIL_ADAPTER_FOLDER "${SHARED_UTIL_FOLDER}/adapters")
 
-set_platform_files(${CMAKE_CURRENT_LIST_DIR}/deps/c-utility)
+set_platform_files(${SHARED_UTIL_FOLDER})
 
 target_link_libraries(umqtt aziotsharedutil)
 if (NOT WIN32)
