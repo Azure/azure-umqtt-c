@@ -38,9 +38,11 @@ endif ()
 
 #do not add or build any tests of the dependencies
 set(original_run_e2e_tests ${run_e2e_tests})
+set(original_run_int_tests ${run_int_tests})
 set(original_run_unittests ${run_unittests})
 
 set(run_e2e_tests OFF)
+set(run_int_tests OFF)
 set(run_unittests OFF)
 
 include("dependencies.cmake")
@@ -84,6 +86,7 @@ endif ()
 set(use_cppunittest ON)
 
 set(run_e2e_tests ${original_run_e2e_tests})
+set(run_int_tests ${original_run_int_tests})
 set(run_unittests ${original_run_unittests})
 
 #these are the C source files
