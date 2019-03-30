@@ -3,7 +3,7 @@
 
 cmake_minimum_required(VERSION 2.8.11)
 
-if (DEFINED AZURE_MQTT_BUILT)
+if (TARGET umqtt)
     RETURN()
 endif()
 
@@ -13,8 +13,6 @@ FILE(READ ${CMAKE_CURRENT_LIST_DIR}/version.txt UMQTT_VERSION)
 
 set(GENERIC_LIB_VERSION ${UMQTT_VERSION})
 string(SUBSTRING ${UMQTT_VERSION} 0 1 GENERIC_LIB_SOVERSION)
-
-include(ExternalProject)
 
 #the following variables are project-wide and can be used with cmake-gui
 option(run_unittests "set run_unittests to ON to run unittests (default is OFF)" OFF)
@@ -44,7 +42,7 @@ set(run_unittests OFF)
 
 if(NOT ${use_installed_dependencies})
     if ((NOT TARGET azure_macro_utils_c) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-macro-utils-c/CMakeLists.txt))
-        add_subdirectory(deps/azure-macro-utils-c)
+        add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/deps/azure-macro-utils-c)
     endif()
 
     if(${original_run_e2e_tests} OR ${original_run_unittests})
