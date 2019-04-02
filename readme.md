@@ -16,8 +16,10 @@ azure-c-shared-utility needs to be built before building azure-mqtt-c.
 
 - Clone azure-umqtt-c by:
 
-```
-git clone --recursive https://github.com/Azure/azure-umqtt-c.git
+```Shell
+git clone https://github.com/Azure/azure-umqtt-c.git
+cd azure-umqtt-c
+git submodule update --init
 ```
 
 - Create a folder cmake under azure-umqtt-c
@@ -28,7 +30,7 @@ git clone --recursive https://github.com/Azure/azure-umqtt-c.git
 cmake ..
 ```
 
-- Build 
+- Build
 
 ```
 cmake --build .
