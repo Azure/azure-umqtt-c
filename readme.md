@@ -7,7 +7,7 @@ azure-umqtt-c is a general purpose library build for MQTT protocol
 ## Dependencies
 
 azure-mqtt client use the azure-c-shared-utility, which is a C library provisioning common functionality for basic tasks (like string, list manipulation, IO, etc.).
-azure-c-shared-utility is available here: https://github.com/Azure/azure-c-shared-utility.
+azure-c-shared-utility is available here: <https://github.com/Azure/azure-c-shared-utility.>
 azure-c-shared-utility needs to be built before building azure-mqtt-c.  
 
 ## Setup
@@ -26,41 +26,38 @@ git submodule update --init
 
 - Switch to the cmake folder and run
 
-```
+```Shell
 cmake ..
 ```
 
 - Build
 
-```
+```Shell
 cmake --build .
 ```
 
 ### Installation and Use
+
 Optionally, you may choose to install azure-umqtt-c on your machine:
 
 1. Switch to the *cmake* folder and run
-    ```
+
+    ```Shell
     cmake -Duse_installed=ON ../
-    ```
-    ```
     cmake --build . --target install
     ```
-    
+
     or install using the follow commands for each platform:
 
     On Linux:
-    ```
+
+    ```Shell
     sudo make install
     ```
 
     On Windows:
-    ```
-    msbuild /m INSTALL.vcxproj
-    ```
 
-2. Use it in your project (if installed)
-    ```
+    ```Shell
     find_package(umqtt REQUIRED CONFIG)
     target_link_library(yourlib umqtt)
     ```
@@ -73,6 +70,6 @@ _If running tests, this requires that umock-c, azure-ctest, and azure-c-testrunn
 
 In order to build the tests use:
 
-```
+```Shell
 cmake .. -Drun_unittests:bool=ON
 ```
