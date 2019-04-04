@@ -9,6 +9,3 @@
 *.jar
 
 /.vscode/*
-/deps/ctest/
-/deps/testrunnerswitcher/
-/deps/umock-c/
