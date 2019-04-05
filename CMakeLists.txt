@@ -33,11 +33,9 @@ endif ()
 
 #do not add or build any tests of the dependencies
 set(original_run_e2e_tests ${run_e2e_tests})
-set(original_run_int_tests ${run_int_tests})
 set(original_run_unittests ${run_unittests})
 
 set(run_e2e_tests OFF)
-set(run_int_tests OFF)
 set(run_unittests OFF)
 
 if(NOT ${use_installed_dependencies})
@@ -47,33 +45,30 @@ if(NOT ${use_installed_dependencies})
 
     if(${original_run_e2e_tests} OR ${original_run_unittests})
         if (NOT TARGET testrunnerswitcher)
-            add_subdirectory(deps/azure-c-testrunnerswitcher)
+            add_subdirectory(deps/testrunnerswitcher)
         endif()
         if (NOT TARGET ctest)
-            add_subdirectory(deps/azure-ctest)
+            add_subdirectory(deps/ctest)
         endif()
         if (NOT TARGET umock_c)
             add_subdirectory(deps/umock-c)
         endif()
+        enable_testing()
     endif()
     if (NOT TARGET aziotsharedutil)
         add_subdirectory(deps/c-utility)
+        # Include the common build rules for C shared utility
+        if(${use_installed_dependencies})
+            include(deps/c-utility/configs/azure_iot_build_rules.cmake)
+        else()
+            include(${SHARED_UTIL_FOLDER}/configs/azure_iot_build_rules.cmake)
+        endif()
     endif()
-endif()
-
-include("dependencies.cmake")
-
-# Include the common build rules for C shared utility
-if(${use_installed_dependencies})
-    include(deps/c-utility/configs/azure_iot_build_rules.cmake)
-else()
-    include(${SHARED_UTIL_FOLDER}/configs/azure_iot_build_rules.cmake)
 endif()
 
 set_platform_files(${SHARED_UTIL_FOLDER})
 
 set(run_e2e_tests ${original_run_e2e_tests})
-set(run_int_tests ${original_run_int_tests})
 set(run_unittests ${original_run_unittests})
 
 #these are the C source files
@@ -133,7 +128,6 @@ if (NOT ${ARCHITECTURE} STREQUAL "ARM")
 endif ()
 
 if (${run_unittests})
-    include("dependencies-test.cmake")
     add_subdirectory(tests)
 endif ()
 
