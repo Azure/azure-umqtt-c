@@ -6,7 +6,7 @@
 
 #include "azure_c_shared_utility/xio.h"
 #include "azure_c_shared_utility/buffer_.h"
-#include "azure_c_shared_utility/umock_c_prod.h"
+#include "umock_c/umock_c_prod.h"
 #include "azure_umqtt_c/mqttconst.h"
 #include "azure_c_shared_utility/strings.h"
 

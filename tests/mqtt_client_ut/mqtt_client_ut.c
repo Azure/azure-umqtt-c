@@ -14,10 +14,10 @@
 #endif
 
 #include "testrunnerswitcher.h"
-#include "umock_c.h"
-#include "umock_c_negative_tests.h"
-#include "umocktypes_bool.h"
-#include "umocktypes_stdint.h"
+#include "umock_c/umock_c.h"
+#include "umock_c/umock_c_negative_tests.h"
+#include "umock_c/umocktypes_bool.h"
+#include "umock_c/umocktypes_stdint.h"
 
 #if defined _MSC_VER
 #pragma warning(disable: 4054) /* MSC incorrectly fires this */
@@ -53,7 +53,7 @@ static void my_gballoc_free(void* ptr)
 #include "azure_umqtt_c/mqttconst.h"
 
 #define ENABLE_MOCKS
-#include "azure_c_shared_utility/umock_c_prod.h"
+#include "umock_c/umock_c_prod.h"
 
 MOCKABLE_FUNCTION(, void, on_mqtt_operation_callback, MQTT_CLIENT_HANDLE, handle, MQTT_CLIENT_EVENT_RESULT, actionResult, const void*, msgInfo, void*, callbackCtx);
 MOCKABLE_FUNCTION(, void, on_mqtt_disconnected_callback, void*, callback_ctx);
