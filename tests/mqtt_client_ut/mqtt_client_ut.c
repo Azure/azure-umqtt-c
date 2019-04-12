@@ -1013,6 +1013,7 @@ TEST_FUNCTION(mqtt_client_on_bytes_received_bytesReceived_fail_succeeds)
 
     EXPECTED_CALL(mqtt_codec_bytesReceived(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG))
         .SetReturn(MU_FAILURE);
+    STRICT_EXPECTED_CALL(mqtt_codec_reset(IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(xio_close(TEST_IO_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
 
     for (size_t index = 0; index < MAX_CLOSE_RETRIES; index++)
