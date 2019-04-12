@@ -443,6 +443,7 @@ static void onBytesReceived(void* context, const unsigned char* buffer, size_t s
     {
         if (mqtt_codec_bytesReceived(mqtt_client->codec_handle, buffer, size) != 0)
         {
+            mqtt_codec_reset(mqtt_client->codec_handle);
             set_error_callback(mqtt_client, MQTT_CLIENT_PARSE_ERROR);
         }
     }

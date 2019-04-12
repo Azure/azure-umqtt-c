@@ -27,6 +27,7 @@ typedef void(*ON_PACKET_COMPLETE_CALLBACK)(void* context, CONTROL_PACKET_TYPE pa
 MOCKABLE_FUNCTION(, MQTTCODEC_HANDLE, mqtt_codec_create, ON_PACKET_COMPLETE_CALLBACK, packetComplete, void*, callbackCtx);
 MOCKABLE_FUNCTION(, void, mqtt_codec_destroy, MQTTCODEC_HANDLE, handle);
 
+MOCKABLE_FUNCTION(, void, mqtt_codec_reset, MQTTCODEC_HANDLE, handle);
 MOCKABLE_FUNCTION(, BUFFER_HANDLE, mqtt_codec_connect, const MQTT_CLIENT_OPTIONS*, mqttOptions, STRING_HANDLE, trace_log);
 MOCKABLE_FUNCTION(, BUFFER_HANDLE, mqtt_codec_disconnect);
 MOCKABLE_FUNCTION(, BUFFER_HANDLE, mqtt_codec_publish, QOS_VALUE, qosValue, bool, duplicateMsg, bool, serverRetain, uint16_t, packetId, const char*, topicName, const uint8_t*, msgBuffer, size_t, buffLen, STRING_HANDLE, trace_log);
