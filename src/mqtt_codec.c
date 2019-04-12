@@ -39,6 +39,10 @@
 
 #define MAX_SEND_SIZE                       0xFFFFFF7F // 268435455
 
+// This captures the maximum packet size for 3 digits.
+// If it's above this value then we bail out of the loop
+#define MAX_3_DIGIT_PACKET_SIZE             2097152
+
 #define CODEC_STATE_VALUES      \
     CODEC_STATE_FIXED_HEADER,   \
     CODEC_STATE_VAR_HEADER,     \
@@ -381,6 +385,8 @@ static int constructConnPayload(BUFFER_HANDLE ctrlPacket, const MQTT_CLIENT_OPTI
     size_t willMessageLen = 0;
     size_t willTopicLen = 0;
     size_t spaceLen = 0;
+    size_t currLen = 0;
+    size_t totalLen = 0;
 
     if (mqttOptions->clientId != NULL)
     {
@@ -408,8 +414,8 @@ static int constructConnPayload(BUFFER_HANDLE ctrlPacket, const MQTT_CLIENT_OPTI
         willTopicLen = strlen(mqttOptions->willTopic);
     }
 
-    size_t currLen = BUFFER_length(ctrlPacket);
-    size_t totalLen = clientLen + usernameLen + passwordLen + willMessageLen + willTopicLen + spaceLen;
+    currLen = BUFFER_length(ctrlPacket);
+    totalLen = clientLen + usernameLen + passwordLen + willMessageLen + willTopicLen + spaceLen;
 
     // Validate the Username & Password
     if (clientLen > USHRT_MAX)
@@ -519,7 +525,7 @@ static int prepareheaderDataInfo(MQTTCODEC_INSTANCE* codecData, uint8_t remainLe
             totalLen += (encodeByte & 127) * multiplier;
             multiplier *= NEXT_128_CHUNK;
 
-            if (multiplier > 128 * 128 * 128)
+            if (multiplier > MAX_3_DIGIT_PACKET_SIZE)
             {
                 result = MU_FAILURE;
                 break;
@@ -528,7 +534,7 @@ static int prepareheaderDataInfo(MQTTCODEC_INSTANCE* codecData, uint8_t remainLe
 
         if (result != 0 || totalLen > MAX_SEND_SIZE)
         {
-            LogError("Recieve buffer too large for MQTT packet");
+            LogError("Receive buffer too large for MQTT packet");
             result = MU_FAILURE;
         }
         else
