@@ -65,6 +65,21 @@ if(NOT ${use_installed_dependencies})
             include(${SHARED_UTIL_FOLDER}/configs/azure_iot_build_rules.cmake)
         endif()
     endif()
+
+else()
+    if (NOT azure_macro_utils_cFOUND)
+        find_package(azure_macro_utils_c REQUIRED CONFIG)
+    endif ()
+    if (NOT umock_cFOUND)
+        find_package(umock_c REQUIRED CONFIG)
+    endif ()
+    if (NOT azure_c_shared_utilityFOUND)
+        find_package(azure_c_shared_utility REQUIRED CONFIG)
+    endif ()
+	
+	include(${azure_c_shared_utility_DIR}/azure_c_shared_utilityConfig.cmake)
+	include(${azure_c_shared_utility_DIR}/azure_c_shared_utilityFunctions.cmake)
+	include(${azure_c_shared_utility_DIR}/azure_iot_build_rules.cmake)
 endif()
 
 set_platform_files(${SHARED_UTIL_FOLDER})
@@ -90,7 +105,7 @@ set(source_h_files
 #the following "set" statetement exports across the project a global variable called COMMON_INC_FOLDER that expands to whatever needs to included when using COMMON library
 set(MQTT_INC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/inc CACHE INTERNAL "this is what needs to be included if using sharedLib lib" FORCE)
 set(MQTT_SRC_FOLDER ${CMAKE_CURRENT_LIST_DIR}/src CACHE INTERNAL "this is what needs to be included when doing include sources" FORCE)
-include_directories(${MQTT_INC_FOLDER} ${SHARED_UTIL_INC_FOLDER} ${MACRO_UTILS_INC_FOLDER})
+include_directories(${MQTT_INC_FOLDER} ${SHARED_UTIL_INC_FOLDER} ${UMOCK_C_INC_FOLDER} ${MACRO_UTILS_INC_FOLDER})
 
 get_directory_property(hasParent PARENT_DIRECTORY)
 if (hasParent)
