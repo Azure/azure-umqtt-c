@@ -65,9 +65,9 @@ if(NOT ${use_installed_dependencies})
             include(${SHARED_UTIL_FOLDER}/configs/azure_iot_build_rules.cmake)
         endif()
     endif()
-endif()
 
-set_platform_files(${SHARED_UTIL_FOLDER})
+    set_platform_files(${SHARED_UTIL_FOLDER})
+endif()
 
 set(run_e2e_tests ${original_run_e2e_tests})
 set(run_unittests ${original_run_unittests})
