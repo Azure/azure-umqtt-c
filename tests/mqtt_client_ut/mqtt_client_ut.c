@@ -185,6 +185,16 @@ extern "C" {
         return buffer_result;
     }
 
+    static int my_xio_close(XIO_HANDLE xio, ON_IO_CLOSE_COMPLETE on_io_close_complete, void* callback_context)
+    {
+        (void)xio;
+        if (on_io_close_complete != NULL)
+        {
+            on_io_close_complete(callback_context);
+        }
+        return 0;
+    }
+
     static MQTT_MESSAGE_HANDLE my_mqttmessage_create(uint16_t packetId, const char* topicName, QOS_VALUE qosValue, const uint8_t* appMsg, size_t appMsgLength)
     {
         (void)packetId;
@@ -309,6 +319,7 @@ TEST_SUITE_INITIALIZE(suite_init)
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(xio_open, MU_FAILURE);
     REGISTER_GLOBAL_MOCK_HOOK(xio_send, my_xio_send);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(xio_send, MU_FAILURE);
+    REGISTER_GLOBAL_MOCK_HOOK(xio_close, my_xio_close);
 
     REGISTER_GLOBAL_MOCK_HOOK(tickcounter_get_current_ms, my_tickcounter_get_current_ms);
     REGISTER_GLOBAL_MOCK_FAIL_RETURN(tickcounter_get_current_ms, MU_FAILURE);
@@ -1015,12 +1026,8 @@ TEST_FUNCTION(mqtt_client_on_bytes_received_bytesReceived_fail_succeeds)
         .SetReturn(MU_FAILURE);
     STRICT_EXPECTED_CALL(mqtt_codec_reset(IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(xio_close(TEST_IO_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
-
-    for (size_t index = 0; index < MAX_CLOSE_RETRIES; index++)
-    {
-        STRICT_EXPECTED_CALL(xio_dowork(IGNORED_PTR_ARG));
-        STRICT_EXPECTED_CALL(ThreadAPI_Sleep(CLOSE_SLEEP_VALUE));
-    }
+    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(ThreadAPI_Sleep(CLOSE_SLEEP_VALUE));
 
     // act
     g_bytesRecv(g_bytesRecvCtx, TEST_BUFFER_U_CHAR, 1);
@@ -1056,6 +1063,7 @@ TEST_FUNCTION(mqtt_client_connect_multiple_completes_one_connect_succeeds)
     ASSERT_IS_NOT_NULL(g_ioError);
     g_openComplete(g_onCompleteCtx, IO_OPEN_OK);
     g_openComplete(g_onCompleteCtx, IO_OPEN_OK);
+    mqtt_client_dowork(mqttHandle);
 
     // assert
     ASSERT_ARE_EQUAL(int, 0, result);
@@ -1104,12 +1112,8 @@ TEST_FUNCTION(mqtt_client_ioerror_succeeds)
     umock_c_reset_all_calls();
 
     STRICT_EXPECTED_CALL(xio_close(TEST_IO_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
-
-    for (size_t index = 0; index < MAX_CLOSE_RETRIES; index++)
-    {
-        STRICT_EXPECTED_CALL(xio_dowork(IGNORED_PTR_ARG));
-        STRICT_EXPECTED_CALL(ThreadAPI_Sleep(CLOSE_SLEEP_VALUE));
-    }
+    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(ThreadAPI_Sleep(CLOSE_SLEEP_VALUE));
 
     // act
     g_ioError(g_ioErrorCtx);
@@ -1770,11 +1774,8 @@ TEST_FUNCTION(mqtt_client_dowork_ping_No_ping_response_succeeds)
     EXPECTED_CALL(xio_dowork(IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(tickcounter_get_current_ms(TEST_COUNTER_HANDLE, IGNORED_PTR_ARG)).IgnoreArgument(2);
     STRICT_EXPECTED_CALL(xio_close(TEST_IO_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
-    for (size_t index = 0; index < MAX_CLOSE_RETRIES; index++)
-    {
-        STRICT_EXPECTED_CALL(xio_dowork(IGNORED_PTR_ARG));
-        STRICT_EXPECTED_CALL(ThreadAPI_Sleep(CLOSE_SLEEP_VALUE));
-    }
+    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(ThreadAPI_Sleep(CLOSE_SLEEP_VALUE));
 
     // act
     g_current_ms = TEST_KEEP_ALIVE_INTERVAL * 8 * 1000;
@@ -1921,6 +1922,10 @@ TEST_FUNCTION(mqtt_client_dowork_does_nothing_if_disconnected_1)
 
     g_sendComplete(g_onSendCtx, IO_SEND_OK);
     umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(xio_close(TEST_IO_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(ThreadAPI_Sleep(CLOSE_SLEEP_VALUE));
 
     // act
     mqtt_client_dowork(mqttHandle);
@@ -2528,11 +2533,8 @@ TEST_FUNCTION(mqtt_client_recvCompleteCallback_PUBLISH_RELEASE_fails)
     STRICT_EXPECTED_CALL(BUFFER_u_char(TEST_BUFFER_HANDLE)).SetReturn(PUBLISH_ACK_RESP);
     EXPECTED_CALL(mqtt_codec_publishComplete(IGNORED_NUM_ARG));
     STRICT_EXPECTED_CALL(xio_close(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
-    for (size_t index = 0; index < MAX_CLOSE_RETRIES; index++)
-    {
-        STRICT_EXPECTED_CALL(xio_dowork(IGNORED_PTR_ARG));
-        STRICT_EXPECTED_CALL(ThreadAPI_Sleep(CLOSE_SLEEP_VALUE));
-    }
+    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(ThreadAPI_Sleep(CLOSE_SLEEP_VALUE));
 
     // act
     g_mqtt_codec_publish_func_fail = true;
