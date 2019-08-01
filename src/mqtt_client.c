@@ -37,8 +37,9 @@ MU_DEFINE_ENUM_STRINGS(QOS_VALUE, QOS_VALUE_VALUES);
 #define MQTT_STATUS_CLIENT_CONNECTED    0x0001
 #define MQTT_STATUS_SOCKET_CONNECTED    0x0002
 #define MQTT_STATUS_PENDING_CLOSE       0x0004
-#define MQTT_STATUS_LOG_TRACE           0x0008
-#define MQTT_STATUS_RAW_TRACE           0x0010
+
+#define MQTT_FLAGS_LOG_TRACE           0x0001
+#define MQTT_FLAGS_RAW_TRACE           0x0002
 
 typedef struct MQTT_CLIENT_TAG
 {
@@ -58,7 +59,8 @@ typedef struct MQTT_CLIENT_TAG
     uint16_t keepAliveInterval;
     MQTT_CLIENT_OPTIONS mqttOptions;
 
-    uint32_t mqtt_status;
+    uint16_t mqtt_status;
+    uint16_t mqtt_flags;
 
     tickcounter_ms_t timeSincePing;
     uint16_t maxPingRespTime;
@@ -66,7 +68,12 @@ typedef struct MQTT_CLIENT_TAG
 
 static bool is_trace_enabled(MQTT_CLIENT* mqtt_client)
 {
-    return (mqtt_client->mqtt_status & MQTT_STATUS_LOG_TRACE);
+    return (mqtt_client->mqtt_flags & MQTT_FLAGS_LOG_TRACE);
+}
+
+static bool is_raw_trace_enabled(MQTT_CLIENT* mqtt_client)
+{
+    return (mqtt_client->mqtt_flags & MQTT_FLAGS_RAW_TRACE);
 }
 
 static void on_connection_closed(void* context)
@@ -277,7 +284,7 @@ static const char* retrievePacketType(CONTROL_PACKET_TYPE packet)
 
 static void logOutgoingRawTrace(MQTT_CLIENT* mqtt_client, const uint8_t* data, size_t length)
 {
-    if (mqtt_client != NULL && data != NULL && length > 0 && (mqtt_client->mqtt_status & MQTT_STATUS_RAW_TRACE))
+    if (mqtt_client != NULL && data != NULL && length > 0 && is_raw_trace_enabled(mqtt_client))
     {
         char tmBuffer[TIME_MAX_BUFFER];
         getLogTime(tmBuffer, TIME_MAX_BUFFER);
@@ -294,7 +301,7 @@ static void logOutgoingRawTrace(MQTT_CLIENT* mqtt_client, const uint8_t* data, s
 
 static void logIncomingRawTrace(MQTT_CLIENT* mqtt_client, CONTROL_PACKET_TYPE packet, uint8_t flags, const uint8_t* data, size_t length)
 {
-    if (mqtt_client != NULL && (mqtt_client->mqtt_status & MQTT_STATUS_RAW_TRACE))
+    if (mqtt_client != NULL && is_raw_trace_enabled(mqtt_client))
     {
         if (data != NULL && length > 0)
         {
@@ -1323,20 +1330,20 @@ void mqtt_client_set_trace(MQTT_CLIENT_HANDLE handle, bool traceOn, bool rawByte
     {
         if (traceOn)
         {
-            handle->mqtt_status |= MQTT_STATUS_LOG_TRACE;
+            handle->mqtt_flags |= MQTT_FLAGS_LOG_TRACE;
         }
         else
         {
-            handle->mqtt_status &= ~MQTT_STATUS_LOG_TRACE;
+            handle->mqtt_flags &= ~MQTT_FLAGS_LOG_TRACE;
         }
 #ifdef ENABLE_RAW_TRACE
-        if (traceOn)
+        if (rawBytesOn)
         {
-            handle->mqtt_status |= MQTT_STATUS_RAW_TRACE;
+            handle->mqtt_flags |= MQTT_FLAGS_RAW_TRACE;
         }
         else
         {
-            handle->mqtt_status &= ~MQTT_STATUS_RAW_TRACE;
+            handle->mqtt_flags &= ~MQTT_FLAGS_RAW_TRACE;
         }
 #endif
     }
