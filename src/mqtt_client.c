@@ -71,10 +71,12 @@ static bool is_trace_enabled(MQTT_CLIENT* mqtt_client)
     return (mqtt_client->mqtt_flags & MQTT_FLAGS_LOG_TRACE);
 }
 
+#ifdef ENABLE_RAW_TRACE
 static bool is_raw_trace_enabled(MQTT_CLIENT* mqtt_client)
 {
     return (mqtt_client->mqtt_flags & MQTT_FLAGS_RAW_TRACE);
 }
+#endif // ENABLE_RAW_TRACE
 
 static void on_connection_closed(void* context)
 {
