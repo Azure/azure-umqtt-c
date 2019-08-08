@@ -111,12 +111,12 @@ static void close_connection(MQTT_CLIENT* mqtt_client)
     }
     else
     {
+        mqtt_client->mqtt_status &= ~MQTT_STATUS_SOCKET_CONNECTED;
         if (mqtt_client->disconnect_cb)
         {
             mqtt_client->disconnect_cb(mqtt_client->disconnect_ctx);
         }
     }
-    mqtt_client->xioHandle = NULL;
 }
 
 static void set_error_callback(MQTT_CLIENT* mqtt_client, MQTT_CLIENT_EVENT_ERROR error_type)
@@ -1270,6 +1270,8 @@ void mqtt_client_dowork(MQTT_CLIENT_HANDLE handle)
         if (mqtt_client->mqtt_status & MQTT_STATUS_PENDING_CLOSE)
         {
             close_connection(mqtt_client);
+            // turn off pending close
+            mqtt_client->mqtt_status &= ~MQTT_STATUS_PENDING_CLOSE;
         }
         else
         {
