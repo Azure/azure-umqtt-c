@@ -1947,9 +1947,7 @@ TEST_FUNCTION(mqtt_client_dowork_does_nothing_if_disconnected_2)
     (void)mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
     umock_c_reset_all_calls();
 
-    //
-    // If client is disconnected, mqtt_client_dowork shall do nothing, this is why there are no expected calls here.
-    //
+    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_PTR_ARG));
 
     // act
     int result = mqtt_client_disconnect(mqttHandle, NULL, NULL);

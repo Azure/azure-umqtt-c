@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include <stdlib.h>
+#include <stdbool.h>
 #include "azure_c_shared_utility/agenttime.h"
 #include "azure_c_shared_utility/const_defines.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
@@ -391,7 +392,7 @@ static int sendPacketItem(MQTT_CLIENT* mqtt_client, const unsigned char* data, s
         result = xio_send(mqtt_client->xioHandle, (const void*)data, length, sendComplete, mqtt_client);
         if (result != 0)
         {
-            LogError("%d: Failure sending control packet data", result);
+            LogError("Failure sending control packet data");
             result = MU_FAILURE;
         }
         else
@@ -716,7 +717,11 @@ static void ProcessPublishMessage(MQTT_CLIENT* mqtt_client, uint8_t* initialPos,
                 if (pubRel != NULL)
                 {
                     size_t size = BUFFER_length(pubRel);
-                    (void)sendPacketItem(mqtt_client, BUFFER_u_char(pubRel), size);
+                    if (sendPacketItem(mqtt_client, BUFFER_u_char(pubRel), size) != 0)
+                    {
+                        LogError("Failed sending publish reply.");
+                        set_error_callback(mqtt_client, MQTT_CLIENT_COMMUNICATION_ERROR);
+                    }
                     BUFFER_delete(pubRel);
                 }
             }
@@ -829,7 +834,11 @@ static void recvCompleteCallback(void* context, CONTROL_PACKET_TYPE packet, int 
                     if (pubRel != NULL)
                     {
                         size_t size = BUFFER_length(pubRel);
-                        (void)sendPacketItem(mqtt_client, BUFFER_u_char(pubRel), size);
+                        if (sendPacketItem(mqtt_client, BUFFER_u_char(pubRel), size) != 0)
+                        {
+                            LogError("Failed sending publish reply.");
+                            set_error_callback(mqtt_client, MQTT_CLIENT_COMMUNICATION_ERROR);
+                        }
                         BUFFER_delete(pubRel);
                     }
                     break;
