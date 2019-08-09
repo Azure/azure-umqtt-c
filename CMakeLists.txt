@@ -34,9 +34,12 @@ endif ()
 #do not add or build any tests of the dependencies
 set(original_run_e2e_tests ${run_e2e_tests})
 set(original_run_unittests ${run_unittests})
+set(original_skip_samples ${skip_samples})
 
 set(run_e2e_tests OFF)
 set(run_unittests OFF)
+set(skip_samples ON)
+set(use_cppunittest ON)
 
 if(NOT ${use_installed_dependencies})
     if ((NOT TARGET azure_macro_utils_c) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-macro-utils-c/CMakeLists.txt))
@@ -76,16 +79,17 @@ else()
     if (NOT azure_c_shared_utilityFOUND)
         find_package(azure_c_shared_utility REQUIRED CONFIG)
     endif ()
-	
-	include(${azure_c_shared_utility_DIR}/azure_c_shared_utilityConfig.cmake)
-	include(${azure_c_shared_utility_DIR}/azure_c_shared_utilityFunctions.cmake)
-	include(${azure_c_shared_utility_DIR}/azure_iot_build_rules.cmake)
+    
+    include(${azure_c_shared_utility_DIR}/azure_c_shared_utilityConfig.cmake)
+    include(${azure_c_shared_utility_DIR}/azure_c_shared_utilityFunctions.cmake)
+    include(${azure_c_shared_utility_DIR}/azure_iot_build_rules.cmake)
 endif()
 
 set_platform_files(${SHARED_UTIL_FOLDER})
 
 set(run_e2e_tests ${original_run_e2e_tests})
 set(run_unittests ${original_run_unittests})
+set(skip_samples ${original_skip_samples})
 
 #these are the C source files
 set(source_c_files
