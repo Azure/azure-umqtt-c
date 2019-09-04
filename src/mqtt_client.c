@@ -429,7 +429,11 @@ static void onOpenComplete(void* context, IO_OPEN_RESULT open_result)
                 /*Codes_SRS_MQTT_CLIENT_07_009: [On success mqtt_client_connect shall send the MQTT CONNECT to the endpoint.]*/
                 if (sendPacketItem(mqtt_client, BUFFER_u_char(connPacket), size) != 0)
                 {
-                    LogError("Error: mqtt_codec_connect failed");
+                    LogError("Error: failure sending connect packet");
+                    if (mqtt_client->fnOnErrorCallBack)
+                    {
+                        mqtt_client->fnOnErrorCallBack(mqtt_client, MQTT_CLIENT_COMMUNICATION_ERROR, mqtt_client->errorCBCtx);
+                    }
                 }
                 else
                 {
