@@ -1039,6 +1039,33 @@ TEST_FUNCTION(mqtt_client_on_bytes_received_bytesReceived_fail_succeeds)
     mqtt_client_deinit(mqttHandle);
 }
 
+TEST_FUNCTION(mqtt_client_on_open_complete_fail_succeeds)
+{
+    // arrange
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, TestErrorCallback, NULL);
+    MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
+    SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, TEST_WILL_MSG, TEST_WILL_TOPIC, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
+    make_connack(mqttHandle, &mqttOptions);
+    umock_c_reset_all_calls();
+
+    // Arrange
+    EXPECTED_CALL(mqtt_codec_connect(IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(BUFFER_length(TEST_BUFFER_HANDLE));
+    STRICT_EXPECTED_CALL(BUFFER_u_char(TEST_BUFFER_HANDLE));
+    STRICT_EXPECTED_CALL(tickcounter_get_current_ms(TEST_COUNTER_HANDLE, IGNORED_PTR_ARG));
+    EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG)).SetReturn(__LINE__);
+    STRICT_EXPECTED_CALL(BUFFER_delete(TEST_BUFFER_HANDLE));
+
+    // act
+    g_openComplete(g_onCompleteCtx, IO_OPEN_OK);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    mqtt_client_deinit(mqttHandle);
+}
+
 TEST_FUNCTION(mqtt_client_connect_multiple_completes_one_connect_succeeds)
 {
     // arrange
@@ -2305,7 +2332,7 @@ TEST_FUNCTION(mqtt_client_recvCompleteCallback_PUBLISH_AT_MOST_ONCE_with_two_zer
 {
     // arrange
     // This is legal publish.  The 0x00 0x00 would be illegal PacketID if we were using PacketID's, which AT_MOST_ONCE does not.
-    unsigned char PUBLISH_VALUE[] = { 0x00, 0x04, 0x6d, 0x73, 0x67, 0x41, 0x00, 0x00 }; 
+    unsigned char PUBLISH_VALUE[] = { 0x00, 0x04, 0x6d, 0x73, 0x67, 0x41, 0x00, 0x00 };
     size_t length = sizeof(PUBLISH_VALUE) / sizeof(PUBLISH_VALUE[0]);
 
     uint8_t flag = 0x00;
@@ -2581,7 +2608,7 @@ TEST_FUNCTION(mqtt_client_recvCompleteCallback_PUBLISH_COMPLETE_succeeds)
 TEST_FUNCTION(mqtt_client_recvCompleteCallback_PUBLISH_too_long_topic_name_length_fails)
 {
     // arrange
-    unsigned char PUBLISH_RESP[] = { 0x00, 0x01}; // Topic length is 1, but there is not a byte following 
+    unsigned char PUBLISH_RESP[] = { 0x00, 0x01}; // Topic length is 1, but there is not a byte following
     size_t length = sizeof(PUBLISH_RESP) / sizeof(PUBLISH_RESP[0]);
 
     uint8_t flag = 0x0d;
@@ -2890,7 +2917,7 @@ TEST_FUNCTION(mqtt_client_trace_PUBLISH_succeeds)
 #endif
     EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(mqttmessage_destroy(IGNORED_PTR_ARG));
-#ifndef NO_LOGGING    
+#ifndef NO_LOGGING
     STRICT_EXPECTED_CALL(STRING_delete(IGNORED_PTR_ARG));
 #endif
     EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
