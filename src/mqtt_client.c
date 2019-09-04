@@ -430,10 +430,9 @@ static void onOpenComplete(void* context, IO_OPEN_RESULT open_result)
                 if (sendPacketItem(mqtt_client, BUFFER_u_char(connPacket), size) != 0)
                 {
                     LogError("Error: failure sending connect packet");
-                    if (mqtt_client->fnOnErrorCallBack)
-                    {
-                        mqtt_client->fnOnErrorCallBack(mqtt_client, MQTT_CLIENT_COMMUNICATION_ERROR, mqtt_client->errorCBCtx);
-                    }
+                    // Set the status to pending close because we connot continue
+                    // with CONN failing to send
+                    mqtt_client->mqtt_status |= MQTT_STATUS_PENDING_CLOSE;
                 }
                 else
                 {
