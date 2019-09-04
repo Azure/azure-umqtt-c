@@ -447,10 +447,7 @@ static void onOpenComplete(void* context, IO_OPEN_RESULT open_result)
         }
         else
         {
-            if (!(mqtt_client->mqtt_status & MQTT_STATUS_SOCKET_CONNECTED) && mqtt_client->fnOnErrorCallBack)
-            {
-                mqtt_client->fnOnErrorCallBack(mqtt_client, MQTT_CLIENT_CONNECTION_ERROR, mqtt_client->errorCBCtx);
-            }
+            LogError("Error: failure opening connection to endpoint");
             mqtt_client->mqtt_status |= MQTT_STATUS_PENDING_CLOSE;
         }
     }
