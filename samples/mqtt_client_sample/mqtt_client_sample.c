@@ -25,16 +25,11 @@ static bool g_close_complete = true;
 
 #define DEFAULT_MSG_TO_SEND         1
 
+MU_DEFINE_ENUM_STRINGS_2(QOS_VALUE, QOS_VALUE_VALUES)
+
 static const char* QosToString(QOS_VALUE qosValue)
 {
-    switch (qosValue)
-    {
-        case DELIVER_AT_LEAST_ONCE: return "Deliver_At_Least_Once";
-        case DELIVER_EXACTLY_ONCE: return "Deliver_Exactly_Once";
-        case DELIVER_AT_MOST_ONCE: return "Deliver_At_Most_Once";
-        case DELIVER_FAILURE: return "Deliver_Failure";
-    }
-    return "";
+    return MU_ENUM_TO_STRING_2(QOS_VALUE, qosValue);
 }
 
 static void OnRecvCallback(MQTT_MESSAGE_HANDLE msgHandle, void* context)
@@ -147,6 +142,7 @@ static void OnErrorComplete(MQTT_CLIENT_HANDLE handle, MQTT_CLIENT_EVENT_ERROR e
     (void)handle;
     switch (error)
     {
+    default:
     case MQTT_CLIENT_CONNECTION_ERROR:
     case MQTT_CLIENT_PARSE_ERROR:
     case MQTT_CLIENT_MEMORY_ERROR:
