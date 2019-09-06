@@ -564,6 +564,10 @@ static void TestOpCallback(MQTT_CLIENT_HANDLE handle, MQTT_CLIENT_EVENT_RESULT a
     (void)handle;
     switch (actionResult)
     {
+        default:
+            ASSERT_FAIL("Unexpected enum value: %d", actionResult);
+            break;
+
         case MQTT_CLIENT_ON_CONNACK:
         {
             if (context != NULL && msgInfo != NULL)
@@ -660,6 +664,10 @@ static void TestErrorCallback(MQTT_CLIENT_HANDLE handle, MQTT_CLIENT_EVENT_ERROR
     (void)context;
     switch (error)
     {
+        default:
+            ASSERT_FAIL("Unexpected enum value: %d", error);
+            break;
+
         case MQTT_CLIENT_CONNECTION_ERROR:
         case MQTT_CLIENT_PARSE_ERROR:
         case MQTT_CLIENT_MEMORY_ERROR:
