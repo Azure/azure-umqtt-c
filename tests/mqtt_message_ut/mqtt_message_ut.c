@@ -110,7 +110,7 @@ TEST_SUITE_INITIALIZE(suite_init)
 
     ASSERT_ARE_EQUAL(int, 0, umocktypes_bool_register_types());
 
-    REGISTER_UMOCK_ALIAS_TYPE(BUFFER_HANDLE, void*);
+    //REGISTER_UMOCK_ALIAS_TYPE(BUFFER_HANDLE, void*);
     REGISTER_UMOCK_ALIAS_TYPE(STRING_TOKEN_HANDLE, void*);
 
     REGISTER_GLOBAL_MOCK_HOOK(gballoc_malloc, my_gballoc_malloc);
