@@ -945,6 +945,14 @@ static void recvCompleteCallback(void* context, CONTROL_PACKET_TYPE packet, int 
     }
 }
 
+void mqtt_client_close_xio(MQTT_CLIENT_HANDLE handle)
+{
+  MQTT_CLIENT* mqtt_client = (MQTT_CLIENT*)handle;
+  (void)xio_close(mqtt_client->xioHandle, on_connection_closed, mqtt_client);
+  // Clear the handle because we don't use it anymore
+  mqtt_client->xioHandle = NULL;
+}
+
 MQTT_CLIENT_HANDLE mqtt_client_init(ON_MQTT_MESSAGE_RECV_CALLBACK msgRecv, ON_MQTT_OPERATION_CALLBACK operation_cb, void* opCallbackCtx, ON_MQTT_ERROR_CALLBACK onErrorCallBack, void* errorCBCtx)
 {
     MQTT_CLIENT* result;
