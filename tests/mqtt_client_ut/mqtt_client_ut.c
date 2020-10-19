@@ -809,6 +809,36 @@ TEST_FUNCTION(mqtt_client_deinit_succeeds)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
+TEST_FUNCTION(mqtt_client_close_xio_handle_NULL_succeeds)
+{
+    // arrange
+
+    // act
+    mqtt_client_close_xio(NULL);
+
+    // assert
+}
+
+TEST_FUNCTION(mqtt_client_deinit_succeeds)
+{
+    // arrange
+    MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
+    SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, TEST_WILL_MSG, TEST_WILL_TOPIC, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, TestErrorCallback, NULL);
+
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(tickcounter_destroy(TEST_COUNTER_HANDLE));
+    EXPECTED_CALL(mqtt_codec_destroy(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(gballoc_free(mqttHandle));
+
+    // act
+    mqtt_client_close_xio(mqttHandle);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+}
+
 /*Tests_SRS_MQTT_CLIENT_07_006: [If any of the parameters handle, ioHandle, or mqttOptions are NULL then mqtt_client_connect shall return a non-zero value.]*/
 TEST_FUNCTION(mqtt_client_connect_MQTT_CLIENT_HANDLE_NULL_fails)
 {
