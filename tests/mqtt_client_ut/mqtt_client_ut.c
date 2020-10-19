@@ -809,17 +809,17 @@ TEST_FUNCTION(mqtt_client_deinit_succeeds)
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 }
 
-TEST_FUNCTION(mqtt_client_close_xio_handle_NULL_succeeds)
+TEST_FUNCTION(mqtt_client_clear_xio_handle_NULL_succeeds)
 {
     // arrange
 
     // act
-    mqtt_client_close_xio(NULL);
+    mqtt_client_clear_xio(NULL);
 
     // assert
 }
 
-TEST_FUNCTION(mqtt_client_deinit_succeeds)
+TEST_FUNCTION(mqtt_client_clear_xio_succeeds)
 {
     // arrange
     MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
@@ -828,12 +828,8 @@ TEST_FUNCTION(mqtt_client_deinit_succeeds)
 
     umock_c_reset_all_calls();
 
-    STRICT_EXPECTED_CALL(tickcounter_destroy(TEST_COUNTER_HANDLE));
-    EXPECTED_CALL(mqtt_codec_destroy(IGNORED_PTR_ARG));
-    STRICT_EXPECTED_CALL(gballoc_free(mqttHandle));
-
     // act
-    mqtt_client_close_xio(mqttHandle);
+    mqtt_client_clear_xio(mqttHandle);
 
     // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
