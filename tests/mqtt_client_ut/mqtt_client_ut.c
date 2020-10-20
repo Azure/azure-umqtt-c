@@ -833,6 +833,9 @@ TEST_FUNCTION(mqtt_client_clear_xio_succeeds)
 
     // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    mqtt_client_deinit(mqttHandle);
 }
 
 TEST_FUNCTION(mqtt_client_clear_xio_after_connect_and_do_work_succeeds)
