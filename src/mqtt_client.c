@@ -816,7 +816,7 @@ static void recvCompleteCallback(void* context, CONTROL_PACKET_TYPE packet, int 
                 case PUBREL_TYPE:
                 case PUBCOMP_TYPE:
                 {
-                    if (packetLength != 2) // CONNACK payload must be only 2 bytes
+                    if (packetLength != 2) // PUBXXX payload must be only 2 bytes
                     {
                         LogError("Invalid packet length.");
                         set_error_callback(mqtt_client, MQTT_CLIENT_COMMUNICATION_ERROR);
@@ -897,7 +897,7 @@ static void recvCompleteCallback(void* context, CONTROL_PACKET_TYPE packet, int 
                         while (remainLen > 0)
                         {
                             uint8_t qosRet = byteutil_readByte(&iterator);
-                            if (qosRet & 0x7C) // CONNACK payload must be only 2 bytes
+                            if (qosRet & 0x7C) // SUBACK QOS bits 6-2 must be zero
                             {
                                 LogError("Invalid SUBACK_TYPE packet.");
                                 set_error_callback(mqtt_client, MQTT_CLIENT_COMMUNICATION_ERROR);

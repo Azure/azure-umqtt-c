@@ -1080,8 +1080,8 @@ int mqtt_codec_bytesReceived(MQTTCODEC_HANDLE handle, const unsigned char* buffe
                     // validate packet type and invalid reserved header flags
                     switch (codec_Data->currPacket)
                     {
-                        case PACKET_INVALID1:
-                        case PACKET_INVALID2:
+                        case PACKET_INVALID1_TYPE:
+                        case PACKET_INVALID2_TYPE:
                             codec_Data->currPacket = PACKET_TYPE_ERROR;
                             result = MU_FAILURE;
                             break;
