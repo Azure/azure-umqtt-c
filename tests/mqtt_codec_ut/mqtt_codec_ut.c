@@ -2016,7 +2016,7 @@ TEST_FUNCTION(mqtt_codec_bytesReceived_invalid_packet_id1_fails)
     // arrange
     int result;
 
-    unsigned char INVALID_PACKET_ID[] = { PACKET_INVALID1, 0x00 };
+    unsigned char INVALID_PACKET_ID[] = { PACKET_INVALID1_TYPE, 0x00 };
     size_t length = sizeof(INVALID_PACKET_ID) / sizeof(INVALID_PACKET_ID[0]);
 
     TEST_COMPLETE_DATA_INSTANCE testData = { 0 };
@@ -2042,7 +2042,7 @@ TEST_FUNCTION(mqtt_codec_bytesReceived_invalid_packet_id2_fails)
     // arrange
     int result;
 
-    unsigned char INVALID_PACKET_ID[] = { PACKET_INVALID2, 0x00 };
+    unsigned char INVALID_PACKET_ID[] = { PACKET_INVALID2_TYPE, 0x00 };
     size_t length = sizeof(INVALID_PACKET_ID) / sizeof(INVALID_PACKET_ID[0]);
 
     TEST_COMPLETE_DATA_INSTANCE testData = { 0 };
