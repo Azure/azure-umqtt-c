@@ -706,11 +706,12 @@ static void make_connack(MQTT_CLIENT_HANDLE mqttHandle, MQTT_CLIENT_OPTIONS* mqt
 {
     (void)mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, mqttOptions);
 
+    umock_c_reset_all_calls();
     unsigned char CONNACK_RESP[] = { 0x1, 0x0 };
     size_t length = sizeof(CONNACK_RESP) / sizeof(CONNACK_RESP[0]);
     BUFFER_HANDLE connack_handle = TEST_BUFFER_HANDLE;
-    STRICT_EXPECTED_CALL(BUFFER_u_char(TEST_BUFFER_HANDLE)).SetReturn(CONNACK_RESP);
     STRICT_EXPECTED_CALL(BUFFER_length(TEST_BUFFER_HANDLE)).SetReturn(length);
+    STRICT_EXPECTED_CALL(BUFFER_u_char(TEST_BUFFER_HANDLE)).SetReturn(CONNACK_RESP);
     g_packetComplete(mqttHandle, CONNACK_TYPE, 0, connack_handle);
 }
 
@@ -846,16 +847,16 @@ TEST_FUNCTION(mqtt_client_clear_xio_after_connect_and_do_work_succeeds)
     MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
     SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, TEST_WILL_MSG, TEST_WILL_TOPIC, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
 
+    (void)mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
+    g_openComplete(g_onCompleteCtx, IO_OPEN_OK);
+
+    umock_c_reset_all_calls();
     unsigned char CONNACK_RESP[] = { 0x1, 0x0 };
     size_t length = sizeof(CONNACK_RESP) / sizeof(CONNACK_RESP[0]);
     BUFFER_HANDLE connack_handle = TEST_BUFFER_HANDLE;
-    STRICT_EXPECTED_CALL(BUFFER_u_char(TEST_BUFFER_HANDLE)).SetReturn(CONNACK_RESP);
     STRICT_EXPECTED_CALL(BUFFER_length(TEST_BUFFER_HANDLE)).SetReturn(length);
-
-    (void)mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
-    g_openComplete(g_onCompleteCtx, IO_OPEN_OK);
+    STRICT_EXPECTED_CALL(BUFFER_u_char(TEST_BUFFER_HANDLE)).SetReturn(CONNACK_RESP);
     g_packetComplete(mqttHandle, CONNACK_TYPE, 0, connack_handle);
-    umock_c_reset_all_calls();
 
     g_current_ms = TEST_KEEP_ALIVE_INTERVAL * 2 * 1000;
 
@@ -1738,6 +1739,7 @@ TEST_FUNCTION(mqtt_client_disconnect_callback_succeeds)
 
     MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, TestErrorCallback, NULL);
     make_connack(mqttHandle, &mqttOptions);
+
     umock_c_reset_all_calls();
 
     setup_mqtt_client_disconnect_mocks(&mqttOptions);
@@ -1823,16 +1825,16 @@ TEST_FUNCTION(mqtt_client_dowork_ping_succeeds)
     MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
     SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, TEST_WILL_MSG, TEST_WILL_TOPIC, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
 
+    (void)mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
+    g_openComplete(g_onCompleteCtx, IO_OPEN_OK);
+
+    umock_c_reset_all_calls();
     unsigned char CONNACK_RESP[] = { 0x1, 0x0 };
     size_t length = sizeof(CONNACK_RESP) / sizeof(CONNACK_RESP[0]);
     BUFFER_HANDLE connack_handle = TEST_BUFFER_HANDLE;
-    STRICT_EXPECTED_CALL(BUFFER_u_char(TEST_BUFFER_HANDLE)).SetReturn(CONNACK_RESP);
     STRICT_EXPECTED_CALL(BUFFER_length(TEST_BUFFER_HANDLE)).SetReturn(length);
-
-    (void)mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
-    g_openComplete(g_onCompleteCtx, IO_OPEN_OK);
+    STRICT_EXPECTED_CALL(BUFFER_u_char(TEST_BUFFER_HANDLE)).SetReturn(CONNACK_RESP);
     g_packetComplete(mqttHandle, CONNACK_TYPE, 0, connack_handle);
-    umock_c_reset_all_calls();
 
     g_current_ms = TEST_KEEP_ALIVE_INTERVAL * 2 * 1000;
 
@@ -1865,14 +1867,15 @@ TEST_FUNCTION(mqtt_client_dowork_ping_No_ping_response_succeeds)
     MQTT_CLIENT_OPTIONS mqttOptions ={ 0 };
     SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, NULL, NULL, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
 
+    (void)mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
+    g_openComplete(g_onCompleteCtx, IO_OPEN_OK);
+
+    umock_c_reset_all_calls();
     unsigned char CONNACK_RESP[] ={ 0x1, 0x0 };
     size_t length = sizeof(CONNACK_RESP) / sizeof(CONNACK_RESP[0]);
     BUFFER_HANDLE connack_handle = TEST_BUFFER_HANDLE;
-    STRICT_EXPECTED_CALL(BUFFER_u_char(TEST_BUFFER_HANDLE)).SetReturn(CONNACK_RESP);
     STRICT_EXPECTED_CALL(BUFFER_length(TEST_BUFFER_HANDLE)).SetReturn(length);
-
-    (void)mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
-    g_openComplete(g_onCompleteCtx, IO_OPEN_OK);
+    STRICT_EXPECTED_CALL(BUFFER_u_char(TEST_BUFFER_HANDLE)).SetReturn(CONNACK_RESP);
     g_packetComplete(mqttHandle, CONNACK_TYPE, 0, connack_handle);
 
     g_current_ms = TEST_KEEP_ALIVE_INTERVAL * 2 * 1000;
@@ -1910,16 +1913,16 @@ TEST_FUNCTION(mqtt_client_dowork_no_keepalive_no_ping_succeeds)
     MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
     SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, NULL, NULL, TEST_USERNAME, TEST_PASSWORD, 0, false, true, DELIVER_AT_MOST_ONCE);
 
+    (void)mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
+    g_openComplete(g_onCompleteCtx, IO_OPEN_OK);
+
+    umock_c_reset_all_calls();
     unsigned char CONNACK_RESP[] = { 0x1, 0x0 };
     size_t length = sizeof(CONNACK_RESP) / sizeof(CONNACK_RESP[0]);
     BUFFER_HANDLE connack_handle = TEST_BUFFER_HANDLE;
-    STRICT_EXPECTED_CALL(BUFFER_u_char(TEST_BUFFER_HANDLE)).SetReturn(CONNACK_RESP);
     STRICT_EXPECTED_CALL(BUFFER_length(TEST_BUFFER_HANDLE)).SetReturn(length);
-
-    (void)mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
-    g_openComplete(g_onCompleteCtx, IO_OPEN_OK);
+    STRICT_EXPECTED_CALL(BUFFER_u_char(TEST_BUFFER_HANDLE)).SetReturn(CONNACK_RESP);
     g_packetComplete(mqttHandle, CONNACK_TYPE, 0, connack_handle);
-    umock_c_reset_all_calls();
 
     g_current_ms = TEST_KEEP_ALIVE_INTERVAL * 2 * 1000;
 
@@ -1947,16 +1950,16 @@ TEST_FUNCTION(mqtt_client_dowork_no_ping_succeeds)
     MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
     SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, TEST_WILL_MSG, TEST_WILL_TOPIC, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
 
+    (void)mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
+    g_openComplete(g_onCompleteCtx, IO_OPEN_OK);
+
+    umock_c_reset_all_calls();
     unsigned char CONNACK_RESP[] = { 0x1, 0x0 };
     size_t length = sizeof(CONNACK_RESP) / sizeof(CONNACK_RESP[0]);
     BUFFER_HANDLE connack_handle = TEST_BUFFER_HANDLE;
-    STRICT_EXPECTED_CALL(BUFFER_u_char(TEST_BUFFER_HANDLE)).SetReturn(CONNACK_RESP);
     STRICT_EXPECTED_CALL(BUFFER_length(TEST_BUFFER_HANDLE)).SetReturn(length);
-
-    (void)mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
-    g_openComplete(g_onCompleteCtx, IO_OPEN_OK);
+    STRICT_EXPECTED_CALL(BUFFER_u_char(TEST_BUFFER_HANDLE)).SetReturn(CONNACK_RESP);
     g_packetComplete(mqttHandle, CONNACK_TYPE, 0, connack_handle);
-    umock_c_reset_all_calls();
 
     EXPECTED_CALL(xio_dowork(IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(tickcounter_get_current_ms(TEST_COUNTER_HANDLE, IGNORED_PTR_ARG)).IgnoreArgument(2);
@@ -1981,16 +1984,16 @@ TEST_FUNCTION(mqtt_client_dowork_tickcounter_fails_succeeds)
     MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
     SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, TEST_WILL_MSG, TEST_WILL_TOPIC, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
 
+    (void)mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
+    g_openComplete(g_onCompleteCtx, IO_OPEN_OK);
+
+    umock_c_reset_all_calls();
     unsigned char CONNACK_RESP[] = { 0x1, 0x0 };
     size_t length = sizeof(CONNACK_RESP) / sizeof(CONNACK_RESP[0]);
     BUFFER_HANDLE connack_handle = TEST_BUFFER_HANDLE;
-    STRICT_EXPECTED_CALL(BUFFER_u_char(TEST_BUFFER_HANDLE)).SetReturn(CONNACK_RESP);
     STRICT_EXPECTED_CALL(BUFFER_length(TEST_BUFFER_HANDLE)).SetReturn(length);
-
-    (void)mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
-    g_openComplete(g_onCompleteCtx, IO_OPEN_OK);
+    STRICT_EXPECTED_CALL(BUFFER_u_char(TEST_BUFFER_HANDLE)).SetReturn(CONNACK_RESP);
     g_packetComplete(mqttHandle, CONNACK_TYPE, 0, connack_handle);
-    umock_c_reset_all_calls();
 
     EXPECTED_CALL(xio_dowork(IGNORED_PTR_ARG));
     STRICT_EXPECTED_CALL(tickcounter_get_current_ms(TEST_COUNTER_HANDLE, IGNORED_PTR_ARG)).IgnoreArgument(2).SetReturn(MU_FAILURE);
@@ -2020,8 +2023,8 @@ TEST_FUNCTION(mqtt_client_dowork_does_nothing_if_disconnected_1)
     unsigned char CONNACK_RESP[] = { 0x1, 0x0 };
     size_t length = sizeof(CONNACK_RESP) / sizeof(CONNACK_RESP[0]);
     BUFFER_HANDLE connack_handle = TEST_BUFFER_HANDLE;
-    STRICT_EXPECTED_CALL(BUFFER_u_char(TEST_BUFFER_HANDLE)).SetReturn(CONNACK_RESP);
     STRICT_EXPECTED_CALL(BUFFER_length(TEST_BUFFER_HANDLE)).SetReturn(length);
+    STRICT_EXPECTED_CALL(BUFFER_u_char(TEST_BUFFER_HANDLE)).SetReturn(CONNACK_RESP);
 
     (void)mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
     g_openComplete(g_onCompleteCtx, IO_OPEN_OK);
@@ -3095,7 +3098,7 @@ TEST_FUNCTION(mqtt_client_trace_SUBSCRIBE_ACK_succeeds)
 TEST_FUNCTION(mqtt_client_trace_UNSUBSCRIBE_ACK_succeeds)
 {
     // arrange
-    unsigned char UNSUBSCRIBE_ACK_RESP[] = { 0xB0, 0x02, 0x12, 0x34 };
+    unsigned char UNSUBSCRIBE_ACK_RESP[] = { 0x12, 0x34 };
     size_t length = sizeof(UNSUBSCRIBE_ACK_RESP) / sizeof(UNSUBSCRIBE_ACK_RESP[0]);
 
     TEST_COMPLETE_DATA_INSTANCE testData;

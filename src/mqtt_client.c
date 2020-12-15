@@ -769,7 +769,22 @@ static void recvCompleteCallback(void* context, CONTROL_PACKET_TYPE packet, int 
                 {
                     /*Codes_SRS_MQTT_CLIENT_07_028: [If the actionResult parameter is of type CONNECT_ACK then the msgInfo value shall be a CONNECT_ACK structure.]*/
                     CONNECT_ACK connack = { 0 };
-                    connack.isSessionPresent = (byteutil_readByte(&iterator) == 0x1) ? true : false;
+                    if (packetLength != 2) // CONNACK payload must be only 2 bytes
+                    {
+                        LogError("Invalid CONNACK packet.");
+                        set_error_callback(mqtt_client, MQTT_CLIENT_COMMUNICATION_ERROR);
+                        break;
+                    }
+
+                    uint8_t connect_acknowledge_flags = byteutil_readByte(&iterator);
+                    if (connect_acknowledge_flags & 0xFE) // bits 7-1 must be zero
+                    {
+                        LogError("Invalid CONNACK packet.");
+                        set_error_callback(mqtt_client, MQTT_CLIENT_COMMUNICATION_ERROR);
+                        break;
+                    }
+
+                    connack.isSessionPresent = (connect_acknowledge_flags == 0x1) ? true : false;
                     uint8_t rc = byteutil_readByte(&iterator);
                     connack.returnCode =
                         (rc < ((uint8_t)CONN_REFUSED_UNKNOWN)) ?
@@ -801,6 +816,13 @@ static void recvCompleteCallback(void* context, CONTROL_PACKET_TYPE packet, int 
                 case PUBREL_TYPE:
                 case PUBCOMP_TYPE:
                 {
+                    if (packetLength != 2) // PUBXXX payload must be only 2 bytes
+                    {
+                        LogError("Invalid packet length.");
+                        set_error_callback(mqtt_client, MQTT_CLIENT_COMMUNICATION_ERROR);
+                        break;
+                    }
+
                     /*Codes_SRS_MQTT_CLIENT_07_029: [If the actionResult parameter are of types PUBACK_TYPE, PUBREC_TYPE, PUBREL_TYPE or PUBCOMP_TYPE then the msgInfo value shall be a PUBLISH_ACK structure.]*/
                     MQTT_CLIENT_EVENT_RESULT action = (packet == PUBACK_TYPE) ? MQTT_CLIENT_ON_PUBLISH_ACK :
                         (packet == PUBREC_TYPE) ? MQTT_CLIENT_ON_PUBLISH_RECV :
@@ -875,6 +897,12 @@ static void recvCompleteCallback(void* context, CONTROL_PACKET_TYPE packet, int 
                         while (remainLen > 0)
                         {
                             uint8_t qosRet = byteutil_readByte(&iterator);
+                            if (qosRet & 0x7C) // SUBACK QOS bits 6-2 must be zero
+                            {
+                                LogError("Invalid SUBACK_TYPE packet.");
+                                set_error_callback(mqtt_client, MQTT_CLIENT_COMMUNICATION_ERROR);
+                                break;
+                            }
                             suback.qosReturn[suback.qosCount++] =
                                 (qosRet <= ((uint8_t)DELIVER_EXACTLY_ONCE)) ?
                                 (QOS_VALUE)qosRet :  DELIVER_FAILURE;
@@ -908,6 +936,13 @@ static void recvCompleteCallback(void* context, CONTROL_PACKET_TYPE packet, int 
                 {
                     /*Codes_SRS_MQTT_CLIENT_07_031: [If the actionResult parameter is of type UNSUBACK_TYPE then the msgInfo value shall be a UNSUBSCRIBE_ACK structure.]*/
                     UNSUBSCRIBE_ACK unsuback = { 0 };
+                    if (packetLength != 2) // UNSUBACK_TYPE payload must be only 2 bytes
+                    {
+                        LogError("Invalid UNSUBACK packet length.");
+                        set_error_callback(mqtt_client, MQTT_CLIENT_COMMUNICATION_ERROR);
+                        break;
+                    }
+
                     unsuback.packetId = byteutil_read_uint16(&iterator, packetLength);
 
 #ifndef NO_LOGGING
