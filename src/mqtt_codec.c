@@ -414,11 +414,15 @@ static int constructConnPayload(BUFFER_HANDLE ctrlPacket, const MQTT_CLIENT_OPTI
         willTopicLen = strlen(mqttOptions->willTopic);
     }
 
-    currLen = BUFFER_length(ctrlPacket);
+    currLen = ctrlPacket == NULL ? 0 : BUFFER_length(ctrlPacket);
     totalLen = clientLen + usernameLen + passwordLen + willMessageLen + willTopicLen + spaceLen;
 
+    if (ctrlPacket == NULL)
+    {
+        result = MU_FAILURE;
+    }
     // Validate the Username & Password
-    if (clientLen > USHRT_MAX)
+    else if (clientLen > USHRT_MAX)
     {
         result = MU_FAILURE;
     }
