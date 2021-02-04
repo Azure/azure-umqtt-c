@@ -5,7 +5,7 @@ resources:
 - repo: self
   clean: true
 jobs:
-- job: checksubmodule  
+- job: checksubmodule
   pool:
     name: Hosted Ubuntu 1604
   steps:
@@ -18,18 +18,18 @@ jobs:
       pkg-config
       sudo curl -sL https://deb.nodesource.com/setup_6.x | bash -
       sudo apt-get install -y nodejs
-    displayName: 'setup'  
+    displayName: 'setup'
   - script: |
       npm install check_submodules
       ./../../node_modules/.bin/check_submodules . master
-    displayName: 'build'   
+    displayName: 'build'
 - job: windowsx86
   pool:
     name: 'aziotbld-win03'
   steps:
   - script: |
      if exist jenkins\windows_c.cmd (
-      call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\Tools\VsDevCmd.bat"
+      call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat"
       call jenkins\windows_c.cmd)
     displayName: 'build'
     env:
@@ -68,35 +68,35 @@ jobs:
   pool: aziotbld-lin01
   displayName: 'linux-options'
   steps:
-  - script: | 
+  - script: |
      if [ -f "jenkins/linux_c_option_test.sh" ]
-     then 
+     then
       sudo ./jenkins/linux_c_option_test.sh
      fi
     displayName: 'build'
     condition: always()
   - script: sudo rm -rf $(Agent.BuildDirectory)/*
     displayName: 'cleanup'
-    condition: always()    
+    condition: always()
 - job: windowscex86
   pool:
     name: 'win'
   steps:
   - script: |
      if exist jenkins\windowsce_c.cmd (
-      call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\Tools\VsDevCmd.bat"
+      call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat"
       call jenkins\windowsce_c.cmd)
     displayName: 'build'
   - script: cd .. && rd /Q /S $(Agent.BuildDirectory)\s
     displayName: 'cleanup'
-    condition: always()    
+    condition: always()
 - job: windowsdynamic
   pool:
     name: 'aziotbld-win03'
   steps:
   - script: |
      if exist jenkins\windows_c_build_as_dynamic.cmd (
-      call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\Tools\VsDevCmd.bat"
+      call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat"
       call jenkins\windows_c_build_as_dynamic.cmd)
     displayName: 'build'
     env:
@@ -118,7 +118,7 @@ jobs:
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
   - script: cd .. && rd /Q /S $(Agent.BuildDirectory)\s
     displayName: 'cleanup'
-    condition: always()      
+    condition: always()
 - job: OSX
   pool:
     name: OSX
@@ -128,7 +128,7 @@ jobs:
      then
       ./jenkins/osx_gcc_openssl.sh
      fi
-    displayName: 'build'  
+    displayName: 'build'
     env:
       IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
       IOTHUB_EVENTHUB_CONNECTION_STRING: $(IOTHUB-EVENTHUB-CONNECTION-STRING)
@@ -149,7 +149,7 @@ jobs:
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
   - script: rm -rf $(Agent.BuildDirectory)/*
     displayName: 'cleanup'
-    condition: always()   
+    condition: always()
 - job: clang
   variables:
     _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/ubuntu-clang"
@@ -184,7 +184,7 @@ jobs:
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
   - script: sudo rm -rf $(Agent.BuildDirectory)/*
     displayName: 'cleanup'
-    condition: always()    
+    condition: always()
 - job: ubuntu1604
   variables:
     _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/linux-c-ubuntu"
@@ -219,7 +219,7 @@ jobs:
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
   - script: sudo rm -rf $(Agent.BuildDirectory)/*
     displayName: 'cleanup'
-    condition: always()    
+    condition: always()
 - job: linux_install_deps
   variables:
     _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/c-debian"
@@ -254,7 +254,7 @@ jobs:
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
   - script: sudo rm -rf $(Agent.BuildDirectory)/*
     displayName: 'cleanup'
-    condition: always()    
+    condition: always()
 - job: debian
   variables:
     _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/c-debian"
@@ -289,7 +289,7 @@ jobs:
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
   - script: sudo rm -rf $(Agent.BuildDirectory)/*
     displayName: 'cleanup'
-    condition: always()    
+    condition: always()
 - job: wolfssl
   variables:
     _PREVIEW_VSTS_DOCKER_IMAGE: "aziotbld/vsts-c-wolfssl"
@@ -355,7 +355,7 @@ jobs:
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
   - script: cd .. && rd /Q /S $(Agent.BuildDirectory)\s
     displayName: 'cleanup'
-    condition: always()    
+    condition: always()
 - job: xcodenative
   pool:
     name: OSX
@@ -366,7 +366,7 @@ jobs:
       DYLD_LIBRARY_PATH=/usr/local/Cellar/curl/7.61.0/lib
       ./jenkins/osx_xcode_native.sh
      fi
-    displayName: 'build'  
+    displayName: 'build'
     env:
       IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
       IOTHUB_EVENTHUB_CONNECTION_STRING: $(IOTHUB-EVENTHUB-CONNECTION-STRING)
