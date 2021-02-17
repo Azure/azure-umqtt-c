@@ -703,6 +703,7 @@ static void ProcessPublishMessage(MQTT_CLIENT* mqtt_client, uint8_t* initialPos,
 #endif
                 mqtt_client->fnMessageRecv(msgHandle, mqtt_client->ctx);
 
+                CONTROL_PACKET_TYPE response_packet_type = UNKNOWN_TYPE;
                 BUFFER_HANDLE pubRel = NULL;
                 if (qosValue == DELIVER_EXACTLY_ONCE)
                 {
@@ -712,6 +713,8 @@ static void ProcessPublishMessage(MQTT_CLIENT* mqtt_client, uint8_t* initialPos,
                         LogError("Failed to allocate publish receive message.");
                         set_error_callback(mqtt_client, MQTT_CLIENT_MEMORY_ERROR);
                     }
+
+                    response_packet_type = PUBREC_TYPE;
                 }
                 else if (qosValue == DELIVER_AT_LEAST_ONCE)
                 {
@@ -721,6 +724,8 @@ static void ProcessPublishMessage(MQTT_CLIENT* mqtt_client, uint8_t* initialPos,
                         LogError("Failed to allocate publish ack message.");
                         set_error_callback(mqtt_client, MQTT_CLIENT_MEMORY_ERROR);
                     }
+
+                    response_packet_type = PUBACK_TYPE;
                 }
                 if (pubRel != NULL)
                 {
@@ -730,6 +735,17 @@ static void ProcessPublishMessage(MQTT_CLIENT* mqtt_client, uint8_t* initialPos,
                         LogError("Failed sending publish reply.");
                         set_error_callback(mqtt_client, MQTT_CLIENT_COMMUNICATION_ERROR);
                     }
+#ifndef NO_LOGGING
+                    else if (is_trace_enabled(mqtt_client))
+                    {
+                        STRING_HANDLE ack_trace_log = STRING_construct_sprintf("%s | PACKET_ID: %"PRIu16, 
+                            response_packet_type == PUBACK_TYPE ? "PUBACK" : ((response_packet_type == PUBREC_TYPE) ? "PUBREC" : "UNDEFINED"),
+                            packetId);
+
+                        log_outgoing_trace(mqtt_client, ack_trace_log);
+                        STRING_delete(ack_trace_log);
+                    }
+#endif
                     BUFFER_delete(pubRel);
                 }
             }
