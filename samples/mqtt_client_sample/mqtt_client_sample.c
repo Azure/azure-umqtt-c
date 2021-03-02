@@ -25,8 +25,6 @@ static bool g_close_complete = true;
 
 #define DEFAULT_MSG_TO_SEND         1
 
-MU_DEFINE_ENUM_STRINGS_2(QOS_VALUE, QOS_VALUE_VALUES)
-
 static const char* QosToString(QOS_VALUE qosValue)
 {
     return MU_ENUM_TO_STRING_2(QOS_VALUE, qosValue);
