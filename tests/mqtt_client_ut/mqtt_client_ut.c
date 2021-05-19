@@ -551,11 +551,12 @@ static void setup_mqtt_client_connect_retry_mocks(MQTT_CLIENT_OPTIONS* mqttOptio
     STRICT_EXPECTED_CALL(xio_open(TEST_IO_HANDLE, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
 }
 
-static void TestRecvCallback(MQTT_MESSAGE_HANDLE msgHandle, void* context)
+static MQTT_CLIENT_ACK_OPTION TestRecvCallback(MQTT_MESSAGE_HANDLE msgHandle, void* context)
 {
     (void)msgHandle;
     (void)context;
     g_msgRecvCallbackInvoked = true;
+    return MQTT_CLIENT_ACK_SYNC;
 }
 
 static void TestOpCallback(MQTT_CLIENT_HANDLE handle, MQTT_CLIENT_EVENT_RESULT actionResult, const void* msgInfo, void* context)

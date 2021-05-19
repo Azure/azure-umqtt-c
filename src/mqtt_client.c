@@ -633,6 +633,55 @@ static int cloneMqttOptions(MQTT_CLIENT* mqtt_client, const MQTT_CLIENT_OPTIONS*
     return result;
 }
 
+static void SendMessageAck(MQTT_CLIENT* mqtt_client, uint16_t packetId, QOS_VALUE qosValue)
+{
+    CONTROL_PACKET_TYPE response_packet_type = UNKNOWN_TYPE;
+    BUFFER_HANDLE pubRel = NULL;
+    if (qosValue == DELIVER_EXACTLY_ONCE)
+    {
+        pubRel = mqtt_codec_publishReceived(packetId);
+        if (pubRel == NULL)
+        {
+            LogError("Failed to allocate publish receive message.");
+            set_error_callback(mqtt_client, MQTT_CLIENT_MEMORY_ERROR);
+        }
+
+        response_packet_type = PUBREC_TYPE;
+    }
+    else if (qosValue == DELIVER_AT_LEAST_ONCE)
+    {
+        pubRel = mqtt_codec_publishAck(packetId);
+        if (pubRel == NULL)
+        {
+            LogError("Failed to allocate publish ack message.");
+            set_error_callback(mqtt_client, MQTT_CLIENT_MEMORY_ERROR);
+        }
+
+        response_packet_type = PUBACK_TYPE;
+    }
+    if (pubRel != NULL)
+    {
+        size_t size = BUFFER_length(pubRel);
+        if (sendPacketItem(mqtt_client, BUFFER_u_char(pubRel), size) != 0)
+        {
+            LogError("Failed sending publish reply.");
+            set_error_callback(mqtt_client, MQTT_CLIENT_COMMUNICATION_ERROR);
+        }
+#ifndef NO_LOGGING
+        else if (is_trace_enabled(mqtt_client))
+        {
+            STRING_HANDLE ack_trace_log = STRING_construct_sprintf("%s | PACKET_ID: %"PRIu16, 
+                response_packet_type == PUBACK_TYPE ? "PUBACK" : ((response_packet_type == PUBREC_TYPE) ? "PUBREC" : "UNDEFINED"),
+                packetId);
+
+            log_outgoing_trace(mqtt_client, ack_trace_log);
+            STRING_delete(ack_trace_log);
+        }
+#endif
+        BUFFER_delete(pubRel);
+    }
+}
+
 static void ProcessPublishMessage(MQTT_CLIENT* mqtt_client, uint8_t* initialPos, size_t packetLength, int flags)
 {
     bool isDuplicateMsg = (flags & DUPLICATE_FLAG_MASK) ? true : false;
@@ -701,52 +750,11 @@ static void ProcessPublishMessage(MQTT_CLIENT* mqtt_client, uint8_t* initialPos,
                     log_incoming_trace(mqtt_client, trace_log);
                 }
 #endif
-                mqtt_client->fnMessageRecv(msgHandle, mqtt_client->ctx);
+                MQTT_CLIENT_ACK_OPTION ack_option = mqtt_client->fnMessageRecv(msgHandle, mqtt_client->ctx);
 
-                CONTROL_PACKET_TYPE response_packet_type = UNKNOWN_TYPE;
-                BUFFER_HANDLE pubRel = NULL;
-                if (qosValue == DELIVER_EXACTLY_ONCE)
+                if (ack_option == MQTT_CLIENT_ACK_SYNC)
                 {
-                    pubRel = mqtt_codec_publishReceived(packetId);
-                    if (pubRel == NULL)
-                    {
-                        LogError("Failed to allocate publish receive message.");
-                        set_error_callback(mqtt_client, MQTT_CLIENT_MEMORY_ERROR);
-                    }
-
-                    response_packet_type = PUBREC_TYPE;
-                }
-                else if (qosValue == DELIVER_AT_LEAST_ONCE)
-                {
-                    pubRel = mqtt_codec_publishAck(packetId);
-                    if (pubRel == NULL)
-                    {
-                        LogError("Failed to allocate publish ack message.");
-                        set_error_callback(mqtt_client, MQTT_CLIENT_MEMORY_ERROR);
-                    }
-
-                    response_packet_type = PUBACK_TYPE;
-                }
-                if (pubRel != NULL)
-                {
-                    size_t size = BUFFER_length(pubRel);
-                    if (sendPacketItem(mqtt_client, BUFFER_u_char(pubRel), size) != 0)
-                    {
-                        LogError("Failed sending publish reply.");
-                        set_error_callback(mqtt_client, MQTT_CLIENT_COMMUNICATION_ERROR);
-                    }
-#ifndef NO_LOGGING
-                    else if (is_trace_enabled(mqtt_client))
-                    {
-                        STRING_HANDLE ack_trace_log = STRING_construct_sprintf("%s | PACKET_ID: %"PRIu16, 
-                            response_packet_type == PUBACK_TYPE ? "PUBACK" : ((response_packet_type == PUBREC_TYPE) ? "PUBREC" : "UNDEFINED"),
-                            packetId);
-
-                        log_outgoing_trace(mqtt_client, ack_trace_log);
-                        STRING_delete(ack_trace_log);
-                    }
-#endif
-                    BUFFER_delete(pubRel);
+                    SendMessageAck(mqtt_client, packetId, qosValue);
                 }
             }
             mqttmessage_destroy(msgHandle);
@@ -1277,6 +1285,25 @@ int mqtt_client_unsubscribe(MQTT_CLIENT_HANDLE handle, uint16_t packetId, const 
             STRING_delete(trace_log);
         }
     }
+    return result;
+}
+
+int mqtt_client_send_ack(MQTT_CLIENT_HANDLE handle, uint16_t packetId, QOS_VALUE qosValue)
+{
+    int result;
+
+    if (handle == NULL || packetId == 0)
+    {
+        LogError("Invalid parameter specified mqtt_client: %p, packetId: %d", handle, packetId);
+        result = MU_FAILURE;
+    }
+    else
+    {
+        MQTT_CLIENT* mqtt_client = (MQTT_CLIENT*)handle;
+        SendMessageAck(mqtt_client, packetId, qosValue);
+        result = 0;
+    }
+
     return result;
 }
 

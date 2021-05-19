@@ -30,7 +30,7 @@ static const char* QosToString(QOS_VALUE qosValue)
     return MU_ENUM_TO_STRING_2(QOS_VALUE, qosValue);
 }
 
-static void OnRecvCallback(MQTT_MESSAGE_HANDLE msgHandle, void* context)
+static MQTT_CLIENT_ACK_OPTION OnRecvCallback(MQTT_MESSAGE_HANDLE msgHandle, void* context)
 {
     (void)context;
     const APP_PAYLOAD* appMsg = mqttmessage_getApplicationMsg(msgHandle);
@@ -47,6 +47,7 @@ static void OnRecvCallback(MQTT_MESSAGE_HANDLE msgHandle, void* context)
     }
 
     (void)printf("\r\n");
+    return MQTT_CLIENT_ACK_SYNC;
 }
 
 static void OnCloseComplete(void* context)
