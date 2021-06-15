@@ -65,7 +65,7 @@ MOCKABLE_FUNCTION(, int, mqtt_client_disconnect, MQTT_CLIENT_HANDLE, handle, ON_
 MOCKABLE_FUNCTION(, int, mqtt_client_subscribe, MQTT_CLIENT_HANDLE, handle, uint16_t, packetId, SUBSCRIBE_PAYLOAD*, subscribeList, size_t, count);
 MOCKABLE_FUNCTION(, int, mqtt_client_unsubscribe, MQTT_CLIENT_HANDLE, handle, uint16_t, packetId, const char**, unsubscribeList, size_t, count);
 
-MOCKABLE_FUNCTION(, int, mqtt_client_send_ack, MQTT_CLIENT_HANDLE, handle, uint16_t, packetId, QOS_VALUE, qosValue);
+MOCKABLE_FUNCTION(, int, mqtt_client_send_message_response, MQTT_CLIENT_HANDLE, handle, uint16_t, packetId, QOS_VALUE, qosValue);
 
 MOCKABLE_FUNCTION(, int, mqtt_client_publish, MQTT_CLIENT_HANDLE, handle, MQTT_MESSAGE_HANDLE, msgHandle);
 

@@ -659,6 +659,7 @@ static void SendMessageAck(MQTT_CLIENT* mqtt_client, uint16_t packetId, QOS_VALU
 
         response_packet_type = PUBACK_TYPE;
     }
+
     if (pubRel != NULL)
     {
         size_t size = BUFFER_length(pubRel);
@@ -1288,7 +1289,7 @@ int mqtt_client_unsubscribe(MQTT_CLIENT_HANDLE handle, uint16_t packetId, const 
     return result;
 }
 
-int mqtt_client_send_ack(MQTT_CLIENT_HANDLE handle, uint16_t packetId, QOS_VALUE qosValue)
+int mqtt_client_send_message_response(MQTT_CLIENT_HANDLE handle, uint16_t packetId, QOS_VALUE qosValue)
 {
     int result;
 

@@ -3139,7 +3139,7 @@ TEST_FUNCTION(mqtt_client_trace_UNSUBSCRIBE_ACK_succeeds)
     mqtt_client_deinit(mqttHandle);
 }
 
-TEST_FUNCTION(mqtt_client_send_ack_PUBACK_succeeds)
+TEST_FUNCTION(mqtt_client_send_message_response_PUBACK_succeeds)
 {
     // arrange
     TEST_COMPLETE_DATA_INSTANCE testData;
@@ -3161,7 +3161,7 @@ TEST_FUNCTION(mqtt_client_send_ack_PUBACK_succeeds)
     EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG));
 
     // act
-    int result = mqtt_client_send_ack(mqttHandle, TEST_PACKET_ID, DELIVER_AT_LEAST_ONCE);
+    int result = mqtt_client_send_message_response(mqttHandle, TEST_PACKET_ID, DELIVER_AT_LEAST_ONCE);
 
     // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -3171,13 +3171,13 @@ TEST_FUNCTION(mqtt_client_send_ack_PUBACK_succeeds)
     mqtt_client_deinit(mqttHandle);
 }
 
-TEST_FUNCTION(mqtt_client_send_ack_NULL_handle_fails)
+TEST_FUNCTION(mqtt_client_send_message_response_NULL_handle_fails)
 {
     // arrange
     umock_c_reset_all_calls();
 
     // act
-    int result = mqtt_client_send_ack(NULL, TEST_PACKET_ID, DELIVER_AT_LEAST_ONCE);
+    int result = mqtt_client_send_message_response(NULL, TEST_PACKET_ID, DELIVER_AT_LEAST_ONCE);
 
     // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
@@ -3186,7 +3186,7 @@ TEST_FUNCTION(mqtt_client_send_ack_NULL_handle_fails)
     // cleanup
 }
 
-TEST_FUNCTION(mqtt_client_send_ack_zero_packet_id_fails)
+TEST_FUNCTION(mqtt_client_send_message_response_zero_packet_id_fails)
 {
     // arrange
     TEST_COMPLETE_DATA_INSTANCE testData;
@@ -3201,7 +3201,7 @@ TEST_FUNCTION(mqtt_client_send_ack_zero_packet_id_fails)
     umock_c_reset_all_calls();
 
     // act
-    int result = mqtt_client_send_ack(mqttHandle, 0, DELIVER_AT_LEAST_ONCE);
+    int result = mqtt_client_send_message_response(mqttHandle, 0, DELIVER_AT_LEAST_ONCE);
 
     // assert
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
