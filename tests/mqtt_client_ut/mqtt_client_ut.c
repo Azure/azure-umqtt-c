@@ -3139,4 +3139,76 @@ TEST_FUNCTION(mqtt_client_trace_UNSUBSCRIBE_ACK_succeeds)
     mqtt_client_deinit(mqttHandle);
 }
 
+TEST_FUNCTION(mqtt_client_send_ack_PUBACK_succeeds)
+{
+    // arrange
+    TEST_COMPLETE_DATA_INSTANCE testData;
+    PUBLISH_ACK puback = { 0 };
+    puback.packetId = 0x1234;
+
+    testData.actionResult = MQTT_CLIENT_ON_PUBLISH_ACK;
+    testData.msgInfo = &puback;
+
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, (void*)&testData, TestErrorCallback, NULL);
+ 
+    umock_c_reset_all_calls();
+
+    STRICT_EXPECTED_CALL(mqtt_codec_publishAck(TEST_PACKET_ID));
+    EXPECTED_CALL(BUFFER_length(IGNORED_PTR_ARG));
+    EXPECTED_CALL(BUFFER_u_char(IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(tickcounter_get_current_ms(TEST_COUNTER_HANDLE, IGNORED_PTR_ARG)).IgnoreArgument(2);
+    EXPECTED_CALL(xio_send(IGNORED_PTR_ARG, IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    EXPECTED_CALL(BUFFER_delete(IGNORED_PTR_ARG));
+
+    // act
+    int result = mqtt_client_send_ack(mqttHandle, TEST_PACKET_ID, DELIVER_AT_LEAST_ONCE);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_ARE_EQUAL(int, 0, result);
+
+    // cleanup
+    mqtt_client_deinit(mqttHandle);
+}
+
+TEST_FUNCTION(mqtt_client_send_ack_NULL_handle_fails)
+{
+    // arrange
+    umock_c_reset_all_calls();
+
+    // act
+    int result = mqtt_client_send_ack(NULL, TEST_PACKET_ID, DELIVER_AT_LEAST_ONCE);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+
+    // cleanup
+}
+
+TEST_FUNCTION(mqtt_client_send_ack_zero_packet_id_fails)
+{
+    // arrange
+    TEST_COMPLETE_DATA_INSTANCE testData;
+    PUBLISH_ACK puback = { 0 };
+    puback.packetId = 0x1234;
+
+    testData.actionResult = MQTT_CLIENT_ON_PUBLISH_ACK;
+    testData.msgInfo = &puback;
+
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, (void*)&testData, TestErrorCallback, NULL);
+ 
+    umock_c_reset_all_calls();
+
+    // act
+    int result = mqtt_client_send_ack(mqttHandle, 0, DELIVER_AT_LEAST_ONCE);
+
+    // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+    ASSERT_ARE_NOT_EQUAL(int, 0, result);
+
+    // cleanup
+    mqtt_client_deinit(mqttHandle);
+}
+
 END_TEST_SUITE(mqtt_client_ut)
