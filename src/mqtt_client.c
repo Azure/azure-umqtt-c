@@ -380,28 +380,26 @@ static void logIncomingRawTrace(MQTT_CLIENT* mqtt_client, CONTROL_PACKET_TYPE pa
 
 static int sendPacketItem(MQTT_CLIENT* mqtt_client, const unsigned char* data, size_t length)
 {
-    int result;
+    int result = xio_send(mqtt_client->xioHandle, (const void*)data, length, sendComplete, mqtt_client);
 
-    if (tickcounter_get_current_ms(mqtt_client->packetTickCntr, &mqtt_client->packetSendTimeMs) != 0)
+    if (result != 0)
     {
-        LogError("Failure getting current ms tickcounter");
+        LogError("Failure sending control packet data");
         result = MU_FAILURE;
     }
     else
     {
-        result = xio_send(mqtt_client->xioHandle, (const void*)data, length, sendComplete, mqtt_client);
-        if (result != 0)
+#ifdef ENABLE_RAW_TRACE
+        logOutgoingRawTrace(mqtt_client, (const uint8_t*)data, length);
+#endif
+
+        if (tickcounter_get_current_ms(mqtt_client->packetTickCntr, &mqtt_client->packetSendTimeMs) != 0)
         {
-            LogError("Failure sending control packet data");
+            LogError("Failure getting current ms tickcounter");
             result = MU_FAILURE;
         }
-        else
-        {
-#ifdef ENABLE_RAW_TRACE
-            logOutgoingRawTrace(mqtt_client, (const uint8_t*)data, length);
-#endif
-        }
     }
+
     return result;
 }
 
