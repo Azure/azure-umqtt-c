@@ -121,8 +121,9 @@ STRING_HANDLE STRING_construct_sprintf(const char* format, ...)
 }
 #endif
 
-TEST_DEFINE_ENUM_TYPE(CONTROL_PACKET_TYPE, CONTROL_PACKET_TYPE_VALUES);
-IMPLEMENT_UMOCK_C_ENUM_TYPE(CONTROL_PACKET_TYPE, CONTROL_PACKET_TYPE_VALUES);
+MU_DEFINE_ENUM_STRINGS_2(CONTROL_PACKET_TYPE, CONTROL_PACKET_TYPE_VALUES);
+TEST_DEFINE_ENUM_2_TYPE(CONTROL_PACKET_TYPE, CONTROL_PACKET_TYPE_VALUES);
+IMPLEMENT_UMOCK_C_ENUM_2_TYPE(CONTROL_PACKET_TYPE, CONTROL_PACKET_TYPE_VALUES);
 
 static void SetupMqttLibOptions(MQTT_CLIENT_OPTIONS* options, const char* clientId,
     const char* willMsg,
@@ -1978,6 +1979,136 @@ TEST_FUNCTION(mqtt_codec_bytesReceived_unsuback_succeed)
 
     // assert
     ASSERT_IS_TRUE(g_callbackInvoked);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    mqtt_codec_destroy(handle);
+}
+
+TEST_FUNCTION(mqtt_codec_bytesReceived_pingresp_invalid_fails)
+{
+    // arrange
+    int result;
+
+    unsigned char PINGRESP_RESP[] = { 0xD0, 0xFF };
+    size_t length = sizeof(PINGRESP_RESP) / sizeof(PINGRESP_RESP[0]);
+
+    TEST_COMPLETE_DATA_INSTANCE testData = { 0 };
+    testData.dataHeader = PINGRESP_RESP + FIXED_HEADER_SIZE;
+    testData.Length = 2;
+    MQTTCODEC_HANDLE handle = mqtt_codec_create(TestOnCompleteCallback, &testData);
+
+    umock_c_reset_all_calls();
+
+    // act
+    result = mqtt_codec_bytesReceived(handle, PINGRESP_RESP, length);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, result, 0);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    mqtt_codec_destroy(handle);
+}
+
+TEST_FUNCTION(mqtt_codec_bytesReceived_invalid_packet_id1_fails)
+{
+    // arrange
+    int result;
+
+    unsigned char INVALID_PACKET_ID[] = { PACKET_INVALID1_TYPE, 0x00 };
+    size_t length = sizeof(INVALID_PACKET_ID) / sizeof(INVALID_PACKET_ID[0]);
+
+    TEST_COMPLETE_DATA_INSTANCE testData = { 0 };
+    testData.dataHeader = INVALID_PACKET_ID + FIXED_HEADER_SIZE;
+    testData.Length = 2;
+    MQTTCODEC_HANDLE handle = mqtt_codec_create(TestOnCompleteCallback, &testData);
+
+    umock_c_reset_all_calls();
+
+    // act
+    result = mqtt_codec_bytesReceived(handle, INVALID_PACKET_ID, length);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, result, 0);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    mqtt_codec_destroy(handle);
+}
+
+TEST_FUNCTION(mqtt_codec_bytesReceived_invalid_packet_id2_fails)
+{
+    // arrange
+    int result;
+
+    unsigned char INVALID_PACKET_ID[] = { PACKET_INVALID2_TYPE, 0x00 };
+    size_t length = sizeof(INVALID_PACKET_ID) / sizeof(INVALID_PACKET_ID[0]);
+
+    TEST_COMPLETE_DATA_INSTANCE testData = { 0 };
+    testData.dataHeader = INVALID_PACKET_ID + FIXED_HEADER_SIZE;
+    testData.Length = 2;
+    MQTTCODEC_HANDLE handle = mqtt_codec_create(TestOnCompleteCallback, &testData);
+
+    umock_c_reset_all_calls();
+
+    // act
+    result = mqtt_codec_bytesReceived(handle, INVALID_PACKET_ID, length);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, result, 0);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    mqtt_codec_destroy(handle);
+}
+
+TEST_FUNCTION(mqtt_codec_bytesReceived_invalid_header_flags1_fails)
+{
+    // arrange
+    int result;
+
+    unsigned char INVALID_CONNACK_HEADER_PACKET[] = { CONNACK_TYPE | 0x01, 0x00 };
+    size_t length = sizeof(INVALID_CONNACK_HEADER_PACKET) / sizeof(INVALID_CONNACK_HEADER_PACKET[0]);
+
+    TEST_COMPLETE_DATA_INSTANCE testData = { 0 };
+    testData.dataHeader = INVALID_CONNACK_HEADER_PACKET + FIXED_HEADER_SIZE;
+    testData.Length = 2;
+    MQTTCODEC_HANDLE handle = mqtt_codec_create(TestOnCompleteCallback, &testData);
+
+    umock_c_reset_all_calls();
+
+    // act
+    result = mqtt_codec_bytesReceived(handle, INVALID_CONNACK_HEADER_PACKET, length);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, result, 0);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    mqtt_codec_destroy(handle);
+}
+
+TEST_FUNCTION(mqtt_codec_bytesReceived_invalid_header_flags2_fails)
+{
+    // arrange
+    int result;
+
+    unsigned char INVALID_CONNACK_HEADER_PACKET[] = { PUBREL_TYPE, 0x00 };
+    size_t length = sizeof(INVALID_CONNACK_HEADER_PACKET) / sizeof(INVALID_CONNACK_HEADER_PACKET[0]);
+
+    TEST_COMPLETE_DATA_INSTANCE testData = { 0 };
+    testData.dataHeader = INVALID_CONNACK_HEADER_PACKET + FIXED_HEADER_SIZE;
+    testData.Length = 2;
+    MQTTCODEC_HANDLE handle = mqtt_codec_create(TestOnCompleteCallback, &testData);
+
+    umock_c_reset_all_calls();
+
+    // act
+    result = mqtt_codec_bytesReceived(handle, INVALID_CONNACK_HEADER_PACKET, length);
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, result, 0);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup
