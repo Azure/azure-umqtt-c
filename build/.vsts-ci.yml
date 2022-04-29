@@ -251,18 +251,18 @@ jobs:
   - script: sudo rm -rf $(Agent.BuildDirectory)/*
     displayName: 'cleanup'
     condition: always()
-- job: linux_install_deps
-  container: linux-c-debian
+- job: wolfssl
+  container: linux-c-ubuntu-wolfssl
   pool: 
     name: 'sdk-c--ubuntu-18'
-  displayName: 'Linux Debian with Installed Deps'
+  displayName: 'Linux Ubuntu with WolfSSL'
   steps:
   - script: |
-     if [ -f "jenkins/linux_install_deps.sh" ]
+     if [ -f "jenkins/linux_wolfssl.sh" ]
      then
-      sudo chmod 755 jenkins/linux_install_deps.sh
-      sudo -E ./jenkins/linux_install_deps.sh
-      sudo jenkins/linux_install_deps.sh
+      LD_LIBRARY_PATH=/usr/local/lib
+      LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/my_library/
+      sudo ./jenkins/linux_wolfssl.sh
      fi
     displayName: 'build'
     env:
@@ -321,18 +321,18 @@ jobs:
   - script: sudo rm -rf $(Agent.BuildDirectory)/*
     displayName: 'cleanup'
     condition: always()
-- job: wolfssl
-  container: linux-c-ubuntu-wolfssl
+- job: linux_install_deps
+  container: linux-c-debian
   pool: 
     name: 'sdk-c--ubuntu-18'
-  displayName: 'WolfSSL'
+  displayName: 'Linux Debian with Installed Deps'
   steps:
   - script: |
-     if [ -f "jenkins/linux_wolfssl.sh" ]
+     if [ -f "jenkins/linux_install_deps.sh" ]
      then
-      LD_LIBRARY_PATH=/usr/local/lib
-      LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/my_library/
-      sudo ./jenkins/linux_wolfssl.sh
+      sudo chmod 755 jenkins/linux_install_deps.sh
+      sudo -E ./jenkins/linux_install_deps.sh
+      sudo jenkins/linux_install_deps.sh
      fi
     displayName: 'build'
     env:
