@@ -73,7 +73,7 @@ extern "C" {
 }
 #endif
 
-#define TEST_MESSAGE (const uint8_t*)"Message to send";
+#define TEST_MESSAGE "Message to send"
 
 static bool g_fail_alloc_calls;
 
