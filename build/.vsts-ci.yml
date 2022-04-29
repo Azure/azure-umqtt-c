@@ -399,7 +399,7 @@ jobs:
     displayName: 'cleanup'
     condition: always()
 - job: xcodenative
-  container: XCode Native
+  displayName: XCode Native
   pool:
     name: OSX
   steps:
