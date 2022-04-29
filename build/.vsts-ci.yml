@@ -42,6 +42,7 @@ jobs:
       ./../../node_modules/.bin/check_submodules . master
     displayName: 'build'
 - job: windowsx86
+  displayName: Windows x86
   pool:
     name: 'sdk-c--win-vs2017'
   steps:
