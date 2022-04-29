@@ -73,12 +73,14 @@ extern "C" {
 }
 #endif
 
+#define TEST_MESSAGE_TEXT "Message to send"
+
 static bool g_fail_alloc_calls;
 
 static const uint8_t TEST_PACKET_ID = (uint8_t)0x12;
 static const char* TEST_TOPIC_NAME = "$subTopic1/subTopic2/subTopic3/?$prop1=value1&$prop2=value2";
-static const uint8_t* TEST_MESSAGE = (const uint8_t*)"Message to send";
-static const int TEST_MSG_LEN = sizeof(TEST_MESSAGE)/sizeof(TEST_MESSAGE[0]);
+static const uint8_t* TEST_MESSAGE = (const uint8_t *)TEST_MESSAGE_TEXT;
+static const int TEST_MSG_LEN = sizeof(TEST_MESSAGE_TEXT) - 1;
 
 typedef struct TEST_COMPLETE_DATA_INSTANCE_TAG
 {
