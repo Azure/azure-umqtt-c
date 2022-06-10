@@ -1104,6 +1104,7 @@ int mqtt_client_connect(MQTT_CLIENT_HANDLE handle, XIO_HANDLE xioHandle, MQTT_CL
         mqtt_client->qosValue = mqttOptions->qualityOfServiceValue;
         mqtt_client->keepAliveInterval = mqttOptions->keepAliveInterval;
         mqtt_client->maxPingRespTime = (DEFAULT_MAX_PING_RESPONSE_TIME < mqttOptions->keepAliveInterval/2) ? DEFAULT_MAX_PING_RESPONSE_TIME : mqttOptions->keepAliveInterval/2;
+        mqtt_client->timeSincePing = 0;
         if (cloneMqttOptions(mqtt_client, mqttOptions) != 0)
         {
             LogError("Error: Clone Mqtt Options failed");
