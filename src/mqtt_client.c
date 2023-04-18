@@ -169,7 +169,7 @@ static char* byteutil_readUTF(uint8_t** buffer, size_t* byteLen)
     // not being asked to read a string longer than buffer passed in.
     if ((stringLen > 0) && ((size_t)(stringLen + (*buffer - bufferInitial)) <= *byteLen))
     {
-        result = (char*)malloc(stringLen + 1);
+        result = (char*)malloc((size_t)stringLen + 1);
         if (result != NULL)
         {
             (void)memcpy(result, *buffer, stringLen);
