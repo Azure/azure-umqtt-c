@@ -102,7 +102,7 @@ mkdir %build-root%\cmake\%CMAKE_DIR%
 pushd %build-root%\cmake\%CMAKE_DIR%
 
 echo ***checking msbuild***
-where /q msbuild
+where msbuild
 
 if %MAKE_NUGET_PKG% == yes (
     echo ***Running CMAKE for Win32***
