@@ -3,10 +3,7 @@
 
 cmake_minimum_required(VERSION 3.5)
 
-compileAsC99()
-
 set(theseTestsName mqtt_codec_ut)
-generate_cppunittest_wrapper(${theseTestsName})
 
 set(${theseTestsName}_test_files
 ${theseTestsName}.c
@@ -24,4 +21,4 @@ include_directories(${MQTT_SRC_FOLDER})
 
 build_c_test_artifacts(${theseTestsName} ON "tests/umqtt_tests")
 
-#compile_c_test_artifacts_as(${theseTestsName} C99)
+compile_c_test_artifacts_as(${theseTestsName} C99)
