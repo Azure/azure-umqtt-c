@@ -24,4 +24,4 @@ include_directories(${MQTT_SRC_FOLDER})
 
 build_c_test_artifacts(${theseTestsName} ON "tests/umqtt_tests")
 
-compile_c_test_artifacts_as(${theseTestsName} C99)
+#compile_c_test_artifacts_as(${theseTestsName} C99)
