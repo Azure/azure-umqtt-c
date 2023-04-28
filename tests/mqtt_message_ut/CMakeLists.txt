@@ -3,10 +3,10 @@
 
 cmake_minimum_required(VERSION 3.5)
 
-compileAsC99()
+#compileAsC99()
 
 set(theseTestsName mqtt_message_ut)
-generate_cppunittest_wrapper(${theseTestsName})
+#generate_cppunittest_wrapper(${theseTestsName})
 
 set(${theseTestsName}_test_files
 ${theseTestsName}.c
