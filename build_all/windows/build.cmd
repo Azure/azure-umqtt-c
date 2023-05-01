@@ -106,7 +106,7 @@ where msbuild
 
 if %MAKE_NUGET_PKG% == yes (
     echo ***Running CMAKE for Win32***
-    cmake %build-root% -Drun_unittests:BOOL=%CMAKE_run_unittests%
+    cmake %build-root% -LAH -Duse_cppunittest:BOOL=OFF -Drun_unittests:BOOL=%CMAKE_run_unittests%
     if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
     popd
 
@@ -116,7 +116,7 @@ if %MAKE_NUGET_PKG% == yes (
     )
     mkdir %build-root%\cmake\umqtt_x64
     pushd %build-root%\cmake\umqtt_x64
-    cmake -Drun_unittests:BOOL=%CMAKE_run_unittests% %build-root% -A x64
+    cmake -LAH -Duse_cppunittest:BOOL=OFF -Drun_unittests:BOOL=%CMAKE_run_unittests% %build-root% -A x64
     if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
     popd
 
@@ -127,20 +127,20 @@ if %MAKE_NUGET_PKG% == yes (
     mkdir %build-root%\cmake\umqtt_arm
     pushd %build-root%\cmake\umqtt_arm
     echo ***Running CMAKE for ARM***
-    cmake -Drun_unittests:BOOL=%CMAKE_run_unittests% %build-root% -A ARM
+    cmake -LAH -Duse_cppunittest:BOOL=OFF  -Drun_unittests:BOOL=%CMAKE_run_unittests% %build-root% -A ARM
     if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 
 ) else if %build-platform% == Win32 (
     echo ***Running CMAKE for Win32***
-    cmake %build-root% -Drun_unittests:BOOL=%CMAKE_run_unittests% -A Win32
+    cmake -LAH -Duse_cppunittest:BOOL=OFF %build-root% -Drun_unittests:BOOL=%CMAKE_run_unittests% -A Win32
     if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 ) else if %build-platform% == arm (
     echo ***Running CMAKE for ARM***
-    cmake -Drun_unittests:BOOL=%CMAKE_run_unittests% %build-root% -A ARM
+    cmake -LAH -Duse_cppunittest:BOOL=OFF -Drun_unittests:BOOL=%CMAKE_run_unittests% %build-root% -A ARM
     if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 ) else (
     echo ***Running CMAKE for Win64***
-    cmake -Drun_unittests:BOOL=%CMAKE_run_unittests% %build-root% -A x64
+    cmake -LAH -Duse_cppunittest:BOOL=OFF -Drun_unittests:BOOL=%CMAKE_run_unittests% %build-root% -A x64
     if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 )
 

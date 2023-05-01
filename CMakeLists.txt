@@ -22,6 +22,7 @@ option(use_installed_dependencies "set use_installed_dependencies to ON to use i
 option(use_custom_heap "use externally defined heap functions instead of the malloc family" OFF)
 option(no_logging "disable logging" OFF)
 option(enable_raw_logging "Enables the ability to add raw logging" OFF)
+option(use_cppunittest "set use_cppunittest to ON to build CppUnitTest tests on Windows (default is ON)" ON)
 
 if(${use_custom_heap})
     add_definitions(-DGB_USE_CUSTOM_HEAP)
@@ -39,7 +40,6 @@ set(original_skip_samples ${skip_samples})
 set(run_e2e_tests OFF)
 set(run_unittests OFF)
 set(skip_samples ON)
-set(use_cppunittest OFF)
 
 if(NOT ${use_installed_dependencies})
     if ((NOT TARGET azure_macro_utils_c) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-macro-utils-c/CMakeLists.txt))
