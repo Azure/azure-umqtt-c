@@ -11,7 +11,7 @@ resources:
     image: csdkcontainerregistry.azurecr.io/linux-c-ubuntu-clang:latest
   - container: linux-c-debian-buster
     endpoint: csdk-containers
-    image: csdkcontainerregistry.azurecr.io/linux-c-debian:latest
+    image: csdkcontainerregistry.azurecr.io/linux-c-debian-buster:latest
   - container: linux-c-ubuntu-wolfssl
     endpoint: csdk-containers
     image: csdkcontainerregistry.azurecr.io/linux-c-ubuntu-wolfssl:latest
