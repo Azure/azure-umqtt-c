@@ -9,9 +9,9 @@ resources:
   - container: linux-c-ubuntu-clang
     endpoint: csdk-containers
     image: csdkcontainerregistry.azurecr.io/linux-c-ubuntu-clang:latest
-  - container: linux-c-debian
+  - container: linux-c-debian-buster
     endpoint: csdk-containers
-    image: csdkcontainerregistry.azurecr.io/linux-c-debian:latest
+    image: csdkcontainerregistry.azurecr.io/linux-c-debian-buster:latest
   - container: linux-c-ubuntu-wolfssl
     endpoint: csdk-containers
     image: csdkcontainerregistry.azurecr.io/linux-c-ubuntu-wolfssl:latest
@@ -196,10 +196,10 @@ jobs:
       DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
 - job: debian
-  container: linux-c-debian
+  container: linux-c-debian-buster
   pool: 
     name: 'sdk-c--ubuntu-22'
-  displayName: 'Linux Debian'
+  displayName: 'Linux Debian (Buster)'
   steps:
   - script: |
      if [ -f "jenkins/debian_c.sh" ]
@@ -228,10 +228,10 @@ jobs:
       DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
       PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
 - job: linux_install_deps
-  container: linux-c-debian
+  container: linux-c-debian-buster
   pool: 
     name: 'sdk-c--ubuntu-22'
-  displayName: 'Linux Debian with Installed Deps'
+  displayName: 'Linux Debian (Buster) with Installed Deps'
   steps:
   - script: |
      if [ -f "jenkins/linux_install_deps.sh" ]
