@@ -52,8 +52,6 @@ static const char* const TRUE_CONST = "true";
 static const char* const FALSE_CONST = "false";
 
 MU_DEFINE_ENUM(CODEC_STATE_RESULT, CODEC_STATE_VALUES);
-BUFFER_HANDLE mqtt_codec_disconnect();
-BUFFER_HANDLE mqtt_codec_ping();
 
 typedef struct MQTTCODEC_INSTANCE_TAG
 {
