@@ -711,7 +711,7 @@ BUFFER_HANDLE mqtt_codec_connect(const MQTT_CLIENT_OPTIONS* mqttOptions, STRING_
     return result;
 }
 
-BUFFER_HANDLE mqtt_codec_disconnect()
+BUFFER_HANDLE mqtt_codec_disconnect(void)
 {
     /* Codes_SRS_MQTT_CODEC_07_011: [On success mqtt_codec_disconnect shall construct a BUFFER_HANDLE that represents a MQTT DISCONNECT packet.] */
     BUFFER_HANDLE result = BUFFER_new();
@@ -891,7 +891,7 @@ BUFFER_HANDLE mqtt_codec_publishComplete(uint16_t packetId)
     return result;
 }
 
-BUFFER_HANDLE mqtt_codec_ping()
+BUFFER_HANDLE mqtt_codec_ping(void)
 {
     /* Codes_SRS_MQTT_CODEC_07_021: [On success mqtt_codec_ping shall construct a BUFFER_HANDLE that represents a MQTT PINGREQ packet.] */
     BUFFER_HANDLE result = BUFFER_new();
