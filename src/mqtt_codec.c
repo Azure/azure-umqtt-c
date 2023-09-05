@@ -52,6 +52,8 @@ static const char* const TRUE_CONST = "true";
 static const char* const FALSE_CONST = "false";
 
 MU_DEFINE_ENUM(CODEC_STATE_RESULT, CODEC_STATE_VALUES);
+BUFFER_HANDLE mqtt_codec_disconnect();
+BUFFER_HANDLE mqtt_codec_ping();
 
 typedef struct MQTTCODEC_INSTANCE_TAG
 {
@@ -711,7 +713,7 @@ BUFFER_HANDLE mqtt_codec_connect(const MQTT_CLIENT_OPTIONS* mqttOptions, STRING_
     return result;
 }
 
-BUFFER_HANDLE mqtt_codec_disconnect(void)
+BUFFER_HANDLE mqtt_codec_disconnect()
 {
     /* Codes_SRS_MQTT_CODEC_07_011: [On success mqtt_codec_disconnect shall construct a BUFFER_HANDLE that represents a MQTT DISCONNECT packet.] */
     BUFFER_HANDLE result = BUFFER_new();
@@ -891,7 +893,7 @@ BUFFER_HANDLE mqtt_codec_publishComplete(uint16_t packetId)
     return result;
 }
 
-BUFFER_HANDLE mqtt_codec_ping(void)
+BUFFER_HANDLE mqtt_codec_ping()
 {
     /* Codes_SRS_MQTT_CODEC_07_021: [On success mqtt_codec_ping shall construct a BUFFER_HANDLE that represents a MQTT PINGREQ packet.] */
     BUFFER_HANDLE result = BUFFER_new();
