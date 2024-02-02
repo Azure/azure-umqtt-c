@@ -14,6 +14,7 @@
 #include "azure_c_shared_utility/threadapi.h"
 #include "azure_c_shared_utility/tickcounter.h"
 #include "azure_c_shared_utility/xlogging.h"
+#include "azure_c_shared_utility/safe_math.h"
 
 #include "azure_umqtt_c/mqtt_client.h"
 #include "azure_umqtt_c/mqtt_codec.h"
@@ -169,14 +170,19 @@ static char* byteutil_readUTF(uint8_t** buffer, size_t* byteLen)
     // not being asked to read a string longer than buffer passed in.
     if ((stringLen > 0) && ((size_t)(stringLen + (*buffer - bufferInitial)) <= *byteLen))
     {
-        result = (char*)malloc((size_t)stringLen + 1);
-        if (result != NULL)
+        size_t malloc_size = safe_add_size_t((size_t)stringLen, 1);
+        if (malloc_size != SIZE_MAX &&
+            (result = (char*)malloc(malloc_size)) != NULL)
         {
             (void)memcpy(result, *buffer, stringLen);
             result[stringLen] = '\0';
             *buffer += stringLen;
             *byteLen = stringLen;
          }
+        else
+        {
+            LogError("Cannot alloc memory, size:%zu", malloc_size);
+        }
     }
     else
     {
@@ -914,8 +920,9 @@ static void recvCompleteCallback(void* context, CONTROL_PACKET_TYPE packet, int 
                     }
 #endif
                     // Allocate the remaining len
-                    suback.qosReturn = (QOS_VALUE*)malloc(sizeof(QOS_VALUE)*remainLen);
-                    if (suback.qosReturn != NULL)
+                    size_t malloc_size = safe_multiply_size_t(sizeof(QOS_VALUE), remainLen);
+                    if (malloc_size != SIZE_MAX && 
+                        (suback.qosReturn = (QOS_VALUE*)malloc(malloc_size)) != NULL)
                     {
                         while (remainLen > 0)
                         {
@@ -950,7 +957,7 @@ static void recvCompleteCallback(void* context, CONTROL_PACKET_TYPE packet, int 
                     }
                     else
                     {
-                        LogError("allocation of quality of service value failed.");
+                        LogError("allocation of quality of service value failed, size:%zu", malloc_size);
                         set_error_callback(mqtt_client, MQTT_CLIENT_MEMORY_ERROR);
                     }
                     break;
