@@ -2,7 +2,7 @@ This project has adopted the [Microsoft Open Source Code of Conduct](https://ope
 
 # Microsoft Azure MQTT
 
-azure-umqtt-c is a general purpose library build for MQTT protocol
+azure-umqtt-c is a C library for MQTT 3.1 protocol communication to Azure Cloud IoT Services.
 
 ## Dependencies
 
