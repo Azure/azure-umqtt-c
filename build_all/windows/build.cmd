@@ -132,15 +132,15 @@ if %MAKE_NUGET_PKG% == yes (
 
 ) else if %build-platform% == Win32 (
     echo ***Running CMAKE for Win32***
-    cmake -LAH -Duse_cppunittest:BOOL=OFF %build-root% -Drun_unittests:BOOL=%CMAKE_run_unittests% -A Win32
+    cmake -LAH -Duse_cppunittest:BOOL=OFF %build-root% -Drun_unittests:BOOL=%CMAKE_run_unittests% -A Win32 -G %VSVERSION%
     if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 ) else if %build-platform% == arm (
     echo ***Running CMAKE for ARM***
-    cmake -LAH -Duse_cppunittest:BOOL=OFF -Drun_unittests:BOOL=%CMAKE_run_unittests% %build-root% -A ARM
+    cmake -LAH -Duse_cppunittest:BOOL=OFF -Drun_unittests:BOOL=%CMAKE_run_unittests% %build-root% -A ARM -G %VSVERSION%
     if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 ) else (
     echo ***Running CMAKE for Win64***
-    cmake -LAH -Duse_cppunittest:BOOL=OFF -Drun_unittests:BOOL=%CMAKE_run_unittests% %build-root% -A x64
+    cmake -LAH -Duse_cppunittest:BOOL=OFF -Drun_unittests:BOOL=%CMAKE_run_unittests% %build-root% -A x64 -G %VSVERSION%
     if not !ERRORLEVEL!==0 exit /b !ERRORLEVEL!
 )
 
