@@ -1118,7 +1118,7 @@ int mqtt_codec_bytesReceived(MQTTCODEC_HANDLE handle, const unsigned char* buffe
                             break;
 
                         case PUBLISH_TYPE:
-                        case CONTROL_PACKET_TYPE_INVALID: 
+                        // case CONTROL_PACKET_TYPE_INVALID: 
                         case PACKET_TYPE_ERROR:
                         case UNKNOWN_TYPE:
                             break;
