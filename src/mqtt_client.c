@@ -33,7 +33,7 @@
 static const char* const TRUE_CONST = "true";
 static const char* const FALSE_CONST = "false";
 
-MU_DEFINE_ENUM_STRINGS_2(QOS_VALUE, QOS_VALUE_VALUES);
+MU_DEFINE_ENUM_STRINGS(QOS_VALUE, QOS_VALUE_VALUES);
 
 #define MQTT_STATUS_INITIAL_STATUS      0x0000
 #define MQTT_STATUS_CLIENT_CONNECTED    0x0001
@@ -710,7 +710,7 @@ static void ProcessPublishMessage(MQTT_CLIENT* mqtt_client, uint8_t* initialPos,
         if (is_trace_enabled(mqtt_client))
         {
             trace_log = STRING_construct_sprintf("PUBLISH | IS_DUP: %s | RETAIN: %d | QOS: %s | TOPIC_NAME: %s", isDuplicateMsg ? TRUE_CONST : FALSE_CONST,
-                isRetainMsg ? 1 : 0, MU_ENUM_TO_STRING_2(QOS_VALUE, qosValue), topicName);
+                isRetainMsg ? 1 : 0, MU_ENUM_TO_STRING(QOS_VALUE, qosValue), topicName);
         }
 #endif
         uint16_t packetId = 0;
