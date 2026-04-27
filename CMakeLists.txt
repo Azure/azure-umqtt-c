@@ -1,7 +1,9 @@
 #Copyright (c) Microsoft. All rights reserved.
 #Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-cmake_minimum_required(VERSION 3.5)
+if(NOT DEFINED CMAKE_MINIMUM_REQUIRED_VERSION)
+    cmake_minimum_required(VERSION 3.18)
+endif()
 
 if (TARGET umqtt)
     RETURN()
@@ -50,31 +52,37 @@ if(NOT ${use_installed_dependencies})
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-strict-prototypes")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-strict-prototypes")
     endif()
-    if ((NOT TARGET azure_macro_utils_c) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-macro-utils-c/CMakeLists.txt))
-        add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/deps/azure-macro-utils-c)
-    endif()
-    if (NOT TARGET umock_c)
-        add_subdirectory(deps/umock-c)
-        include_directories(${UMOCK_C_INC_FOLDER})
+
+    if ((NOT TARGET c_build_tools) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/c-build-tools/CMakeLists.txt))
+        add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/deps/c-build-tools)
+        set_default_build_options()
     endif()
 
-    if(${original_run_e2e_tests} OR ${original_run_unittests})
-        if (NOT TARGET testrunnerswitcher)
-            add_subdirectory(deps/testrunnerswitcher)
-        endif()
-        if (NOT TARGET ctest)
-            add_subdirectory(deps/ctest)
-        endif()
-        enable_testing()
+    if ((NOT TARGET macro_utils_c) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/macro-utils-c/CMakeLists.txt))
+        add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/deps/macro-utils-c)
     endif()
-    if (NOT TARGET aziotsharedutil)
-        add_subdirectory(deps/c-utility)
-        # Include the common build rules for C shared utility
-        if(${use_installed_dependencies})
-            include(deps/c-utility/configs/azure_iot_build_rules.cmake)
-        else()
-            include(${SHARED_UTIL_FOLDER}/configs/azure_iot_build_rules.cmake)
+
+    if ((NOT TARGET c_logging) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/c-logging/CMakeLists.txt))
+        add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/deps/c-logging)
+        if (NOT TARGET c_logging)
+            add_library(c_logging ALIAS c_logging_v2)
         endif()
+    endif()
+
+    if ((NOT TARGET ctest) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/ctest/CMakeLists.txt))
+        add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/deps/ctest)
+    endif()
+
+    if ((NOT TARGET testrunnerswitcher) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/c-testrunnerswitcher/CMakeLists.txt))
+        add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/deps/c-testrunnerswitcher)
+    endif()
+
+    if ((NOT TARGET umock_c) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/umock-c/CMakeLists.txt))
+        add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/deps/umock-c)
+    endif()
+
+    if ((NOT TARGET aziotsharedutil) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/c-utility/CMakeLists.txt))
+        add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/deps/c-utility)
     endif()
 
 else()
@@ -92,6 +100,10 @@ else()
     include(${azure_c_shared_utility_DIR}/azure_c_shared_utilityFunctions.cmake)
     include(${azure_c_shared_utility_DIR}/azure_iot_build_rules.cmake)
 endif()
+
+include_directories(${CMAKE_CURRENT_LIST_DIR}/deps/macro-utils-c/inc)
+include_directories(${CMAKE_CURRENT_LIST_DIR}/deps/umock-c/inc)
+include_directories(${CMAKE_CURRENT_LIST_DIR}/deps/c-logging/v2/inc)
 
 set_platform_files(${SHARED_UTIL_FOLDER})
 

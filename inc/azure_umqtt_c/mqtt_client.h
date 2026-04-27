@@ -5,7 +5,7 @@
 #define MQTT_CLIENT_H
 
 #include "azure_c_shared_utility/xio.h"
-#include "azure_macro_utils/macro_utils.h"
+#include "macro_utils/macro_utils.h"
 #include "azure_umqtt_c/mqttconst.h"
 #include "azure_umqtt_c/mqtt_message.h"
 #include "umock_c/umock_c_prod.h"
