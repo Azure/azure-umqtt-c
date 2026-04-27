@@ -33,7 +33,43 @@
 static const char* const TRUE_CONST = "true";
 static const char* const FALSE_CONST = "false";
 
-MU_DEFINE_ENUM_STRINGS_2(QOS_VALUE, QOS_VALUE_VALUES);
+const char* MU_QOS_VALUE_ToString(QOS_VALUE value)
+{
+    switch (value)
+    {
+        case DELIVER_AT_MOST_ONCE: return "DELIVER_AT_MOST_ONCE";
+        case DELIVER_AT_LEAST_ONCE: return "DELIVER_AT_LEAST_ONCE";
+        case DELIVER_EXACTLY_ONCE: return "DELIVER_EXACTLY_ONCE";
+        case DELIVER_FAILURE: return "DELIVER_FAILURE";
+        default: return "UNKNOWN";
+    }
+}
+
+const char* MU_CONTROL_PACKET_TYPE_ToString(CONTROL_PACKET_TYPE value)
+{
+    switch (value)
+    {
+        case CONNECT_TYPE: return "CONNECT_TYPE";
+        case CONNACK_TYPE: return "CONNACK_TYPE";
+        case PUBLISH_TYPE: return "PUBLISH_TYPE";
+        case PUBACK_TYPE: return "PUBACK_TYPE";
+        case PUBREC_TYPE: return "PUBREC_TYPE";
+        case PUBREL_TYPE: return "PUBREL_TYPE";
+        case PUBCOMP_TYPE: return "PUBCOMP_TYPE";
+        case SUBSCRIBE_TYPE: return "SUBSCRIBE_TYPE";
+        case SUBACK_TYPE: return "SUBACK_TYPE";
+        case UNSUBSCRIBE_TYPE: return "UNSUBSCRIBE_TYPE";
+        case UNSUBACK_TYPE: return "UNSUBACK_TYPE";
+        case PINGREQ_TYPE: return "PINGREQ_TYPE";
+        case PINGRESP_TYPE: return "PINGRESP_TYPE";
+        case DISCONNECT_TYPE: return "DISCONNECT_TYPE";
+        case PACKET_TYPE_ERROR: return "PACKET_TYPE_ERROR";
+        case UNKNOWN_TYPE: return "UNKNOWN_TYPE";
+        case PACKET_INVALID1_TYPE: return "PACKET_INVALID1_TYPE";
+        case PACKET_INVALID2_TYPE: return "PACKET_INVALID2_TYPE";
+        default: return "UNKNOWN";
+    }
+}
 
 #define MQTT_STATUS_INITIAL_STATUS      0x0000
 #define MQTT_STATUS_CLIENT_CONNECTED    0x0001
@@ -710,7 +746,7 @@ static void ProcessPublishMessage(MQTT_CLIENT* mqtt_client, uint8_t* initialPos,
         if (is_trace_enabled(mqtt_client))
         {
             trace_log = STRING_construct_sprintf("PUBLISH | IS_DUP: %s | RETAIN: %d | QOS: %s | TOPIC_NAME: %s", isDuplicateMsg ? TRUE_CONST : FALSE_CONST,
-                isRetainMsg ? 1 : 0, MU_ENUM_TO_STRING_2(QOS_VALUE, qosValue), topicName);
+                isRetainMsg ? 1 : 0, MU_ENUM_TO_STRING(QOS_VALUE, qosValue), topicName);
         }
 #endif
         uint16_t packetId = 0;
