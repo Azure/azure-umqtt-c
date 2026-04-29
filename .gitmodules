@@ -21,7 +21,7 @@
 	url = https://github.com/Azure/macro-utils-c.git
 [submodule "deps/c-logging"]
 	path = deps/c-logging
-	url = https://github.com/Azure/c-logging.git
+	url = https://github.com/Azure/c-logging
 [submodule "deps/c-testrunnerswitcher"]
 	path = deps/c-testrunnerswitcher
 	url = https://github.com/Azure/c-testrunnerswitcher.git
