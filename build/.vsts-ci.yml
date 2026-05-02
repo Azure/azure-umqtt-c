@@ -49,7 +49,7 @@ jobs:
   condition: false
   steps:
   - checkout: self
-    submodules: true
+    submodules: recursive
   - script: |
       call jenkins\windows_c.cmd
     displayName: 'Build'
@@ -66,7 +66,7 @@ jobs:
   displayName: 'Windows x64'
   steps:
   - checkout: self
-    submodules: true
+    submodules: recursive
   - task: CodeQL3000Init@0
   - script: |
       call jenkins\windows_c_VsDevCmd.cmd x64 && call jenkins\windows_c.cmd --platform x64
@@ -83,7 +83,7 @@ jobs:
   displayName: 'Windows Dynamic'
   steps:
   - checkout: self
-    submodules: true
+    submodules: recursive
   - script: |
       call jenkins\windows_c_VsDevCmd.cmd && call jenkins\windows_c_build_as_dynamic.cmd
     displayName: 'Build'
@@ -97,7 +97,7 @@ jobs:
   displayName: 'Linux Ubuntu Clang'
   steps:
   - checkout: self
-    submodules: true
+    submodules: recursive
   - script: |
       set -e
       sudo apt-get update
@@ -124,7 +124,7 @@ jobs:
   displayName: 'Linux Ubuntu 24.04'
   steps:
   - checkout: self
-    submodules: true
+    submodules: recursive
   - script: |
       set -e
       sudo apt-get update
@@ -151,7 +151,7 @@ jobs:
   displayName: 'Linux Ubuntu with Options'
   steps:
   - checkout: self
-    submodules: true
+    submodules: recursive
   - script: |
       set -e
       sudo apt-get update
@@ -175,7 +175,7 @@ jobs:
   displayName: 'WolfSSL'
   steps:
   - checkout: self
-    submodules: true
+    submodules: recursive
   - script: |
       set -e
       sudo apt-get update
@@ -202,7 +202,7 @@ jobs:
   displayName: 'Linux Debian (Buster)'
   steps:
   - checkout: self
-    submodules: true
+    submodules: recursive
   - script: |
       set -e
       sudo apt-get update
@@ -230,7 +230,7 @@ jobs:
   displayName: 'OSX'
   steps:
   - checkout: self
-    submodules: true
+    submodules: recursive
   - script: |
       ./jenkins/osx_gcc_openssl.sh
     displayName: 'Build'
@@ -248,7 +248,7 @@ jobs:
   displayName: 'XCode Native'
   steps:
   - checkout: self
-    submodules: true
+    submodules: recursive
   - script: |
       curl --version
       export DYLD_LIBRARY_PATH="/usr/local/Cellar/curl/$(ls -b /usr/local/Cellar/curl 2>/dev/null | grep -e '[0-9\.]' | head -1)/lib"
@@ -269,7 +269,7 @@ jobs:
   displayName: 'Raspberry Pi (Cross-compile only)'
   steps:
   - checkout: self
-    submodules: true
+    submodules: recursive
   - script: |
       set -e
       sudo apt-get update
