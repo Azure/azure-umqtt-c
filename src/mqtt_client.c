@@ -30,8 +30,10 @@
 #define DEFAULT_MAX_PING_RESPONSE_TIME  80  // % of time to send pings
 #define MAX_CLOSE_RETRIES               20
 
+#ifndef NO_LOGGING
 static const char* const TRUE_CONST = "true";
 static const char* const FALSE_CONST = "false";
+#endif
 
 const char* MU_QOS_VALUE_ToString(QOS_VALUE value)
 {
@@ -677,6 +679,7 @@ static void SendMessageAck(MQTT_CLIENT* mqtt_client, uint16_t packetId, QOS_VALU
 {
     CONTROL_PACKET_TYPE response_packet_type = UNKNOWN_TYPE;
     BUFFER_HANDLE pubRel = NULL;
+    (void)response_packet_type;
     if (qosValue == DELIVER_EXACTLY_ONCE)
     {
         pubRel = mqtt_codec_publishReceived(packetId);

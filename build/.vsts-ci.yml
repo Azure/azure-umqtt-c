@@ -293,6 +293,8 @@ jobs:
         -Dskip_samples:BOOL=ON \
         -Duse_installed_dependencies:BOOL=OFF \
         -Duse_default_uuid:BOOL=ON \
+        -Duse_http:BOOL=OFF \
+        -Duse_openssl:BOOL=OFF \
         ..
       make -j$(nproc)
     displayName: 'Cross-compile umqtt for armhf'
