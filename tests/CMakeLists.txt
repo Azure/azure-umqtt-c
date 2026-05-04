@@ -3,6 +3,10 @@
 
 usePermissiveRulesForSamplesAndTests()
 
+if (TARGET c_logging_v2)
+    link_libraries(c_logging_v2)
+endif()
+
 #this is CMakeLists.txt for the folder tests of mqtt
 add_subdirectory(mqtt_client_ut)
 add_subdirectory(mqtt_codec_ut)
