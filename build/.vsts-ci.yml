@@ -294,7 +294,9 @@ jobs:
   - script: |
       ./jenkins/osx_gcc_openssl.sh
     displayName: 'Build'
-  - script: rm -rf $(Agent.BuildDirectory)/*
+  - script: |
+      rm -rf $(Agent.BuildDirectory)/*
+      mkdir -p $(Agent.BuildDirectory)/s
     displayName: 'Cleanup'
     condition: always()
 
@@ -356,7 +358,9 @@ jobs:
       export DYLD_LIBRARY_PATH="/usr/local/Cellar/curl/$(ls -b /usr/local/Cellar/curl 2>/dev/null | grep -e '[0-9\.]' | head -1)/lib"
       ./jenkins/osx_xcode_native.sh
     displayName: 'Build'
-  - script: rm -rf $(Agent.BuildDirectory)/*
+  - script: |
+      rm -rf $(Agent.BuildDirectory)/*
+      mkdir -p $(Agent.BuildDirectory)/s
     displayName: 'Cleanup'
     condition: always()
 
