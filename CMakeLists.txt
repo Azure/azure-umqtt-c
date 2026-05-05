@@ -25,7 +25,10 @@ option(use_installed_dependencies "set use_installed_dependencies to ON to use i
 option(use_custom_heap "use externally defined heap functions instead of the malloc family" OFF)
 option(no_logging "disable logging" OFF)
 option(enable_raw_logging "Enables the ability to add raw logging" OFF)
-option(use_cppunittest "set use_cppunittest to ON to build CppUnitTest tests on Windows (default is ON)" ON)
+# CppUnitTest path is broken with new CMake/MSVC: c-utility's _testsonly_lib
+# forces /TP but CMake still emits /TC for .c sources -> STL1003 (yvals_core.h).
+# The plain CTest .exe path used when this is OFF builds and runs the same coverage.
+option(use_cppunittest "set use_cppunittest to ON to build CppUnitTest tests on Windows (default is OFF)" OFF)
 
 if(${use_custom_heap})
     add_definitions(-DGB_USE_CUSTOM_HEAP)
