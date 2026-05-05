@@ -1,7 +1,9 @@
 #Copyright (c) Microsoft. All rights reserved.
 #Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-cmake_minimum_required(VERSION 3.5)
+if(NOT DEFINED CMAKE_MINIMUM_REQUIRED_VERSION)
+    cmake_minimum_required(VERSION 3.18)
+endif()
 
 if (TARGET umqtt)
     RETURN()
@@ -17,12 +19,16 @@ string(SUBSTRING ${UMQTT_VERSION} 0 1 GENERIC_LIB_SOVERSION)
 #the following variables are project-wide and can be used with cmake-gui
 option(run_unittests "set run_unittests to ON to run unittests (default is OFF)" OFF)
 option(run_e2e_tests "set run_e2e_tests to ON to run e2e tests (default is OFF)" OFF)
+option(run_int_tests "set run_int_tests to ON to run integration tests (default is OFF)" OFF)
 option(skip_samples "set skip_samples to ON to skip building samples (default is OFF)[if possible, they are always built]" OFF)
 option(use_installed_dependencies "set use_installed_dependencies to ON to use installed packages instead of building dependencies from submodules" OFF)
 option(use_custom_heap "use externally defined heap functions instead of the malloc family" OFF)
 option(no_logging "disable logging" OFF)
 option(enable_raw_logging "Enables the ability to add raw logging" OFF)
-option(use_cppunittest "set use_cppunittest to ON to build CppUnitTest tests on Windows (default is ON)" ON)
+# CppUnitTest path is broken with new CMake/MSVC: c-utility's _testsonly_lib
+# forces /TP but CMake still emits /TC for .c sources -> STL1003 (yvals_core.h).
+# The plain CTest .exe path used when this is OFF builds and runs the same coverage.
+option(use_cppunittest "set use_cppunittest to ON to build CppUnitTest tests on Windows (default is OFF)" OFF)
 
 if(${use_custom_heap})
     add_definitions(-DGB_USE_CUSTOM_HEAP)
@@ -50,41 +56,48 @@ if(NOT ${use_installed_dependencies})
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-strict-prototypes")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-strict-prototypes")
     endif()
-    if ((NOT TARGET azure_macro_utils_c) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/azure-macro-utils-c/CMakeLists.txt))
-        add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/deps/azure-macro-utils-c)
-    endif()
-    if (NOT TARGET umock_c)
-        add_subdirectory(deps/umock-c)
-        include_directories(${UMOCK_C_INC_FOLDER})
+
+    if(CMAKE_C_COMPILER_ID MATCHES "Clang")
+        # umock_c MOCKABLE_FUNCTION macros emit duplicate typedefs when headers are
+        # included multiple times; clang in C99 mode treats them as errors.
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-typedef-redefinition")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-typedef-redefinition")
     endif()
 
-    if(${original_run_e2e_tests} OR ${original_run_unittests})
-        if (NOT TARGET testrunnerswitcher)
-            add_subdirectory(deps/testrunnerswitcher)
-        endif()
-        if (NOT TARGET ctest)
-            add_subdirectory(deps/ctest)
-        endif()
-        enable_testing()
+    if ((NOT TARGET c_build_tools) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/c-build-tools/CMakeLists.txt))
+        add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/deps/c-build-tools)
+        set_default_build_options()
     endif()
-    if (NOT TARGET aziotsharedutil)
-        add_subdirectory(deps/c-utility)
-        # Include the common build rules for C shared utility
-        if(${use_installed_dependencies})
-            include(deps/c-utility/configs/azure_iot_build_rules.cmake)
-        else()
-            include(${SHARED_UTIL_FOLDER}/configs/azure_iot_build_rules.cmake)
+
+    if ((NOT TARGET macro_utils_c) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/macro-utils-c/CMakeLists.txt))
+        add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/deps/macro-utils-c)
+    endif()
+
+    if ((NOT TARGET c_logging) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/c-logging/CMakeLists.txt))
+        add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/deps/c-logging)
+        if (NOT TARGET c_logging)
+            add_library(c_logging ALIAS c_logging_v2)
         endif()
+    endif()
+
+    if ((NOT TARGET ctest) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/ctest/CMakeLists.txt))
+        add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/deps/ctest)
+    endif()
+
+    if ((NOT TARGET testrunnerswitcher) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/c-testrunnerswitcher/CMakeLists.txt))
+        add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/deps/c-testrunnerswitcher)
+    endif()
+
+    if ((NOT TARGET umock_c) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/umock-c/CMakeLists.txt))
+        add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/deps/umock-c)
+    endif()
+
+    if ((NOT TARGET aziotsharedutil) AND (EXISTS ${CMAKE_CURRENT_LIST_DIR}/deps/c-utility/CMakeLists.txt))
+        add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/deps/c-utility)
     endif()
 
 else()
-    if (NOT azure_macro_utils_cFOUND)
-        find_package(azure_macro_utils_c REQUIRED CONFIG)
-    endif ()
-    if (NOT umock_cFOUND)
-        find_package(umock_c REQUIRED CONFIG)
-    endif ()
-    if (NOT azure_c_shared_utilityFOUND)
+    if (NOT azure_c_shared_utility_FOUND)
         find_package(azure_c_shared_utility REQUIRED CONFIG)
     endif ()
     
@@ -92,6 +105,10 @@ else()
     include(${azure_c_shared_utility_DIR}/azure_c_shared_utilityFunctions.cmake)
     include(${azure_c_shared_utility_DIR}/azure_iot_build_rules.cmake)
 endif()
+
+include_directories(${CMAKE_CURRENT_LIST_DIR}/deps/macro-utils-c/inc)
+include_directories(${CMAKE_CURRENT_LIST_DIR}/deps/umock-c/inc)
+include_directories(${CMAKE_CURRENT_LIST_DIR}/deps/c-logging/v2/inc)
 
 set_platform_files(${SHARED_UTIL_FOLDER})
 

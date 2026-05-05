@@ -5,7 +5,7 @@
 #define MQTTCONST_H
 
 #include "azure_c_shared_utility/crt_abstractions.h"
-#include "azure_macro_utils/macro_utils.h"
+#include "macro_utils/macro_utils.h"
 
 #ifdef __cplusplus
 #include <cstddef>
@@ -17,34 +17,68 @@ extern "C" {
 #endif /* __cplusplus */
 
 #define CONTROL_PACKET_TYPE_VALUES \
-    CONNECT_TYPE, 0x10, \
-    CONNACK_TYPE, 0x20, \
-    PUBLISH_TYPE, 0x30, \
-    PUBACK_TYPE, 0x40, \
-    PUBREC_TYPE, 0x50, \
-    PUBREL_TYPE, 0x60, \
-    PUBCOMP_TYPE, 0x70, \
-    SUBSCRIBE_TYPE, 0x80, \
-    SUBACK_TYPE, 0x90, \
-    UNSUBSCRIBE_TYPE, 0xA0, \
-    UNSUBACK_TYPE, 0xB0, \
-    PINGREQ_TYPE, 0xC0, \
-    PINGRESP_TYPE, 0xD0, \
-    DISCONNECT_TYPE, 0xE0, \
-    PACKET_TYPE_ERROR, 0xE1, /* 0xE1 was assigned because ENUM_2 needs it */ \
-    UNKNOWN_TYPE, 0xE2,      /* 0xE2 was assigned because ENUM_2 needs it */ \
-    PACKET_INVALID1_TYPE, 0x00, \
-    PACKET_INVALID2_TYPE, 0xF0
+    CONTROL_PACKET_TYPE_INVALID, \
+    CONNECT_TYPE, \
+    CONNACK_TYPE, \
+    PUBLISH_TYPE, \
+    PUBACK_TYPE, \
+    PUBREC_TYPE, \
+    PUBREL_TYPE, \
+    PUBCOMP_TYPE, \
+    SUBSCRIBE_TYPE, \
+    SUBACK_TYPE, \
+    UNSUBSCRIBE_TYPE, \
+    UNSUBACK_TYPE, \
+    PINGREQ_TYPE, \
+    PINGRESP_TYPE, \
+    DISCONNECT_TYPE, \
+    PACKET_TYPE_ERROR, \
+    UNKNOWN_TYPE, \
+    PACKET_INVALID1_TYPE, \
+    PACKET_INVALID2_TYPE
 
-MU_DEFINE_ENUM_2(CONTROL_PACKET_TYPE, CONTROL_PACKET_TYPE_VALUES)
+typedef enum CONTROL_PACKET_TYPE_TAG
+{
+    CONTROL_PACKET_TYPE_INVALID = -1,
+    CONNECT_TYPE = 0x10,
+    CONNACK_TYPE = 0x20,
+    PUBLISH_TYPE = 0x30,
+    PUBACK_TYPE = 0x40,
+    PUBREC_TYPE = 0x50,
+    PUBREL_TYPE = 0x60,
+    PUBCOMP_TYPE = 0x70,
+    SUBSCRIBE_TYPE = 0x80,
+    SUBACK_TYPE = 0x90,
+    UNSUBSCRIBE_TYPE = 0xA0,
+    UNSUBACK_TYPE = 0xB0,
+    PINGREQ_TYPE = 0xC0,
+    PINGRESP_TYPE = 0xD0,
+    DISCONNECT_TYPE = 0xE0,
+    PACKET_TYPE_ERROR = 0xE1,
+    UNKNOWN_TYPE = 0xE2,
+    PACKET_INVALID1_TYPE = 0x00,
+    PACKET_INVALID2_TYPE = 0xF0
+} CONTROL_PACKET_TYPE;
+
+const char* MU_CONTROL_PACKET_TYPE_ToString(CONTROL_PACKET_TYPE value);
 
 #define QOS_VALUE_VALUES \
-    DELIVER_AT_MOST_ONCE, 0x00, \
-    DELIVER_AT_LEAST_ONCE, 0x01, \
-    DELIVER_EXACTLY_ONCE, 0x02, \
-    DELIVER_FAILURE, 0x80
+    QOS_VALUE_INVALID, \
+    DELIVER_AT_MOST_ONCE, \
+    DELIVER_AT_LEAST_ONCE, \
+    DELIVER_EXACTLY_ONCE, \
+    DELIVER_FAILURE
 
-MU_DEFINE_ENUM_2(QOS_VALUE, QOS_VALUE_VALUES)
+typedef enum QOS_VALUE_TAG
+{
+    QOS_VALUE_INVALID = -1,
+    DELIVER_AT_MOST_ONCE = 0x00,
+    DELIVER_AT_LEAST_ONCE = 0x01,
+    DELIVER_EXACTLY_ONCE = 0x02,
+    DELIVER_FAILURE = 0x80
+} QOS_VALUE;
+
+const char* MU_QOS_VALUE_ToString(QOS_VALUE value);
 
 typedef struct APP_PAYLOAD_TAG
 {

@@ -27,7 +27,7 @@ static bool g_close_complete = true;
 
 static const char* QosToString(QOS_VALUE qosValue)
 {
-    return MU_ENUM_TO_STRING_2(QOS_VALUE, qosValue);
+    return MU_ENUM_TO_STRING(QOS_VALUE, qosValue);
 }
 
 static MQTT_CLIENT_ACK_OPTION OnRecvCallback(MQTT_MESSAGE_HANDLE msgHandle, void* context)

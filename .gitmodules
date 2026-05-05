@@ -1,15 +1,24 @@
 [submodule "deps/c-utility"]
 	path = deps/c-utility
 	url = https://github.com/Azure/azure-c-shared-utility.git
-[submodule "deps/azure-macro-utils-c"]
-	path = deps/azure-macro-utils-c
-	url = https://github.com/Azure/azure-macro-utils-c.git
-[submodule "deps/testrunnerswitcher"]
-	path = deps/testrunnerswitcher
-	url = https://github.com/Azure/azure-c-testrunnerswitcher.git
 [submodule "deps/ctest"]
 	path = deps/ctest
-	url = https://github.com/Azure/azure-ctest.git
+	url = https://github.com/Azure/ctest.git
 [submodule "deps/umock-c"]
 	path = deps/umock-c
 	url = https://github.com/Azure/umock-c.git
+[submodule "deps/c-build-tools"]
+	path = deps/c-build-tools
+	url = https://github.com/Azure/c-build-tools.git
+[submodule "deps/macro-utils-c"]
+	path = deps/macro-utils-c
+	url = https://github.com/Azure/macro-utils-c.git
+[submodule "deps/c-logging"]
+	path = deps/c-logging
+	url = https://github.com/Azure/c-logging
+[submodule "deps/c-testrunnerswitcher"]
+	path = deps/c-testrunnerswitcher
+	url = https://github.com/Azure/c-testrunnerswitcher.git
+[submodule "deps/azure-messaging-ai-context"]
+	path = deps/azure-messaging-ai-context
+	url = https://github.com/Azure/azure-messaging-ai-context.git

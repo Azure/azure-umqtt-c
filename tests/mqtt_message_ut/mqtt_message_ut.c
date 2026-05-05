@@ -88,9 +88,8 @@ typedef struct TEST_COMPLETE_DATA_INSTANCE_TAG
     size_t Length;
 } TEST_COMPLETE_DATA_INSTANCE;
 
-MU_DEFINE_ENUM_STRINGS_2(QOS_VALUE, QOS_VALUE_VALUES);
-TEST_DEFINE_ENUM_2_TYPE(QOS_VALUE, QOS_VALUE_VALUES);
-IMPLEMENT_UMOCK_C_ENUM_2_TYPE(QOS_VALUE, QOS_VALUE_VALUES);
+TEST_DEFINE_ENUM_TYPE(QOS_VALUE, QOS_VALUE_VALUES);
+IMPLEMENT_UMOCK_C_ENUM_TYPE(QOS_VALUE, QOS_VALUE_VALUES);
 
 TEST_MUTEX_HANDLE test_serialize_mutex;
 
@@ -172,8 +171,8 @@ TEST_FUNCTION(mqttmessage_create_Topicname_NULL_fail)
 TEST_FUNCTION(mqttmessage_create_appMsgLength_NULL_succeed)
 {
     // arrange
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_TOPIC_NAME))
+    EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_ARG, TEST_TOPIC_NAME))
         .IgnoreArgument(1);
 
     // act
@@ -191,10 +190,10 @@ TEST_FUNCTION(mqttmessage_create_appMsgLength_NULL_succeed)
 TEST_FUNCTION(mqttmessage_create_succeed)
 {
     // arrange
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_TOPIC_NAME))
+    EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_ARG, TEST_TOPIC_NAME))
         .IgnoreArgument(1);
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
 
     // act
     MQTT_MESSAGE_HANDLE handle = mqttmessage_create(TEST_PACKET_ID, TEST_TOPIC_NAME, DELIVER_AT_MOST_ONCE, TEST_MESSAGE, TEST_MSG_LEN);
@@ -225,7 +224,7 @@ TEST_FUNCTION(mqttmessage_create_in_place_topic_name_name_fail)
 TEST_FUNCTION(mqttmessage_create_in_place_succeed)
 {
     // arrange
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
 
     // act
     MQTT_MESSAGE_HANDLE handle = mqttmessage_create_in_place(TEST_PACKET_ID, TEST_TOPIC_NAME, DELIVER_AT_MOST_ONCE, TEST_MESSAGE, TEST_MSG_LEN);
@@ -244,9 +243,9 @@ TEST_FUNCTION(mqttmessage_destroy_succeed)
     MQTT_MESSAGE_HANDLE handle = mqttmessage_create(TEST_PACKET_ID, TEST_TOPIC_NAME, DELIVER_AT_MOST_ONCE, TEST_MESSAGE, TEST_MSG_LEN);
     umock_c_reset_all_calls();
 
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_ARG));
 
     // act
     mqttmessage_destroy(handle);
@@ -261,7 +260,7 @@ TEST_FUNCTION(mqttmessage_destroy_inplace_succeed)
     MQTT_MESSAGE_HANDLE handle = mqttmessage_create_in_place(TEST_PACKET_ID, TEST_TOPIC_NAME, DELIVER_AT_MOST_ONCE, TEST_MESSAGE, TEST_MSG_LEN);
     umock_c_reset_all_calls();
 
-    EXPECTED_CALL(gballoc_free(IGNORED_PTR_ARG));
+    EXPECTED_CALL(gballoc_free(IGNORED_ARG));
 
     // act
     mqttmessage_destroy(handle);
@@ -289,9 +288,9 @@ TEST_FUNCTION(mqttmessage_clone_succeed)
     MQTT_MESSAGE_HANDLE handle = mqttmessage_create(TEST_PACKET_ID, TEST_TOPIC_NAME, DELIVER_AT_MOST_ONCE, TEST_MESSAGE, TEST_MSG_LEN);
     umock_c_reset_all_calls();
 
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_TOPIC_NAME));
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+    EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_ARG, TEST_TOPIC_NAME));
+    EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
 
     // act
     MQTT_MESSAGE_HANDLE cloneHandle = mqttmessage_clone(handle);
@@ -606,14 +605,14 @@ TEST_FUNCTION(mqttmessage_getTopicLevels_succeed)
     int result;
 
     umock_c_reset_all_calls();
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_TOPIC_NAME))
+    EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_ARG, TEST_TOPIC_NAME))
         .IgnoreArgument(1);
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
 
     handle = mqttmessage_create(TEST_PACKET_ID, TEST_TOPIC_NAME, DELIVER_AT_MOST_ONCE, TEST_MESSAGE, TEST_MSG_LEN);
 
-    STRICT_EXPECTED_CALL(StringToken_Split(IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, 1, false, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(StringToken_Split(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, 1, false, IGNORED_ARG, IGNORED_ARG));
 
     // act
     result = mqttmessage_getTopicLevels(handle, &levels, &count);
@@ -649,15 +648,15 @@ TEST_FUNCTION(mqttmessage_getTopicLevels_negative_tests)
     ASSERT_ARE_EQUAL(int, 0, umock_c_negative_tests_init());
 
     umock_c_reset_all_calls();
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
-    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_PTR_ARG, TEST_TOPIC_NAME))
+    EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(mallocAndStrcpy_s(IGNORED_ARG, TEST_TOPIC_NAME))
         .IgnoreArgument(1);
-    EXPECTED_CALL(gballoc_malloc(IGNORED_NUM_ARG));
+    EXPECTED_CALL(gballoc_malloc(IGNORED_ARG));
 
     handle = mqttmessage_create(TEST_PACKET_ID, TEST_TOPIC_NAME, DELIVER_AT_MOST_ONCE, TEST_MESSAGE, TEST_MSG_LEN);
 
     umock_c_reset_all_calls();
-    STRICT_EXPECTED_CALL(StringToken_Split(IGNORED_PTR_ARG, IGNORED_NUM_ARG, IGNORED_PTR_ARG, 1, false, IGNORED_PTR_ARG, IGNORED_PTR_ARG));
+    STRICT_EXPECTED_CALL(StringToken_Split(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, 1, false, IGNORED_ARG, IGNORED_ARG));
     umock_c_negative_tests_snapshot();
 
     for (i = 0; i < umock_c_negative_tests_call_count(); i++)

@@ -7,12 +7,15 @@
 usePermissiveRulesForSamplesAndTests()
 
 function(add_sample_directory whatIsBuilding)
-	add_subdirectory(${whatIsBuilding})
+        add_subdirectory(${whatIsBuilding})
 
-	set_target_properties(${whatIsBuilding}
-			   PROPERTIES
-			   FOLDER "uMQTT_Samples")
+        if (TARGET c_logging_v2)
+            target_link_libraries(${whatIsBuilding} c_logging_v2)
+        endif()
+
+        set_target_properties(${whatIsBuilding}
+                           PROPERTIES
+                           FOLDER "uMQTT_Samples")
 endfunction()
 
 add_sample_directory(mqtt_client_sample)
-
