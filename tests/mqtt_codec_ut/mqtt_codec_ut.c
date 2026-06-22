@@ -1523,6 +1523,40 @@ TEST_FUNCTION(mqtt_codec_bytesReceived_buffer_too_large_fail)
     mqtt_codec_destroy(handle);
 }
 
+// Tests that a malformed Remaining Length (four continuation bytes that drive
+// remainLenIndex to its maximum) followed by another segment of continuation
+// bytes does not produce a heap out-of-bounds write into storeRemainLen.
+TEST_FUNCTION(mqtt_codec_bytesReceived_malformed_remaining_length_no_oob_fail)
+{
+    // arrange
+    // Segment 1: PUBLISH type byte + four continuation Remaining-Length bytes.
+    unsigned char MALFORMED_SEG_1[] = { 0x30, 0x80, 0x80, 0x80, 0x80 };
+    // Segment 2: additional continuation bytes that, before the fix, were
+    // written one slot past the 4-byte storeRemainLen array on each iteration.
+    unsigned char MALFORMED_SEG_2[] = { 0x80, 0x80, 0x80, 0x80 };
+
+    TEST_COMPLETE_DATA_INSTANCE testData = { 0 };
+
+    MQTTCODEC_HANDLE handle = mqtt_codec_create(TestOnCompleteCallback, &testData);
+
+    umock_c_reset_all_calls();
+
+    g_curr_packet_type = PUBLISH_TYPE;
+
+    // act
+    int result_seg_1 = mqtt_codec_bytesReceived(handle, MALFORMED_SEG_1, sizeof(MALFORMED_SEG_1) / sizeof(MALFORMED_SEG_1[0]));
+    int result_seg_2 = mqtt_codec_bytesReceived(handle, MALFORMED_SEG_2, sizeof(MALFORMED_SEG_2) / sizeof(MALFORMED_SEG_2[0]));
+
+    // assert
+    ASSERT_ARE_NOT_EQUAL(int, 0, result_seg_1);
+    ASSERT_ARE_NOT_EQUAL(int, 0, result_seg_2);
+    ASSERT_IS_FALSE(g_callbackInvoked);
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    mqtt_codec_destroy(handle);
+}
+
 TEST_FUNCTION(mqtt_codec_bytesReceived_after_large_buffer_succeed)
 {
     // arrange
