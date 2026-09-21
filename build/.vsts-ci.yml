@@ -31,39 +31,31 @@ jobs:
   displayName: 'Check Submodules'
   steps:
   - checkout: self
-    submodules: false
+    submodules: recursive
   # The previous 'check_submodules . master' compared this branch's submodule
   # pointers against master, which is wrong for a maintenance branch and cannot
-  # pass here. Test-SubmoduleConsistency checks the graph agrees with itself,
-  # which is branch-agnostic; azure-iot-sdk-c's LTS branch uses the same check.
-  - task: PowerShell@2
+  # pass here. This check instead verifies the recursive submodule graph agrees
+  # with itself: wherever the same repository appears more than once, every
+  # reference must pin the same commit. It is branch-agnostic and uses only
+  # local git, so no code is downloaded or executed from a moving ref.
+  - script: |
+      set -e
+      tmp=$(mktemp); norm=$(mktemp)
+      git submodule foreach --recursive --quiet \
+        'echo "$(git config --get remote.origin.url) $(git rev-parse HEAD) $displaypath"' > "$tmp"
+      awk '{ u=$1; sub(/^https:\/\/github\.com\//,"",u); sub(/^git@github\.com:/,"",u);
+             sub(/\.git$/,"",u); print tolower(u), $2, $3 }' "$tmp" | sort -u > "$norm"
+      conflicts=$(awk '{print $1, $2}' "$norm" | sort -u | awk '{c[$1]++} END{for(r in c) if(c[r]>1) print r}')
+      if [ -n "$conflicts" ]; then
+        echo "Submodule consistency check FAILED; conflicting commits:"
+        for r in $conflicts; do
+          echo "  $r"
+          awk -v r="$r" '$1==r{print "    "$2"  "$3}' "$norm"
+        done
+        exit 1
+      fi
+      echo "Submodule consistency check passed ($(wc -l < "$norm") references)."
     displayName: 'Check Submodule Consistency'
-    inputs:
-      targetType: 'inline'
-      pwsh: true
-      script: |
-        $ErrorActionPreference = 'Stop'
-        $VerbosePreference = 'Continue'
-
-        $extraHeader = git config --get-all http.https://github.com/.extraheader 2>$null
-        if ($extraHeader -match 'basic\s+(.+)$') {
-          $decoded = [System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($Matches[1]))
-          $env:GITHUB_TOKEN = $decoded.TrimStart(':')
-          Write-Verbose "GitHub token extracted from service connection credential."
-        } else {
-          Write-Verbose "No GitHub token found in git config; proceeding without auth."
-        }
-
-        $PsmUrl = 'https://raw.githubusercontent.com/Azure/iot-sdks-e2e-fx/master/scripts/Azure.Iot.Sdk.Test.psm1'
-        $PsmPath = Join-Path $PWD 'Azure.Iot.Sdk.Test.psm1'
-        Invoke-WebRequest -Uri $PsmUrl -OutFile $PsmPath -UseBasicParsing
-        Import-Module $PsmPath
-
-        $result = Test-SubmoduleConsistency -Path "$(Build.SourcesDirectory)" -ShowTree -Verbose
-        if (-not $result) {
-          Write-Error "Submodule consistency check FAILED. See conflicts above."
-          exit 1
-        }
 
 - job: windowsx86
   timeoutInMinutes: 90
@@ -76,7 +68,7 @@ jobs:
   - checkout: self
     submodules: recursive
   - script: |
-      call jenkins\windows_c.cmd
+      call jenkins\windows_c_VsDevCmd.cmd && call jenkins\windows_c.cmd
     displayName: 'Build'
   - task: ComponentGovernanceComponentDetection@0
     displayName: 'Component Detection'
@@ -94,7 +86,7 @@ jobs:
   - checkout: self
     submodules: recursive
   - script: |
-      call jenkins\windows_c_VsDevCmd.cmd x64 && call jenkins\windows_c.cmd
+      call jenkins\windows_c_VsDevCmd.cmd x64 && call jenkins\windows_c.cmd --platform x64
     displayName: 'Build'
   - task: ComponentGovernanceComponentDetection@0
     displayName: 'Component Detection'
@@ -220,7 +212,7 @@ jobs:
         curl \
         libcurl4-openssl-dev \
         uuid-dev \
-        libwolfssl-dev || true
+        libwolfssl-dev
     displayName: 'Host setup'
   - script: |
       LD_LIBRARY_PATH=/usr/local/lib
