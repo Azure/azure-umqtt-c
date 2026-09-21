@@ -1,335 +1,363 @@
 name: $(BuildID)_$(BuildDefinitionName)_$(SourceBranchName)_$(Date:yyyyMMdd)$(Rev:.r)
-variables:
-  runCodesignValidationInjection: false
+
+# This pipeline was migrated off the csdkcontainerregistry container images and
+# the self-hosted 'sdk-c--*' agent pools onto Microsoft-hosted vmImage agents.
+# Both are gone, so every job on this branch failed before running a build:
+#   "Could not fetch access token for ACR"
+#   "No image label found to route agent pool Azure Pipelines"
+#   "Value cannot be null. (Parameter 'ContainerId')"
+# This mirrors the migration already done on master.
+#
+# umqtt has no E2E tests, so the IoT Hub / DPS secret env blocks that used to be
+# plumbed into every job are removed; unit tests never read them.
+#
+# The clang, OSX and XCode Native jobs are disabled rather than migrated. The
+# dependency set pinned on this branch does not compile under a current clang:
+# deps/ctest ships an aux stdbool.h that collides with the toolchain header, and
+# the old umock-c/macro-utils headers trigger typedef-redefinition errors.
+# The retired containers pinned older toolchains, which is what hid this.
+# Re-enabling them needs a dependency update, which is out of scope here.
+
 resources:
-  containers:
-  - container: linux-c-ubuntu-2004
-    endpoint: csdk-containers
-    image: csdkcontainerregistry.azurecr.io/linux-c-ubuntu-2004:latest
-  - container: linux-c-ubuntu-clang
-    endpoint: csdk-containers
-    image: csdkcontainerregistry.azurecr.io/linux-c-ubuntu-clang:latest
-  - container: linux-c-debian-buster
-    endpoint: csdk-containers
-    image: csdkcontainerregistry.azurecr.io/linux-c-debian-buster:latest
-  - container: linux-c-ubuntu-wolfssl
-    endpoint: csdk-containers
-    image: csdkcontainerregistry.azurecr.io/linux-c-ubuntu-wolfssl:latest
-  - container: raspberrypi-c-buster
-    endpoint: csdk-containers
-    image: csdkcontainerregistry.azurecr.io/raspberrypi-c-buster:brown
+  - repo: self
+    clean: true
+
 jobs:
 - job: checksubmodule
-  displayName: Check Submodules
+  variables:
+    CodeQL.Enabled: false
   pool:
-    vmImage: 'ubuntu-20.04'
+    vmImage: 'ubuntu-24.04'
+  displayName: 'Check Submodules'
   steps:
-  - script: |
-      sudo apt-get update && apt-get install -y \
-      curl \
-      git \
-      python-software-properties \
-      build-essential \
-      pkg-config
-      sudo curl -sL https://deb.nodesource.com/setup_16.x | bash -
-      sudo apt-get install -y nodejs
-    displayName: 'setup'
-  - script: |
-      npm install check_submodules
-      node_modules/.bin/check_submodules . master
-    displayName: 'build'
+  - checkout: self
+    submodules: false
+  # The previous 'check_submodules . master' compared this branch's submodule
+  # pointers against master, which is wrong for a maintenance branch and cannot
+  # pass here. Test-SubmoduleConsistency checks the graph agrees with itself,
+  # which is branch-agnostic; azure-iot-sdk-c's LTS branch uses the same check.
+  - task: PowerShell@2
+    displayName: 'Check Submodule Consistency'
+    inputs:
+      targetType: 'inline'
+      pwsh: true
+      script: |
+        $ErrorActionPreference = 'Stop'
+        $VerbosePreference = 'Continue'
+
+        $extraHeader = git config --get-all http.https://github.com/.extraheader 2>$null
+        if ($extraHeader -match 'basic\s+(.+)$') {
+          $decoded = [System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($Matches[1]))
+          $env:GITHUB_TOKEN = $decoded.TrimStart(':')
+          Write-Verbose "GitHub token extracted from service connection credential."
+        } else {
+          Write-Verbose "No GitHub token found in git config; proceeding without auth."
+        }
+
+        $PsmUrl = 'https://raw.githubusercontent.com/Azure/iot-sdks-e2e-fx/master/scripts/Azure.Iot.Sdk.Test.psm1'
+        $PsmPath = Join-Path $PWD 'Azure.Iot.Sdk.Test.psm1'
+        Invoke-WebRequest -Uri $PsmUrl -OutFile $PsmPath -UseBasicParsing
+        Import-Module $PsmPath
+
+        $result = Test-SubmoduleConsistency -Path "$(Build.SourcesDirectory)" -ShowTree -Verbose
+        if (-not $result) {
+          Write-Error "Submodule consistency check FAILED. See conflicts above."
+          exit 1
+        }
+
 - job: windowsx86
-  displayName: Windows x86
+  timeoutInMinutes: 90
   pool:
-    name: 'sdk-c--win-vs2022'
+    vmImage: 'windows-2022'
+  displayName: 'Windows x86'
   steps:
+  - script: git config --global core.longpaths true
+    displayName: 'Enable git longpaths'
+  - checkout: self
+    submodules: recursive
   - script: |
-     if exist jenkins\windows_c.cmd (
-      call jenkins\windows_c_VsDevCmd.cmd
-      call jenkins\windows_c.cmd)
-    displayName: 'build'
-    env:
-      IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
-      IOTHUB_EVENTHUB_CONNECTION_STRING: $(IOTHUB-EVENTHUB-CONNECTION-STRING)
-      IOTHUB_E2E_X509_CERT_BASE64: $(IOTHUB-E2E-X509-CERT-BASE64)
-      IOTHUB_E2E_X509_PRIVATE_KEY_BASE64: $(IOTHUB-E2E-X509-PRIVATE-KEY-BASE64)
-      IOTHUB_E2E_X509_THUMBPRINT: $(IOTHUB-E2E-X509-THUMBPRINT)
-      IOTHUB_POLICY_KEY: $(IOTHUB-POLICY-KEY)
-      IOTHUB_PARTITION_COUNT: $(IOTHUB-PARTITION-COUNT)
-      STORAGE_ACCOUNT_CONNECTION_STRING: $(STORAGE-ACCOUNT-CONNECTION-STRING)
-      IOT_DPS_CONNECTION_STRING: $(IOT-DPS-CONNECTION-STRING)
-      IOT_DPS_ID_SCOPE: $(IOT-DPS-ID-SCOPE)
-      IOTHUB_DEVICE_CONN_STRING_INVALIDCERT: $(IOTHUB-DEVICE-CONN-STRING-INVALIDCERT)
-      IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
-      DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
-      PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
+      call jenkins\windows_c.cmd
+    displayName: 'Build'
+  - task: ComponentGovernanceComponentDetection@0
+    displayName: 'Component Detection'
+
 - job: windowsx64
+  timeoutInMinutes: 90
+  variables:
+    CodeQL.Enabled: false
   pool:
-    name: 'sdk-c--win-vs2022'
+    vmImage: 'windows-2022'
   displayName: 'Windows x64'
   steps:
+  - script: git config --global core.longpaths true
+    displayName: 'Enable git longpaths'
+  - checkout: self
+    submodules: recursive
   - script: |
-     if exist jenkins\windows_c.cmd (
-      call jenkins\windows_c_VsDevCmd.cmd
-      call jenkins\windows_c.cmd --platform x64)
-    displayName: 'build'
-    env:
-      IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
-      IOTHUB_EVENTHUB_CONNECTION_STRING: $(IOTHUB-EVENTHUB-CONNECTION-STRING)
-      IOTHUB_E2E_X509_CERT_BASE64: $(IOTHUB-E2E-X509-CERT-BASE64)
-      IOTHUB_E2E_X509_PRIVATE_KEY_BASE64: $(IOTHUB-E2E-X509-PRIVATE-KEY-BASE64)
-      IOTHUB_E2E_X509_THUMBPRINT: $(IOTHUB-E2E-X509-THUMBPRINT)
-      IOTHUB_POLICY_KEY: $(IOTHUB-POLICY-KEY)
-      IOTHUB_PARTITION_COUNT: $(IOTHUB-PARTITION-COUNT)
-      STORAGE_ACCOUNT_CONNECTION_STRING: $(STORAGE-ACCOUNT-CONNECTION-STRING)
-      IOT_DPS_CONNECTION_STRING: $(IOT-DPS-CONNECTION-STRING)
-      IOT_DPS_ID_SCOPE: $(IOT-DPS-ID-SCOPE)
-      IOTHUB_CA_ROOT_CERT: $(IOTHUB-CA-ROOT-CERT)
-      IOTHUB_CA_ROOT_CERT_KEY: $(IOTHUB-CA-ROOT-CERT-KEY)
-      IOT_DPS_GLOBAL_ENDPOINT: $(IOT-DPS-GLOBAL-ENDPOINT)
-      IOTHUB_DEVICE_CONN_STRING_INVALIDCERT: $(IOTHUB-DEVICE-CONN-STRING-INVALIDCERT)
-      IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
-      DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
-      PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
+      call jenkins\windows_c_VsDevCmd.cmd x64 && call jenkins\windows_c.cmd
+    displayName: 'Build'
+  - task: ComponentGovernanceComponentDetection@0
+    displayName: 'Component Detection'
+
 - job: windowsdynamic
-  displayName: Windows Dynamic
+  timeoutInMinutes: 90
   pool:
-    name: 'sdk-c--win-vs2022'
+    vmImage: 'windows-2022'
+  displayName: 'Windows Dynamic'
   steps:
+  - script: git config --global core.longpaths true
+    displayName: 'Enable git longpaths'
+  - checkout: self
+    submodules: recursive
   - script: |
-     if exist jenkins\windows_c_build_as_dynamic.cmd (
-      call jenkins\windows_c_VsDevCmd.cmd
-      call jenkins\windows_c_build_as_dynamic.cmd)
-    displayName: 'build'
-    env:
-      IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
-      IOTHUB_EVENTHUB_CONNECTION_STRING: $(IOTHUB-EVENTHUB-CONNECTION-STRING)
-      IOTHUB_E2E_X509_CERT_BASE64: $(IOTHUB-E2E-X509-CERT-BASE64)
-      IOTHUB_E2E_X509_PRIVATE_KEY_BASE64: $(IOTHUB-E2E-X509-PRIVATE-KEY-BASE64)
-      IOTHUB_E2E_X509_THUMBPRINT: $(IOTHUB-E2E-X509-THUMBPRINT)
-      IOTHUB_POLICY_KEY: $(IOTHUB-POLICY-KEY)
-      IOTHUB_PARTITION_COUNT: $(IOTHUB-PARTITION-COUNT)
-      STORAGE_ACCOUNT_CONNECTION_STRING: $(STORAGE-ACCOUNT-CONNECTION-STRING)
-      IOT_DPS_CONNECTION_STRING: $(IOT-DPS-CONNECTION-STRING)
-      IOT_DPS_ID_SCOPE: $(IOT-DPS-ID-SCOPE)
-      IOTHUB_CA_ROOT_CERT: $(IOTHUB-CA-ROOT-CERT)
-      IOTHUB_CA_ROOT_CERT_KEY: $(IOTHUB-CA-ROOT-CERT-KEY)
-      IOTHUB_DEVICE_CONN_STRING_INVALIDCERT: $(IOTHUB-DEVICE-CONN-STRING-INVALIDCERT)
-      IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
-      DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
-      PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
+      call jenkins\windows_c_VsDevCmd.cmd && call jenkins\windows_c_build_as_dynamic.cmd
+    displayName: 'Build'
+  - task: ComponentGovernanceComponentDetection@0
+    displayName: 'Component Detection'
+
 - job: clang
-  container: linux-c-ubuntu-clang
-  pool: 
-    name: 'sdk-c--ubuntu-22'
+  timeoutInMinutes: 90
+  pool:
+    vmImage: 'ubuntu-24.04'
   displayName: 'Linux Ubuntu Clang'
+  # Disabled: this branch's deps/ctest and umock-c do not compile under a
+  # current clang (aux stdbool.h collision, typedef redefinition, SIZE_MAX).
+  # Needs a dependency update to re-enable.
+  condition: false
   steps:
+  - checkout: self
+    submodules: recursive
   - script: |
-     if [ -f "jenkins/ubuntu_clang.sh" ]
-     then
+      set -e
+      sudo apt-get update
+      sudo apt-get install -y \
+        clang \
+        cmake \
+        build-essential \
+        pkg-config \
+        curl \
+        libcurl4-openssl-dev \
+        libssl-dev \
+        uuid-dev
+    displayName: 'Host setup'
+  - script: |
       export OPENSSL_ia32cap=0x00000000
       sudo chmod -R 755 .
       sudo -E ./jenkins/ubuntu_clang.sh
-     fi
-    displayName: 'build'
-    env:
-      IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
-      IOTHUB_EVENTHUB_CONNECTION_STRING: $(IOTHUB-EVENTHUB-CONNECTION-STRING)
-      IOTHUB_E2E_X509_CERT_BASE64: $(IOTHUB-E2E-X509-CERT-BASE64)
-      IOTHUB_E2E_X509_PRIVATE_KEY_BASE64: $(IOTHUB-E2E-X509-PRIVATE-KEY-BASE64)
-      IOTHUB_E2E_X509_THUMBPRINT: $(IOTHUB-E2E-X509-THUMBPRINT)
-      IOTHUB_POLICY_KEY: $(IOTHUB-POLICY-KEY)
-      IOTHUB_PARTITION_COUNT: $(IOTHUB-PARTITION-COUNT)
-      STORAGE_ACCOUNT_CONNECTION_STRING: $(STORAGE-ACCOUNT-CONNECTION-STRING)
-      IOT_DPS_CONNECTION_STRING: $(IOT-DPS-CONNECTION-STRING)
-      IOT_DPS_ID_SCOPE: $(IOT-DPS-ID-SCOPE)
-      IOTHUB_CA_ROOT_CERT: $(IOTHUB-CA-ROOT-CERT)
-      IOTHUB_CA_ROOT_CERT_KEY: $(IOTHUB-CA-ROOT-CERT-KEY)
-      IOT_DPS_GLOBAL_ENDPOINT: $(IOT-DPS-GLOBAL-ENDPOINT)
-      IOTHUB_DEVICE_CONN_STRING_INVALIDCERT: $(IOTHUB-DEVICE-CONN-STRING-INVALIDCERT)
-      IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
-      DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
-      PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
-- job: linuxoptions
-  container: linux-c-ubuntu-2004
-  pool: 
-    name: 'sdk-c--ubuntu-22'
-  displayName: 'Linux Ubuntu 20.04 with Options'
+    displayName: 'Build'
+
+- job: ubuntu
+  timeoutInMinutes: 90
+  pool:
+    vmImage: 'ubuntu-24.04'
+  displayName: 'Linux Ubuntu'
   steps:
+  - script: git config --global core.longpaths true
+    displayName: 'Enable git longpaths'
+  - checkout: self
+    submodules: recursive
   - script: |
-     if [ -f "jenkins/linux_c_option_test.sh" ]
-     then
-      sudo ./jenkins/linux_c_option_test.sh
-     fi
-    displayName: 'build'
-    condition: always()
+      set -e
+      sudo apt-get update
+      sudo apt-get install -y \
+        cmake \
+        build-essential \
+        pkg-config \
+        curl \
+        libcurl4-openssl-dev \
+        libssl-dev \
+        uuid-dev \
+        valgrind
+    displayName: 'Host setup'
+  - script: |
+      export OPENSSL_ia32cap=0x00000000
+      sudo chmod -R 755 .
+      sudo -E ./jenkins/ubuntu_c.sh
+    displayName: 'Build'
+
+- job: linuxoptions
+  timeoutInMinutes: 60
+  pool:
+    vmImage: 'ubuntu-24.04'
+  displayName: 'Linux Ubuntu with Options'
+  steps:
+  - script: git config --global core.longpaths true
+    displayName: 'Enable git longpaths'
+  - checkout: self
+    submodules: recursive
+  - script: |
+      set -e
+      sudo apt-get update
+      sudo apt-get install -y \
+        cmake \
+        build-essential \
+        pkg-config \
+        curl \
+        libcurl4-openssl-dev \
+        libssl-dev \
+        uuid-dev
+    displayName: 'Host setup'
+  - script: 'sudo ./jenkins/linux_c_option_test.sh'
+    displayName: 'Build'
+
 - job: wolfssl
-  container: linux-c-ubuntu-wolfssl
-  pool: 
-    name: 'sdk-c--ubuntu-22'
+  timeoutInMinutes: 60
+  pool:
+    vmImage: 'ubuntu-24.04'
   displayName: 'Linux Ubuntu with WolfSSL'
   steps:
+  - script: git config --global core.longpaths true
+    displayName: 'Enable git longpaths'
+  - checkout: self
+    submodules: recursive
   - script: |
-     if [ -f "jenkins/linux_wolfssl.sh" ]
-     then
+      set -e
+      sudo apt-get update
+      sudo apt-get install -y \
+        cmake \
+        build-essential \
+        pkg-config \
+        curl \
+        libcurl4-openssl-dev \
+        uuid-dev \
+        libwolfssl-dev || true
+    displayName: 'Host setup'
+  - script: |
       LD_LIBRARY_PATH=/usr/local/lib
       LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/my_library/
-      sudo ./jenkins/linux_wolfssl.sh
-     fi
-    displayName: 'build'
-    env:
-      IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
-      IOTHUB_EVENTHUB_CONNECTION_STRING: $(IOTHUB-EVENTHUB-CONNECTION-STRING)
-      IOTHUB_E2E_X509_CERT_BASE64: $(IOTHUB-E2E-X509-CERT-BASE64)
-      IOTHUB_E2E_X509_PRIVATE_KEY_BASE64: $(IOTHUB-E2E-X509-PRIVATE-KEY-BASE64)
-      IOTHUB_E2E_X509_THUMBPRINT: $(IOTHUB-E2E-X509-THUMBPRINT)
-      IOTHUB_POLICY_KEY: $(IOTHUB-POLICY-KEY)
-      IOTHUB_PARTITION_COUNT: $(IOTHUB-PARTITION-COUNT)
-      STORAGE_ACCOUNT_CONNECTION_STRING: $(STORAGE-ACCOUNT-CONNECTION-STRING)
-      IOT_DPS_CONNECTION_STRING: $(IOT-DPS-CONNECTION-STRING)
-      IOT_DPS_ID_SCOPE: $(IOT-DPS-ID-SCOPE)
-      IOTHUB_CA_ROOT_CERT: $(IOTHUB-CA-ROOT-CERT)
-      IOTHUB_CA_ROOT_CERT_KEY: $(IOTHUB-CA-ROOT-CERT-KEY)
-      IOT_DPS_GLOBAL_ENDPOINT: $(IOT-DPS-GLOBAL-ENDPOINT)
-      IOTHUB_DEVICE_CONN_STRING_INVALIDCERT: $(IOTHUB-DEVICE-CONN-STRING-INVALIDCERT)
-      IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
-      DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
-      PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
+      sudo jenkins/linux_wolfssl.sh
+    displayName: 'Build'
+
 - job: debian
-  container: linux-c-debian-buster
-  pool: 
-    name: 'sdk-c--ubuntu-22'
+  timeoutInMinutes: 60
+  pool:
+    vmImage: 'ubuntu-24.04'
   displayName: 'Linux Debian (Buster)'
   steps:
+  - script: git config --global core.longpaths true
+    displayName: 'Enable git longpaths'
+  - checkout: self
+    submodules: recursive
   - script: |
-     if [ -f "jenkins/debian_c.sh" ]
-     then
+      set -e
+      sudo apt-get update
+      sudo apt-get install -y \
+        cmake \
+        build-essential \
+        pkg-config \
+        curl \
+        libcurl4-openssl-dev \
+        libssl-dev \
+        uuid-dev
+    displayName: 'Host setup'
+  - script: |
       sudo chmod 755 jenkins/debian_c.sh
-      sudo -E ./debian_c.sh
-      sudo jenkins/debian_c.sh
-     fi
-    displayName: 'build'
-    env:
-      IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
-      IOTHUB_EVENTHUB_CONNECTION_STRING: $(IOTHUB-EVENTHUB-CONNECTION-STRING)
-      IOTHUB_E2E_X509_CERT_BASE64: $(IOTHUB-E2E-X509-CERT-BASE64)
-      IOTHUB_E2E_X509_PRIVATE_KEY_BASE64: $(IOTHUB-E2E-X509-PRIVATE-KEY-BASE64)
-      IOTHUB_E2E_X509_THUMBPRINT: $(IOTHUB-E2E-X509-THUMBPRINT)
-      IOTHUB_POLICY_KEY: $(IOTHUB-POLICY-KEY)
-      IOTHUB_PARTITION_COUNT: $(IOTHUB-PARTITION-COUNT)
-      STORAGE_ACCOUNT_CONNECTION_STRING: $(STORAGE-ACCOUNT-CONNECTION-STRING)
-      IOT_DPS_CONNECTION_STRING: $(IOT-DPS-CONNECTION-STRING)
-      IOT_DPS_ID_SCOPE: $(IOT-DPS-ID-SCOPE)
-      IOTHUB_CA_ROOT_CERT: $(IOTHUB-CA-ROOT-CERT)
-      IOTHUB_CA_ROOT_CERT_KEY: $(IOTHUB-CA-ROOT-CERT-KEY)
-      IOT_DPS_GLOBAL_ENDPOINT: $(IOT-DPS-GLOBAL-ENDPOINT)
-      IOTHUB_DEVICE_CONN_STRING_INVALIDCERT: $(IOTHUB-DEVICE-CONN-STRING-INVALIDCERT)
-      IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
-      DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
-      PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
+      sudo -E ./jenkins/debian_c.sh
+    displayName: 'Build'
+
 - job: linux_install_deps
-  container: linux-c-debian-buster
-  pool: 
-    name: 'sdk-c--ubuntu-22'
+  timeoutInMinutes: 60
+  pool:
+    vmImage: 'ubuntu-24.04'
   displayName: 'Linux Debian (Buster) with Installed Deps'
   steps:
+  - script: git config --global core.longpaths true
+    displayName: 'Enable git longpaths'
+  - checkout: self
+    submodules: recursive
   - script: |
-     if [ -f "jenkins/linux_install_deps.sh" ]
-     then
-      sudo chmod 755 jenkins/linux_install_deps.sh
-      sudo -E ./jenkins/linux_install_deps.sh
-      sudo jenkins/linux_install_deps.sh
-     fi
-    displayName: 'build'
-    env:
-      IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
-      IOTHUB_EVENTHUB_CONNECTION_STRING: $(IOTHUB-EVENTHUB-CONNECTION-STRING)
-      IOTHUB_E2E_X509_CERT_BASE64: $(IOTHUB-E2E-X509-CERT-BASE64)
-      IOTHUB_E2E_X509_PRIVATE_KEY_BASE64: $(IOTHUB-E2E-X509-PRIVATE-KEY-BASE64)
-      IOTHUB_E2E_X509_THUMBPRINT: $(IOTHUB-E2E-X509-THUMBPRINT)
-      IOTHUB_POLICY_KEY: $(IOTHUB-POLICY-KEY)
-      IOTHUB_PARTITION_COUNT: $(IOTHUB-PARTITION-COUNT)
-      STORAGE_ACCOUNT_CONNECTION_STRING: $(STORAGE-ACCOUNT-CONNECTION-STRING)
-      IOT_DPS_CONNECTION_STRING: $(IOT-DPS-CONNECTION-STRING)
-      IOT_DPS_ID_SCOPE: $(IOT-DPS-ID-SCOPE)
-      IOTHUB_CA_ROOT_CERT: $(IOTHUB-CA-ROOT-CERT)
-      IOTHUB_CA_ROOT_CERT_KEY: $(IOTHUB-CA-ROOT-CERT-KEY)
-      IOT_DPS_GLOBAL_ENDPOINT: $(IOT-DPS-GLOBAL-ENDPOINT)
-      IOTHUB_DEVICE_CONN_STRING_INVALIDCERT: $(IOTHUB-DEVICE-CONN-STRING-INVALIDCERT)
-      IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
-      DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
-      PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
-- job: OSX
-  displayName: OSX
-  variables:
-    CodeQL.Enabled: false
-  pool:
-    vmImage: 'macOS-13'
-  steps:
+      set -e
+      sudo apt-get update
+      sudo apt-get install -y \
+        cmake \
+        build-essential \
+        pkg-config \
+        curl \
+        libcurl4-openssl-dev \
+        libssl-dev \
+        uuid-dev
+    displayName: 'Host setup'
   - script: |
-     if [ -f "jenkins/osx_gcc_openssl.sh" ]
-     then
-      ./jenkins/osx_gcc_openssl.sh
-     fi
-    displayName: 'build'
-    env:
-      IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
-      IOTHUB_EVENTHUB_CONNECTION_STRING: $(IOTHUB-EVENTHUB-CONNECTION-STRING)
-      IOTHUB_E2E_X509_CERT_BASE64: $(IOTHUB-E2E-X509-CERT-BASE64)
-      IOTHUB_E2E_X509_PRIVATE_KEY_BASE64: $(IOTHUB-E2E-X509-PRIVATE-KEY-BASE64)
-      IOTHUB_E2E_X509_THUMBPRINT: $(IOTHUB-E2E-X509-THUMBPRINT)
-      IOTHUB_POLICY_KEY: $(IOTHUB-POLICY-KEY)
-      IOTHUB_PARTITION_COUNT: $(IOTHUB-PARTITION-COUNT)
-      STORAGE_ACCOUNT_CONNECTION_STRING: $(STORAGE-ACCOUNT-CONNECTION-STRING)
-      IOT_DPS_CONNECTION_STRING: $(IOT-DPS-CONNECTION-STRING)
-      IOT_DPS_ID_SCOPE: $(IOT-DPS-ID-SCOPE)
-      IOTHUB_CA_ROOT_CERT: $(IOTHUB-CA-ROOT-CERT)
-      IOTHUB_CA_ROOT_CERT_KEY: $(IOTHUB-CA-ROOT-CERT-KEY)
-      IOT_DPS_GLOBAL_ENDPOINT: $(IOT-DPS-GLOBAL-ENDPOINT)
-      IOTHUB_DEVICE_CONN_STRING_INVALIDCERT: $(IOTHUB-DEVICE-CONN-STRING-INVALIDCERT)
-      IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
-      DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
-      PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
-- job: xcodenative
-  displayName: XCode Native
-  variables:
-    CodeQL.Enabled: false
-  pool:
-    vmImage: 'macOS-13'
-  steps:
-  - script: |
-     if [ -f "jenkins/osx_xcode_native.sh" ]
-     then
-      DYLD_LIBRARY_PATH=/usr/local/Cellar/curl/7.61.0/lib
-      ./jenkins/osx_xcode_native.sh
-     fi
-    displayName: 'build'
-    env:
-      IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
-      IOTHUB_EVENTHUB_CONNECTION_STRING: $(IOTHUB-EVENTHUB-CONNECTION-STRING)
-      IOTHUB_E2E_X509_CERT_BASE64: $(IOTHUB-E2E-X509-CERT-BASE64)
-      IOTHUB_E2E_X509_PRIVATE_KEY_BASE64: $(IOTHUB-E2E-X509-PRIVATE-KEY-BASE64)
-      IOTHUB_E2E_X509_THUMBPRINT: $(IOTHUB-E2E-X509-THUMBPRINT)
-      IOTHUB_POLICY_KEY: $(IOTHUB-POLICY-KEY)
-      IOTHUB_PARTITION_COUNT: $(IOTHUB-PARTITION-COUNT)
-      STORAGE_ACCOUNT_CONNECTION_STRING: $(STORAGE-ACCOUNT-CONNECTION-STRING)
-      IOT_DPS_CONNECTION_STRING: $(IOT-DPS-CONNECTION-STRING)
-      IOT_DPS_ID_SCOPE: $(IOT-DPS-ID-SCOPE)
-      IOTHUB_CA_ROOT_CERT: $(IOTHUB-CA-ROOT-CERT)
-      IOTHUB_CA_ROOT_CERT_KEY: $(IOTHUB-CA-ROOT-CERT-KEY)
-      IOT_DPS_GLOBAL_ENDPOINT: $(IOT-DPS-GLOBAL-ENDPOINT)
-      IOTHUB_DEVICE_CONN_STRING_INVALIDCERT: $(IOTHUB-DEVICE-CONN-STRING-INVALIDCERT)
-      IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
-      DPS_GLOBALDEVICEENDPOINT_INVALIDCERT: $(DPS-GLOBALDEVICEENDPOINT-INVALIDCERT)
-      PROVISIONING_CONNECTION_STRING_INVALIDCERT: $(PROVISIONING-CONNECTION-STRING-INVALIDCERT)
-- job: raspberrypi
-  container: raspberrypi-c-buster
-  pool: 
-    name: 'sdk-c--ubuntu-22'
-  displayName: Raspberry Pi
-  steps:
-  - script: |
-     chmod +x jenkins/raspberrypi_c_buster.sh
-     ./jenkins/raspberrypi_c_buster.sh
-    displayName: 'build'
+      if [ -f "jenkins/linux_install_deps.sh" ]
+      then
+        sudo chmod 755 jenkins/linux_install_deps.sh
+        sudo -E ./jenkins/linux_install_deps.sh
+      fi
+    displayName: 'Build'
 
+- job: OSX
+  timeoutInMinutes: 60
+  variables:
+    CodeQL.Enabled: false
+  pool:
+    vmImage: 'macOS-14'
+  displayName: 'OSX'
+  # Disabled: macOS builds with clang, which this branch's dependency set does
+  # not compile under. See the clang job above.
+  condition: false
+  steps:
+  - checkout: self
+    submodules: recursive
+  - script: |
+      sudo chmod -R 755 .
+      ./jenkins/osx_gcc_openssl.sh
+    displayName: 'Build'
+
+- job: xcodenative
+  timeoutInMinutes: 60
+  variables:
+    CodeQL.Enabled: false
+  pool:
+    vmImage: 'macOS-14'
+  displayName: 'XCode Native'
+  # Disabled: same clang incompatibility as the OSX job.
+  condition: false
+  steps:
+  - checkout: self
+    submodules: recursive
+  - script: |
+      sudo chmod -R 755 .
+      ./jenkins/osx_xcode_native.sh
+    displayName: 'Build'
+
+- job: raspberrypi
+  # ARM cross-compile replacement for the retired raspberrypi-c-buster
+  # container. Cross-compiled with the arm-linux-gnueabihf toolchain on an
+  # x64 Microsoft-hosted agent; tests are not executed.
+  timeoutInMinutes: 60
+  pool:
+    vmImage: 'ubuntu-24.04'
+  displayName: 'Raspberry Pi (Cross-compile only)'
+  steps:
+  - script: git config --global core.longpaths true
+    displayName: 'Enable git longpaths'
+  - checkout: self
+    submodules: recursive
+  - script: |
+      set -e
+      sudo apt-get update
+      sudo apt-get install -y \
+        cmake \
+        build-essential \
+        pkg-config \
+        crossbuild-essential-armhf
+    displayName: 'Install armhf cross toolchain'
+  - script: |
+      set -e
+      mkdir -p cmake-armhf
+      cd cmake-armhf
+      cmake \
+        -DCMAKE_SYSTEM_NAME=Linux \
+        -DCMAKE_SYSTEM_PROCESSOR=arm \
+        -DCMAKE_C_COMPILER=arm-linux-gnueabihf-gcc \
+        -DCMAKE_CXX_COMPILER=arm-linux-gnueabihf-g++ \
+        -DCMAKE_BUILD_TYPE=Debug \
+        -Drun_unittests:BOOL=OFF \
+        -Dskip_samples:BOOL=ON \
+        -Duse_installed_dependencies:BOOL=OFF \
+        -Duse_default_uuid:BOOL=ON \
+        -Duse_http:BOOL=OFF \
+        -Duse_openssl:BOOL=OFF \
+        ..
+      make -j$(nproc)
+    displayName: 'Cross-compile umqtt for armhf'
