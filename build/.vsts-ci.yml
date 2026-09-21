@@ -10,13 +10,6 @@ name: $(BuildID)_$(BuildDefinitionName)_$(SourceBranchName)_$(Date:yyyyMMdd)$(Re
 #
 # umqtt has no E2E tests, so the IoT Hub / DPS secret env blocks that used to be
 # plumbed into every job are removed; unit tests never read them.
-#
-# The clang, OSX and XCode Native jobs are disabled rather than migrated. The
-# dependency set pinned on this branch does not compile under a current clang:
-# deps/ctest ships an aux stdbool.h that collides with the toolchain header, and
-# the old umock-c/macro-utils headers trigger typedef-redefinition errors.
-# The retired containers pinned older toolchains, which is what hid this.
-# Re-enabling them needs a dependency update, which is out of scope here.
 
 resources:
   - repo: self
@@ -112,11 +105,9 @@ jobs:
   pool:
     vmImage: 'ubuntu-24.04'
   displayName: 'Linux Ubuntu Clang'
-  # Disabled: this branch's deps/ctest and umock-c do not compile under a
-  # current clang (aux stdbool.h collision, typedef redefinition, SIZE_MAX).
-  # Needs a dependency update to re-enable.
-  condition: false
   steps:
+  - script: git config --global core.longpaths true
+    displayName: 'Enable git longpaths'
   - checkout: self
     submodules: recursive
   - script: |
@@ -134,6 +125,11 @@ jobs:
     displayName: 'Host setup'
   - script: |
       export OPENSSL_ia32cap=0x00000000
+      # The retired linux-c-ubuntu-clang container selected clang via its image
+      # environment. On a hosted agent nothing sets it, so the job would build
+      # with gcc and silently stop being clang coverage.
+      export CC=clang
+      export CXX=clang++
       sudo chmod -R 755 .
       sudo -E ./jenkins/ubuntu_clang.sh
     displayName: 'Build'
@@ -281,36 +277,127 @@ jobs:
   timeoutInMinutes: 60
   variables:
     CodeQL.Enabled: false
+    CMAKE_POLICY_VERSION_MINIMUM: '3.5'
   pool:
     vmImage: 'macOS-14'
   displayName: 'OSX'
-  # Disabled: macOS builds with clang, which this branch's dependency set does
-  # not compile under. See the clang job above.
-  condition: false
   steps:
+  # Repair the Component Detection node runtime on macOS-hosted images.
+  # The auto-injected ComponentGovernance task invokes a hard-coded path
+  # (.../externals/node20_1/bin/node) that exists as a directory on the
+  # current macOS-14 image but is missing the "node" binary inside it.
+  # Mirror a working node binary into every plausible externals root so
+  # CG (and any other task expecting node20_1) succeeds. Idempotent.
+  - bash: |
+      set +e
+      HOST_NODE="$(command -v node 2>/dev/null || true)"
+      [ -n "$HOST_NODE" ] && echo "Host node: $HOST_NODE ($("$HOST_NODE" -v 2>/dev/null))"
+
+      for ext in /Users/runner/actions-runner/cached/*/externals "$AGENT_HOMEDIRECTORY/externals" ; do
+        [ -d "$ext" ] || continue
+        target_dir="$ext/node20_1"
+        target_bin="$target_dir/bin/node"
+
+        if [ -x "$target_bin" ] && "$target_bin" -v >/dev/null 2>&1; then
+          echo "OK: $target_bin ($("$target_bin" -v))"
+          continue
+        fi
+
+        echo "Repairing $target_bin"
+        mkdir -p "$target_dir/bin"
+        rm -f "$target_bin"
+
+        if [ -x "$ext/node20/bin/node" ]; then
+          ln -sf "$ext/node20/bin/node" "$target_bin"
+          echo "  -> linked from $ext/node20/bin/node"
+        elif [ -n "$HOST_NODE" ] && [ -x "$HOST_NODE" ]; then
+          ln -sf "$HOST_NODE" "$target_bin"
+          echo "  -> linked from $HOST_NODE"
+        else
+          echo "  WARN: no node binary available on this image"
+          continue
+        fi
+
+        "$target_bin" -v >/dev/null 2>&1 && echo "  Repaired: $target_bin ($("$target_bin" -v))"
+      done
+    displayName: 'Repair Component Detection node runtime'
+    condition: always()
+  - script: git config --global core.longpaths true
+    displayName: 'Enable git longpaths'
   - checkout: self
     submodules: recursive
   - script: |
-      sudo chmod -R 755 .
       ./jenkins/osx_gcc_openssl.sh
     displayName: 'Build'
+  - script: |
+      rm -rf $(Agent.BuildDirectory)/*
+      mkdir -p $(Agent.BuildDirectory)/s
+    displayName: 'Cleanup'
+    condition: always()
 
 - job: xcodenative
   timeoutInMinutes: 60
   variables:
     CodeQL.Enabled: false
+    CMAKE_POLICY_VERSION_MINIMUM: '3.5'
   pool:
     vmImage: 'macOS-14'
   displayName: 'XCode Native'
-  # Disabled: same clang incompatibility as the OSX job.
-  condition: false
   steps:
+  # Repair the Component Detection node runtime on macOS-hosted images.
+  # The auto-injected ComponentGovernance task invokes a hard-coded path
+  # (.../externals/node20_1/bin/node) that exists as a directory on the
+  # current macOS-14 image but is missing the "node" binary inside it.
+  # Mirror a working node binary into every plausible externals root so
+  # CG (and any other task expecting node20_1) succeeds. Idempotent.
+  - bash: |
+      set +e
+      HOST_NODE="$(command -v node 2>/dev/null || true)"
+      [ -n "$HOST_NODE" ] && echo "Host node: $HOST_NODE ($("$HOST_NODE" -v 2>/dev/null))"
+
+      for ext in /Users/runner/actions-runner/cached/*/externals "$AGENT_HOMEDIRECTORY/externals" ; do
+        [ -d "$ext" ] || continue
+        target_dir="$ext/node20_1"
+        target_bin="$target_dir/bin/node"
+
+        if [ -x "$target_bin" ] && "$target_bin" -v >/dev/null 2>&1; then
+          echo "OK: $target_bin ($("$target_bin" -v))"
+          continue
+        fi
+
+        echo "Repairing $target_bin"
+        mkdir -p "$target_dir/bin"
+        rm -f "$target_bin"
+
+        if [ -x "$ext/node20/bin/node" ]; then
+          ln -sf "$ext/node20/bin/node" "$target_bin"
+          echo "  -> linked from $ext/node20/bin/node"
+        elif [ -n "$HOST_NODE" ] && [ -x "$HOST_NODE" ]; then
+          ln -sf "$HOST_NODE" "$target_bin"
+          echo "  -> linked from $HOST_NODE"
+        else
+          echo "  WARN: no node binary available on this image"
+          continue
+        fi
+
+        "$target_bin" -v >/dev/null 2>&1 && echo "  Repaired: $target_bin ($("$target_bin" -v))"
+      done
+    displayName: 'Repair Component Detection node runtime'
+    condition: always()
+  - script: git config --global core.longpaths true
+    displayName: 'Enable git longpaths'
   - checkout: self
     submodules: recursive
   - script: |
-      sudo chmod -R 755 .
+      curl --version
+      export DYLD_LIBRARY_PATH="/usr/local/Cellar/curl/$(ls -b /usr/local/Cellar/curl 2>/dev/null | grep -e '[0-9\.]' | head -1)/lib"
       ./jenkins/osx_xcode_native.sh
     displayName: 'Build'
+  - script: |
+      rm -rf $(Agent.BuildDirectory)/*
+      mkdir -p $(Agent.BuildDirectory)/s
+    displayName: 'Cleanup'
+    condition: always()
 
 - job: raspberrypi
   # ARM cross-compile replacement for the retired raspberrypi-c-buster
