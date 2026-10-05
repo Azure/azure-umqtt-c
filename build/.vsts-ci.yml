@@ -121,7 +121,8 @@ jobs:
         curl \
         libcurl4-openssl-dev \
         libssl-dev \
-        uuid-dev
+        uuid-dev \
+        valgrind
     displayName: 'Host setup'
   - script: |
       export OPENSSL_ia32cap=0x00000000
@@ -236,7 +237,8 @@ jobs:
         curl \
         libcurl4-openssl-dev \
         libssl-dev \
-        uuid-dev
+        uuid-dev \
+        valgrind
     displayName: 'Host setup'
   - script: |
       sudo chmod 755 jenkins/debian_c.sh
