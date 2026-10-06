@@ -8,6 +8,10 @@ name: $(BuildID)_$(BuildDefinitionName)_$(SourceBranchName)_$(Date:yyyyMMdd)$(Re
 #   "Value cannot be null. (Parameter 'ContainerId')"
 # This mirrors the migration already done on master.
 #
+# The two Debian jobs keep a Debian container, now a public debian image rather
+# than the retired private one, so they still test Debian and not the Ubuntu
+# host they run on.
+#
 # umqtt has no E2E tests, so the IoT Hub / DPS secret env blocks that used to be
 # plumbed into every job are removed; unit tests never read them.
 
@@ -221,16 +225,23 @@ jobs:
   timeoutInMinutes: 60
   pool:
     vmImage: 'ubuntu-24.04'
-  displayName: 'Linux Debian (Buster)'
+  # Run the Debian jobs in a real Debian container. The retired
+  # linux-c-debian-buster image is gone, and running these steps directly on the
+  # Ubuntu host would keep the Debian name while actually testing Ubuntu, which
+  # drops distro coverage. Buster is end-of-life and its repositories are
+  # archived, so this tracks current Debian stable instead.
+  container: debian:bookworm
+  displayName: 'Linux Debian (Bookworm)'
   steps:
-  - script: git config --global core.longpaths true
-    displayName: 'Enable git longpaths'
-  - checkout: self
-    submodules: recursive
+  # Steps run as root in the container; sudo does not exist until installed
+  # here, and git must be present before the checkout step.
   - script: |
       set -e
-      sudo apt-get update
-      sudo apt-get install -y \
+      apt-get update
+      apt-get install -y \
+        sudo \
+        git \
+        ca-certificates \
         cmake \
         build-essential \
         pkg-config \
@@ -239,7 +250,11 @@ jobs:
         libssl-dev \
         uuid-dev \
         valgrind
-    displayName: 'Host setup'
+    displayName: 'Container setup'
+  - script: git config --global core.longpaths true
+    displayName: 'Enable git longpaths'
+  - checkout: self
+    submodules: recursive
   - script: |
       sudo chmod 755 jenkins/debian_c.sh
       sudo -E ./jenkins/debian_c.sh
@@ -249,16 +264,16 @@ jobs:
   timeoutInMinutes: 60
   pool:
     vmImage: 'ubuntu-24.04'
-  displayName: 'Linux Debian (Buster) with Installed Deps'
+  container: debian:bookworm
+  displayName: 'Linux Debian (Bookworm) with Installed Deps'
   steps:
-  - script: git config --global core.longpaths true
-    displayName: 'Enable git longpaths'
-  - checkout: self
-    submodules: recursive
   - script: |
       set -e
-      sudo apt-get update
-      sudo apt-get install -y \
+      apt-get update
+      apt-get install -y \
+        sudo \
+        git \
+        ca-certificates \
         cmake \
         build-essential \
         pkg-config \
@@ -266,7 +281,11 @@ jobs:
         libcurl4-openssl-dev \
         libssl-dev \
         uuid-dev
-    displayName: 'Host setup'
+    displayName: 'Container setup'
+  - script: git config --global core.longpaths true
+    displayName: 'Enable git longpaths'
+  - checkout: self
+    submodules: recursive
   - script: |
       if [ -f "jenkins/linux_install_deps.sh" ]
       then
