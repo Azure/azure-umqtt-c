@@ -128,3 +128,4 @@ extern int mqtt_codec_bytesReceived(MQTTCODEC_HANDLE handle, const void* buffer,
 **SRS_MQTT_CODEC_07_033: [** mqtt_codec_bytesReceived constructs a sequence of bytes into the corresponding MQTT packets and on success returns zero. **]**  
 **SRS_MQTT_CODEC_07_034: [** Upon a constructing a complete MQTT packet mqtt_codec_bytesReceived shall call the ON_PACKET_COMPLETE_CALLBACK function. **]**  
 **SRS_MQTT_CODEC_07_035: [** If any error is encountered then the packet state will be marked as error and mqtt_codec_bytesReceived shall return a non-zero value. **]**  
+**SRS_MQTT_CODEC_07_037: [** If the Remaining Length index has reached the maximum number of bytes (4) then prepareheaderDataInfo shall return a non-zero value without writing past the storeRemainLen buffer. **]**  

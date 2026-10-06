@@ -516,6 +516,15 @@ static int prepareheaderDataInfo(MQTTCODEC_INSTANCE* codecData, uint8_t remainLe
 {
     int result;
     result = 0;
+    /* Codes_SRS_MQTT_CODEC_07_037: [ If the Remaining Length index has reached the maximum number of bytes (4) then prepareheaderDataInfo shall return a non-zero value without writing past the storeRemainLen buffer. ] */
+    if (codecData->remainLenIndex >= (sizeof(codecData->storeRemainLen) / sizeof(codecData->storeRemainLen[0])))
+    {
+        // The maximum number of bytes in the Remaining Length field is four.
+        // Guard against writing past storeRemainLen if the parser is re-entered
+        // after a Remaining Length error left remainLenIndex at the maximum.
+        LogError("MQTT packet len is invalid");
+        return MU_FAILURE;
+    }
     codecData->storeRemainLen[codecData->remainLenIndex++] = remainLen;
     if (remainLen <= 0x7f)
     {
