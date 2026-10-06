@@ -225,74 +225,84 @@ jobs:
   timeoutInMinutes: 60
   pool:
     vmImage: 'ubuntu-24.04'
-  # Run the Debian jobs in a real Debian container. The retired
-  # linux-c-debian-buster image is gone, and running these steps directly on the
-  # Ubuntu host would keep the Debian name while actually testing Ubuntu, which
-  # drops distro coverage. Buster is end-of-life and its repositories are
-  # archived, so this tracks current Debian stable instead.
-  container: debian:bookworm
+  # Build inside a Debian container so this job still tests Debian rather than
+  # the Ubuntu host it runs on; the retired linux-c-debian-buster image is gone.
+  # Buster is end-of-life with archived repositories, so this tracks current
+  # Debian stable. Run via docker rather than a container job because container
+  # jobs execute as the agent user, which cannot apt-get install.
   displayName: 'Linux Debian (Bookworm)'
   steps:
-  # Steps run as root in the container; sudo does not exist until installed
-  # here, and git must be present before the checkout step.
-  - script: |
-      set -e
-      apt-get update
-      apt-get install -y \
-        sudo \
-        git \
-        ca-certificates \
-        cmake \
-        build-essential \
-        pkg-config \
-        curl \
-        libcurl4-openssl-dev \
-        libssl-dev \
-        uuid-dev \
-        valgrind
-    displayName: 'Container setup'
   - script: git config --global core.longpaths true
     displayName: 'Enable git longpaths'
   - checkout: self
     submodules: recursive
   - script: |
-      sudo chmod 755 jenkins/debian_c.sh
-      sudo -E ./jenkins/debian_c.sh
-    displayName: 'Build'
+      set -e
+      docker run --rm \
+        -v "$(Build.SourcesDirectory)":/src -w /src \
+        debian:bookworm bash -c '
+          set -e
+          apt-get update
+          apt-get install -y \
+            git \
+            ca-certificates \
+            cmake \
+            build-essential \
+            pkg-config \
+            curl \
+            libcurl4-openssl-dev \
+            libssl-dev \
+            uuid-dev \
+            valgrind
+          chmod 755 jenkins/debian_c.sh
+          ./jenkins/debian_c.sh
+        '
+    displayName: 'Build in Debian container'
+  # docker runs as root, so build output is root-owned; hand it back before the
+  # agent's post-job workspace cleanup runs.
+  - script: sudo chown -R `id -u`:`id -g` "$(Build.SourcesDirectory)"
+    displayName: 'Restore workspace ownership'
+    condition: always()
 
 - job: linux_install_deps
   timeoutInMinutes: 60
   pool:
     vmImage: 'ubuntu-24.04'
-  container: debian:bookworm
   displayName: 'Linux Debian (Bookworm) with Installed Deps'
   steps:
-  - script: |
-      set -e
-      apt-get update
-      apt-get install -y \
-        sudo \
-        git \
-        ca-certificates \
-        cmake \
-        build-essential \
-        pkg-config \
-        curl \
-        libcurl4-openssl-dev \
-        libssl-dev \
-        uuid-dev
-    displayName: 'Container setup'
   - script: git config --global core.longpaths true
     displayName: 'Enable git longpaths'
   - checkout: self
     submodules: recursive
   - script: |
-      if [ -f "jenkins/linux_install_deps.sh" ]
-      then
-        sudo chmod 755 jenkins/linux_install_deps.sh
-        sudo -E ./jenkins/linux_install_deps.sh
-      fi
-    displayName: 'Build'
+      set -e
+      docker run --rm \
+        -v "$(Build.SourcesDirectory)":/src -w /src \
+        debian:bookworm bash -c '
+          set -e
+          apt-get update
+          apt-get install -y \
+            git \
+            ca-certificates \
+            cmake \
+            build-essential \
+            pkg-config \
+            curl \
+            libcurl4-openssl-dev \
+            libssl-dev \
+            uuid-dev
+          if [ -f "jenkins/linux_install_deps.sh" ]
+          then
+            chmod 755 jenkins/linux_install_deps.sh
+            ./jenkins/linux_install_deps.sh
+          fi
+        '
+    displayName: 'Build in Debian container'
+  # docker runs as root, so build output is root-owned; hand it back before the
+  # agent's post-job workspace cleanup runs.
+  - script: sudo chown -R `id -u`:`id -g` "$(Build.SourcesDirectory)"
+    displayName: 'Restore workspace ownership'
+    condition: always()
 
 - job: OSX
   timeoutInMinutes: 60
