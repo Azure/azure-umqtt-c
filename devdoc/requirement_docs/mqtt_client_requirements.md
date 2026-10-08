@@ -158,6 +158,8 @@ extern void mqtt_client_dowork(MQTT_CLIENT_HANDLE handle);
 
 **SRS_MQTT_CLIENT_07_035: [**If the timeSincePing has expired past the maxPingRespTime then mqtt_client_dowork shall call the Error Callback function with the message MQTT_CLIENT_NO_PING_RESPONSE**]**
 
+**SRS_MQTT_CLIENT_07_038: [**If sending the PINGREQ packet fails then mqtt_client_dowork shall call the Error Callback function with the message MQTT_CLIENT_COMMUNICATION_ERROR.**]**
+
 ## ON_MQTT_OPERATION_CALLBACK
 
 ```C

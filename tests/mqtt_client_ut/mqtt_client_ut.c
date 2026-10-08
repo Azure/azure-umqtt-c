@@ -98,6 +98,7 @@ static const unsigned char* TEST_BUFFER_U_CHAR = (const unsigned char*)0x19;
 
 static bool g_operationCallbackInvoked;
 static bool g_errorCallbackInvoked;
+static MQTT_CLIENT_EVENT_ERROR g_lastErrorType;
 static bool g_msgRecvCallbackInvoked;
 static bool g_mqtt_codec_publish_func_fail;
 static tickcounter_ms_t g_current_ms;
@@ -397,6 +398,7 @@ TEST_FUNCTION_INITIALIZE(method_init)
     g_packetComplete = NULL;
     g_operationCallbackInvoked = false;
     g_errorCallbackInvoked = false;
+    g_lastErrorType = MQTT_CLIENT_UNKNOWN_ERROR;
     g_msgRecvCallbackInvoked = false;
     g_mqtt_codec_publish_func_fail = false;
     g_openComplete = NULL;
@@ -676,6 +678,7 @@ static void TestErrorCallback(MQTT_CLIENT_HANDLE handle, MQTT_CLIENT_EVENT_ERROR
         case MQTT_CLIENT_UNKNOWN_ERROR:
         {
             g_errorCallbackInvoked = true;
+            g_lastErrorType = error;
         }
         break;
     }
@@ -1850,6 +1853,53 @@ TEST_FUNCTION(mqtt_client_dowork_ping_succeeds)
     mqtt_client_dowork(mqttHandle);
 
     // assert
+    ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
+
+    // cleanup
+    mqtt_client_deinit(mqttHandle);
+}
+
+/* Tests_SRS_MQTT_CLIENT_07_038: [If sending the PINGREQ packet fails then mqtt_client_dowork shall call the Error Callback function with the message MQTT_CLIENT_COMMUNICATION_ERROR.] */
+TEST_FUNCTION(mqtt_client_dowork_ping_send_fails)
+{
+    // arrange
+    MQTT_CLIENT_HANDLE mqttHandle = mqtt_client_init(TestRecvCallback, TestOpCallback, NULL, TestErrorCallback, NULL);
+
+    MQTT_CLIENT_OPTIONS mqttOptions = { 0 };
+    SetupMqttLibOptions(&mqttOptions, TEST_CLIENT_ID, NULL, NULL, TEST_USERNAME, TEST_PASSWORD, TEST_KEEP_ALIVE_INTERVAL, false, true, DELIVER_AT_MOST_ONCE);
+
+    (void)mqtt_client_connect(mqttHandle, TEST_IO_HANDLE, &mqttOptions);
+    g_openComplete(g_onCompleteCtx, IO_OPEN_OK);
+
+    umock_c_reset_all_calls();
+    unsigned char CONNACK_RESP[] = { 0x1, 0x0 };
+    size_t length = sizeof(CONNACK_RESP) / sizeof(CONNACK_RESP[0]);
+    BUFFER_HANDLE connack_handle = TEST_BUFFER_HANDLE;
+    STRICT_EXPECTED_CALL(BUFFER_length(TEST_BUFFER_HANDLE)).SetReturn(length);
+    STRICT_EXPECTED_CALL(BUFFER_u_char(TEST_BUFFER_HANDLE)).SetReturn(CONNACK_RESP);
+    g_packetComplete(mqttHandle, CONNACK_TYPE, 0, connack_handle);
+
+    umock_c_reset_all_calls();
+
+    g_current_ms = TEST_KEEP_ALIVE_INTERVAL * 2 * 1000;
+
+    EXPECTED_CALL(xio_dowork(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(tickcounter_get_current_ms(TEST_COUNTER_HANDLE, IGNORED_ARG)).IgnoreArgument(2);
+    STRICT_EXPECTED_CALL(mqtt_codec_ping());
+    STRICT_EXPECTED_CALL(BUFFER_length(TEST_BUFFER_HANDLE));
+    STRICT_EXPECTED_CALL(BUFFER_u_char(TEST_BUFFER_HANDLE));
+    EXPECTED_CALL(xio_send(IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG, IGNORED_ARG)).SetReturn(MU_FAILURE);
+    STRICT_EXPECTED_CALL(BUFFER_delete(TEST_BUFFER_HANDLE));
+    STRICT_EXPECTED_CALL(xio_close(TEST_IO_HANDLE, IGNORED_ARG, IGNORED_ARG));
+    STRICT_EXPECTED_CALL(xio_dowork(IGNORED_ARG));
+    STRICT_EXPECTED_CALL(ThreadAPI_Sleep(CLOSE_SLEEP_VALUE));
+
+    // act
+    mqtt_client_dowork(mqttHandle);
+
+    // assert
+    ASSERT_IS_TRUE(g_errorCallbackInvoked);
+    ASSERT_ARE_EQUAL(int, (int)MQTT_CLIENT_COMMUNICATION_ERROR, (int)g_lastErrorType);
     ASSERT_ARE_EQUAL(char_ptr, umock_c_get_expected_calls(), umock_c_get_actual_calls());
 
     // cleanup

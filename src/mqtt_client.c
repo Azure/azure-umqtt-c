@@ -1463,15 +1463,27 @@ void mqtt_client_dowork(MQTT_CLIENT_HANDLE handle)
                         if (pingPacket != NULL)
                         {
                             size_t size = BUFFER_length(pingPacket);
-                            (void)sendPacketItem(mqtt_client, BUFFER_u_char(pingPacket), size);
+                            int send_result = sendPacketItem(mqtt_client, BUFFER_u_char(pingPacket), size);
                             BUFFER_delete(pingPacket);
-                            (void)tickcounter_get_current_ms(mqtt_client->packetTickCntr, &mqtt_client->timeSincePing);
-
-                            if (is_trace_enabled(mqtt_client))
+                            if (send_result != 0)
                             {
-                                STRING_HANDLE trace_log = STRING_construct("PINGREQ");
-                                log_outgoing_trace(mqtt_client, trace_log);
-                                STRING_delete(trace_log);
+                                /* Codes_SRS_MQTT_CLIENT_07_038: [If sending the PINGREQ packet fails then mqtt_client_dowork shall call the Error Callback function with the message MQTT_CLIENT_COMMUNICATION_ERROR.] */
+                                LogError("Failure sending PINGREQ packet");
+                                mqtt_client->timeSincePing = 0;
+                                mqtt_client->packetSendTimeMs = 0;
+                                mqtt_client->packetState = UNKNOWN_TYPE;
+                                set_error_callback(mqtt_client, MQTT_CLIENT_COMMUNICATION_ERROR);
+                            }
+                            else
+                            {
+                                (void)tickcounter_get_current_ms(mqtt_client->packetTickCntr, &mqtt_client->timeSincePing);
+
+                                if (is_trace_enabled(mqtt_client))
+                                {
+                                    STRING_HANDLE trace_log = STRING_construct("PINGREQ");
+                                    log_outgoing_trace(mqtt_client, trace_log);
+                                    STRING_delete(trace_log);
+                                }
                             }
                         }
                     }
